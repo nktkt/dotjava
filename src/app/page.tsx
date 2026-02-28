@@ -1,65 +1,236 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { motion } from "motion/react";
+import { Hero } from "@/components/hero";
+import { VersionCard } from "@/components/version-card";
+import { TopicCard } from "@/components/topic-card";
+import { VersionTimeline } from "@/components/version-timeline";
+import { Roadmap } from "@/components/roadmap";
+import { javaVersions } from "@/data/java-versions";
+import { javaTopics, topicCategories } from "@/data/java-topics";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Globe, ArrowRight, FileInput } from "lucide-react";
+
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      <Hero />
+
+      {/* Version Cards Section */}
+      <section id="versions" className="py-16 bg-[#F8F9FB]">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              バージョン別ガイド
+            </h2>
+            <p className="text-[#626264] max-w-xl mx-auto">
+              Java 8 から最新の Java 24 まで、各バージョンで追加された機能を詳しく解説
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {javaVersions.map((version, index) => (
+              <VersionCard key={version.id} version={version} index={index} />
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* Timeline Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              バージョン年表
+            </h2>
+            <p className="text-[#626264] max-w-xl mx-auto">
+              Javaの進化の歴史を年表で確認
+            </p>
+          </motion.div>
+
+          <VersionTimeline />
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* Topics Section */}
+      <section id="topics" className="py-16">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              トピック別学習
+            </h2>
+            <p className="text-[#626264] max-w-xl mx-auto">
+              Javaの基礎からオブジェクト指向、並行処理まで体系的に学習
+            </p>
+          </motion.div>
+
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="flex flex-wrap justify-center mb-8 h-auto gap-1 bg-transparent">
+              <TabsTrigger value="all" className="rounded-full data-[state=active]:bg-[var(--color-dads-blue)] data-[state=active]:text-white">
+                全て
+              </TabsTrigger>
+              {topicCategories.map((cat) => (
+                <TabsTrigger
+                  key={cat.id}
+                  value={cat.id}
+                  className="rounded-full data-[state=active]:bg-[var(--color-dads-blue)] data-[state=active]:text-white"
+                >
+                  {cat.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            <TabsContent value="all">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {javaTopics.map((topic, index) => (
+                  <TopicCard key={topic.id} topic={topic} index={index} />
+                ))}
+              </div>
+            </TabsContent>
+
+            {topicCategories.map((cat) => (
+              <TabsContent key={cat.id} value={cat.id}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {javaTopics
+                    .filter((t) => t.category === cat.id)
+                    .map((topic, index) => (
+                      <TopicCard key={topic.id} topic={topic} index={index} />
+                    ))}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* IO & Web Guides Section */}
+      <section className="py-16 bg-[#F8F9FB]">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-10"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              実践ガイド
+            </h2>
+            <p className="text-[#626264] max-w-xl mx-auto">
+              入出力処理とWeb開発を実践的なコード例で体系的に学習
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/io">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-[#D9DBE0] transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-blue-light)] flex items-center justify-center shrink-0">
+                      <FileInput className="h-7 w-7 text-[var(--color-dads-blue)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-blue)] transition-colors">
+                        入出力 完全ガイド
+                      </h3>
+                      <p className="text-[#626264] text-sm mb-3">
+                        ストリーム基礎、ファイル操作、CSV、JSON、XML、Excel、ネットワークI/O、文字エンコーディングまで全12チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["CSV", "JSON", "XML", "Excel", "NIO.2"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/web">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-[#D9DBE0] transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-warning-light)] flex items-center justify-center shrink-0">
+                      <Globe className="h-7 w-7 text-[var(--color-dads-warning)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-blue)] transition-colors">
+                        Web開発 完全ガイド
+                      </h3>
+                      <p className="text-[#626264] text-sm mb-3">
+                        HTTP基礎、Servlet/JSP、Spring Boot、JPA、Spring Security、REST API設計、テスト、Docker デプロイまで全12チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["Spring Boot", "REST API", "JPA", "Security", "Docker"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Roadmap Section */}
+      <section id="roadmap" className="py-16 bg-[#F8F9FB]">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              学習ロードマップ
+            </h2>
+            <p className="text-[#626264] max-w-xl mx-auto">
+              入門からエキスパートまでの学習ステップ
+            </p>
+          </motion.div>
+
+          <Roadmap />
+        </div>
+      </section>
+    </>
   );
 }
