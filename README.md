@@ -32,8 +32,8 @@ A comprehensive Java learning reference site covering Java 8 through Java 24, bu
 ### Installation
 
 ```bash
-git clone https://github.com/nktkt/java-learn-site.git
-cd java-learn-site
+git clone https://github.com/nktkt/dotjava.git
+cd dotjava
 bun install
 ```
 
