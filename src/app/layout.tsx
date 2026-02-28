@@ -11,9 +11,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Java学習サイト | Java 8 ~ 24 完全ガイド",
+  metadataBase: new URL("https://dotjava.org"),
+  title: {
+    default: "dotjava | Java & Excel 学習サイト",
+    template: "%s | dotjava",
+  },
   description:
-    "Javaの基礎からバージョンごとの新機能まで、全てをコード例と共に学習できるリファレンスサイト。Java 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 対応。",
+    "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excelまで、全てをコード例と共に学習できるリファレンスサイト。",
+  openGraph: {
+    type: "website",
+    siteName: "dotjava",
+    locale: "ja_JP",
+  },
+  twitter: {
+    card: "summary",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "dotjava",
+  url: "https://dotjava.org",
+  description:
+    "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excelまで、全てをコード例と共に学習できるリファレンスサイト。",
 };
 
 export default function RootLayout({
@@ -23,6 +44,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={`${geistMono.variable} antialiased`}>
         <Header />
         <main className="min-h-screen">{children}</main>

@@ -1,0 +1,14 @@
+{
+  "name": "java-learn-site",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "routes": [
+    { "pattern": "dotjava.org", "custom_domain": true },
+    { "pattern": "www.dotjava.org", "custom_domain": true }
+  ]
+}

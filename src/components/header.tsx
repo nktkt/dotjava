@@ -31,7 +31,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2.5">
           <Coffee className="h-6 w-6 text-[var(--color-dads-blue)]" />
           <span className="text-lg font-bold tracking-tight">
-            Java<span className="text-[var(--color-dads-blue)]">学習</span>
+            dot<span className="text-[var(--color-dads-blue)]">java</span>
           </span>
         </Link>
 
