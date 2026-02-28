@@ -5,7 +5,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Coffee, Menu } from "lucide-react";
+import { Coffee, Menu, Twitter } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "ホーム" },
@@ -45,6 +45,14 @@ export function Header() {
               {link.label}
             </Link>
           ))}
+          <a
+            href="https://x.com/naokitakata"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-1 p-2 text-[#626264] rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+          >
+            <Twitter className="h-4 w-4" />
+          </a>
         </nav>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -66,6 +74,16 @@ export function Header() {
                   {link.label}
                 </Link>
               ))}
+              <a
+                href="https://x.com/naokitakata"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+              >
+                <Twitter className="h-4 w-4" />
+                X (Twitter)
+              </a>
             </div>
           </SheetContent>
         </Sheet>
