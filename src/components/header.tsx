@@ -5,7 +5,15 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Coffee, Menu, Twitter } from "lucide-react";
+import { Coffee, Menu } from "lucide-react";
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 const navLinks = [
   { href: "/", label: "ホーム" },
@@ -31,7 +39,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2.5">
           <Coffee className="h-6 w-6 text-[var(--color-dads-blue)]" />
           <span className="text-lg font-bold tracking-tight">
-            dot<span className="text-[var(--color-dads-blue)]">java</span>
+            Java<span className="text-[var(--color-dads-blue)]">学習</span>
           </span>
         </Link>
 
@@ -51,7 +59,7 @@ export function Header() {
             rel="noopener noreferrer"
             className="ml-1 p-2 text-[#626264] rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
           >
-            <Twitter className="h-4 w-4" />
+            <XIcon className="h-4 w-4" />
           </a>
         </nav>
 
@@ -81,8 +89,8 @@ export function Header() {
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2 text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
               >
-                <Twitter className="h-4 w-4" />
-                X (Twitter)
+                <XIcon className="h-4 w-4" />
+                X
               </a>
             </div>
           </SheetContent>
