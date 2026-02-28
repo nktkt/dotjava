@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/#topics", label: "トピック別" },
   { href: "/io", label: "入出力" },
   { href: "/web", label: "Web開発" },
+  { href: "/excel", label: "Excel" },
   { href: "/glossary", label: "用語集" },
 ];
 
