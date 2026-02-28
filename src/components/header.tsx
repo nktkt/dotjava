@@ -22,6 +22,7 @@ const navLinks = [
   { href: "/io", label: "入出力" },
   { href: "/web", label: "Web開発" },
   { href: "/excel", label: "Excel" },
+  { href: "/oracle", label: "Oracle" },
   { href: "/glossary", label: "用語集" },
 ];
 

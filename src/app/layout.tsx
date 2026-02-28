@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://dotjava.org"),
   title: {
-    default: "dotjava | Java & Excel 学習サイト",
+    default: "dotjava | Java・Excel・Oracle 学習サイト",
     template: "%s | dotjava",
   },
   description:
-    "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excelまで、全てをコード例と共に学習できるリファレンスサイト。",
+    "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excel、Oracle Databaseまで、全てをコード例と共に学習できるリファレンスサイト。",
   openGraph: {
     type: "website",
     siteName: "dotjava",
@@ -34,7 +34,7 @@ const jsonLd = {
   name: "dotjava",
   url: "https://dotjava.org",
   description:
-    "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excelまで、全てをコード例と共に学習できるリファレンスサイト。",
+    "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excel、Oracle Databaseまで、全てをコード例と共に学習できるリファレンスサイト。",
 };
 
 export default function RootLayout({

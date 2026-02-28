@@ -4,6 +4,7 @@ import { javaTopics } from "@/data/java-topics";
 import { webChapters } from "@/data/java-web";
 import { ioChapters } from "@/data/java-io";
 import { excelChapters } from "@/data/excel";
+import { oracleChapters } from "@/data/oracle";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -13,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/web`, priority: 0.8 },
     { url: `${baseUrl}/io`, priority: 0.8 },
     { url: `${baseUrl}/excel`, priority: 0.8 },
+    { url: `${baseUrl}/oracle`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
   ];
 
@@ -41,6 +43,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const oraclePages: MetadataRoute.Sitemap = oracleChapters.map((c) => ({
+    url: `${baseUrl}/oracle/${c.id}`,
+    priority: 0.6,
+  }));
+
   return [
     ...staticPages,
     ...versionPages,
@@ -48,5 +55,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...webPages,
     ...ioPages,
     ...excelPages,
+    ...oraclePages,
   ];
 }
