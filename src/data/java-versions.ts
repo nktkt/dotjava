@@ -23,7 +23,7 @@ export const javaVersions: JavaVersion[] = [
     name: "Java 8",
     releaseDate: "2014年3月",
     lts: true,
-    color: "#0017C1",
+    color: "var(--color-dads-blue)",
     summary: "ラムダ式、Stream API、Optional など、Javaの書き方を根本的に変えた革命的バージョン",
     features: [
       {
@@ -164,7 +164,7 @@ CompletableFuture<String> combined = f1.thenCombine(f2,
     name: "Java 9",
     releaseDate: "2017年9月",
     lts: false,
-    color: "#259D63",
+    color: "var(--color-dads-success)",
     summary: "モジュールシステム (Project Jigsaw) の導入、JShell、コレクションファクトリメソッドなど",
     features: [
       {
@@ -308,7 +308,7 @@ try (br) {
     name: "Java 10",
     releaseDate: "2018年3月",
     lts: false,
-    color: "#C26A00",
+    color: "var(--color-dads-warning)",
     summary: "ローカル変数の型推論 (var)、不変コレクション収集など",
     features: [
       {
@@ -364,7 +364,7 @@ String val2 = opt.orElseThrow(); // NoSuchElementException`,
     name: "Java 11",
     releaseDate: "2018年9月",
     lts: true,
-    color: "#0017C1",
+    color: "var(--color-dads-blue)",
     summary: "LTS版。HTTPクライアント正式版、String新メソッド、ファイル読み書き簡素化など",
     features: [
       {
@@ -461,7 +461,7 @@ public class Script {
     name: "Java 12",
     releaseDate: "2019年3月",
     lts: false,
-    color: "#0891B2",
+    color: "var(--color-dads-cyan)",
     summary: "Switch式 (プレビュー)、Stringの新メソッド、Collectors.teeing など",
     features: [
       {
@@ -535,7 +535,7 @@ System.out.println(fmtEn.format(1000000)); // "1M"`,
     name: "Java 13",
     releaseDate: "2019年9月",
     lts: false,
-    color: "#6B21A8",
+    color: "var(--color-dads-purple)",
     summary: "テキストブロック (プレビュー)、Switch式のyield (プレビュー)",
     features: [
       {
@@ -595,7 +595,7 @@ String result = switch (status) {
     name: "Java 14",
     releaseDate: "2020年3月",
     lts: false,
-    color: "#EC0000",
+    color: "var(--color-dads-error)",
     summary: "Switch式 (正式版)、Records (プレビュー)、instanceof パターンマッチング (プレビュー)、NullPointerException改善",
     features: [
       {
@@ -680,7 +680,7 @@ user.getAddress().getCity().getName();
     name: "Java 15",
     releaseDate: "2020年9月",
     lts: false,
-    color: "#6B21A8",
+    color: "var(--color-dads-purple)",
     summary: "テキストブロック (正式版)、Sealed Classes (プレビュー)、Recordsの改善",
     features: [
       {
@@ -745,7 +745,7 @@ Class<?> hiddenClass = lookup.defineHiddenClass(
     name: "Java 16",
     releaseDate: "2021年3月",
     lts: false,
-    color: "#259D63",
+    color: "var(--color-dads-success)",
     summary: "Records (正式版)、instanceof パターンマッチング (正式版)、Stream.toList()",
     features: [
       {
@@ -809,7 +809,7 @@ var numbers = Stream.of(1, 2, 3).toList();
     name: "Java 17",
     releaseDate: "2021年9月",
     lts: true,
-    color: "#0017C1",
+    color: "var(--color-dads-blue)",
     summary: "LTS版。Sealed Classes (正式版)、switchのパターンマッチング (プレビュー)、新しい乱数API",
     features: [
       {
@@ -874,7 +874,7 @@ jrng.jump(); // 状態をジャンプ`,
     name: "Java 18",
     releaseDate: "2022年3月",
     lts: false,
-    color: "#0891B2",
+    color: "var(--color-dads-cyan)",
     summary: "UTF-8がデフォルト、シンプルWebサーバー、javadocのコードスニペット",
     features: [
       {
@@ -932,7 +932,7 @@ public class MyClass { }`,
     name: "Java 19",
     releaseDate: "2022年9月",
     lts: false,
-    color: "#C26A00",
+    color: "var(--color-dads-warning)",
     summary: "Virtual Threads (プレビュー)、Structured Concurrency (インキュベーター)、Record Patterns (プレビュー)",
     features: [
       {
@@ -994,7 +994,7 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
     name: "Java 20",
     releaseDate: "2023年3月",
     lts: false,
-    color: "#0891B2",
+    color: "var(--color-dads-cyan)",
     summary: "Scoped Values (インキュベーター)、Virtual Threads / Record Patterns の改善",
     features: [
       {
@@ -1057,7 +1057,7 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
     name: "Java 21",
     releaseDate: "2023年9月",
     lts: true,
-    color: "#0017C1",
+    color: "var(--color-dads-blue)",
     summary: "LTS版。Virtual Threads (正式版)、Pattern Matching完成形、Sequenced Collections、String Templates (プレビュー)",
     features: [
       {
@@ -1187,7 +1187,7 @@ map.forEach((_, value) -> System.out.println(value));`,
     name: "Java 22",
     releaseDate: "2024年3月",
     lts: false,
-    color: "#6B21A8",
+    color: "var(--color-dads-purple)",
     summary: "Unnamed Variables (正式版)、Statements before super() (プレビュー)、Stream Gatherers (プレビュー)",
     features: [
       {
@@ -1266,7 +1266,7 @@ Optional<String> result = Stream.of("a", "b", "c")
     name: "Java 23",
     releaseDate: "2024年9月",
     lts: false,
-    color: "#0891B2",
+    color: "var(--color-dads-cyan)",
     summary: "Primitive Types in Patterns (プレビュー)、Markdown javadoc、Structured Concurrency / Scoped Values (プレビュー)",
     features: [
       {
@@ -1364,7 +1364,7 @@ List<String> result = Stream.of("a", "bb", "c", "dd", "eee")
     name: "Java 24",
     releaseDate: "2025年3月",
     lts: false,
-    color: "#C26A00",
+    color: "var(--color-dads-warning)",
     summary: "Stream Gatherers (正式版)、Flexible Constructor Bodies (第2プレビュー)、Scoped Values / Structured Concurrency の改善",
     features: [
       {

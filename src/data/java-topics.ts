@@ -14,12 +14,12 @@ export interface JavaTopic {
 }
 
 export const topicCategories = [
-  { id: "basics", name: "基礎", color: "#259D63" },
-  { id: "oop", name: "オブジェクト指向", color: "#0017C1" },
-  { id: "collections", name: "コレクション", color: "#C26A00" },
-  { id: "concurrency", name: "並行処理", color: "#6B21A8" },
-  { id: "io", name: "入出力", color: "#EC0000" },
-  { id: "advanced", name: "応用", color: "#546E7A" },
+  { id: "basics", name: "基礎", color: "var(--color-dads-success)" },
+  { id: "oop", name: "オブジェクト指向", color: "var(--color-dads-blue)" },
+  { id: "collections", name: "コレクション", color: "var(--color-dads-warning)" },
+  { id: "concurrency", name: "並行処理", color: "var(--color-dads-purple)" },
+  { id: "io", name: "入出力", color: "var(--color-dads-error)" },
+  { id: "advanced", name: "応用", color: "var(--color-dads-gray)" },
 ] as const;
 
 export const javaTopics: JavaTopic[] = [

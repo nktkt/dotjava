@@ -42,7 +42,7 @@ export default function OracleChapterClientPage({
       <div className="mb-6">
         <Link
           href="/oracle"
-          className="inline-flex items-center text-sm text-[#626264] hover:text-[var(--color-dads-error)] transition-colors"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-[var(--color-dads-error)] transition-colors"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Oracle Database ガイドに戻る
@@ -72,7 +72,7 @@ export default function OracleChapterClientPage({
                 {category?.name}
               </Badge>
             </div>
-            <p className="text-lg text-[#626264]">
+            <p className="text-lg text-muted-foreground">
               {chapter.description}
             </p>
           </motion.div>
@@ -100,7 +100,7 @@ export default function OracleChapterClientPage({
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-[#626264] mb-4">
+                    <p className="text-muted-foreground mb-4">
                       {section.content}
                     </p>
                     {section.code && <CodeBlock code={section.code} language="sql" />}
@@ -148,7 +148,7 @@ export default function OracleChapterClientPage({
           <div className="sticky top-24 space-y-6">
             {sameCategoryChapters.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-3 text-sm text-[#626264] uppercase tracking-wide">
+                <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
                   {category?.name}の他のチャプター
                 </h3>
                 <div className="space-y-1">
@@ -166,14 +166,14 @@ export default function OracleChapterClientPage({
             )}
 
             <div>
-              <h3 className="font-semibold mb-3 text-sm text-[#626264] uppercase tracking-wide">
+              <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
                 このページの内容
               </h3>
               <div className="space-y-1">
                 {chapter.sections.map((section, index) => (
                   <div
                     key={section.title}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-[#626264]"
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground"
                   >
                     <span
                       className="w-5 h-5 rounded text-xs flex items-center justify-center text-white shrink-0"

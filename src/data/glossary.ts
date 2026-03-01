@@ -9,14 +9,14 @@ export interface GlossaryTerm {
 }
 
 export const glossaryCategories = [
-  { id: "basics", name: "基礎", color: "#259D63" },
-  { id: "oop", name: "オブジェクト指向", color: "#0017C1" },
-  { id: "types", name: "型・データ", color: "#C26A00" },
-  { id: "concurrency", name: "並行処理", color: "#6B21A8" },
-  { id: "memory", name: "メモリ・実行環境", color: "#EC0000" },
-  { id: "api", name: "API・ライブラリ", color: "#0891B2" },
-  { id: "pattern", name: "パターン・設計", color: "#546E7A" },
-  { id: "modern", name: "モダンJava", color: "#000F80" },
+  { id: "basics", name: "基礎", color: "var(--color-dads-success)" },
+  { id: "oop", name: "オブジェクト指向", color: "var(--color-dads-blue)" },
+  { id: "types", name: "型・データ", color: "var(--color-dads-warning)" },
+  { id: "concurrency", name: "並行処理", color: "var(--color-dads-purple)" },
+  { id: "memory", name: "メモリ・実行環境", color: "var(--color-dads-error)" },
+  { id: "api", name: "API・ライブラリ", color: "var(--color-dads-cyan)" },
+  { id: "pattern", name: "パターン・設計", color: "var(--color-dads-gray)" },
+  { id: "modern", name: "モダンJava", color: "var(--color-dads-navy)" },
 ] as const;
 
 export const glossaryTerms: GlossaryTerm[] = [

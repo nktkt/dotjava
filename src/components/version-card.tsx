@@ -21,7 +21,7 @@ export function VersionCard({ version, index }: VersionCardProps) {
       viewport={{ once: true, margin: "-50px" }}
     >
       <Link href={`/version/${version.id}`}>
-        <Card className="group h-full cursor-pointer overflow-hidden border border-[#D9DBE0] transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
+        <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
           <div className="h-1" style={{ backgroundColor: version.color }} />
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -37,23 +37,23 @@ export function VersionCard({ version, index }: VersionCardProps) {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-sm text-[#626264]">
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Calendar className="h-3.5 w-3.5" />
               {version.releaseDate}
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-[#626264] mb-4 line-clamp-2">
+            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
               {version.summary}
             </p>
             <div className="flex flex-wrap gap-1.5 mb-4">
               {version.features.slice(0, 3).map((feature) => (
-                <Badge key={feature.title} variant="outline" className="text-xs border-[#D9DBE0]">
+                <Badge key={feature.title} variant="outline" className="text-xs border-border">
                   {feature.title}
                 </Badge>
               ))}
               {version.features.length > 3 && (
-                <Badge variant="outline" className="text-xs border-[#D9DBE0]">
+                <Badge variant="outline" className="text-xs border-border">
                   +{version.features.length - 3}
                 </Badge>
               )}

@@ -24,7 +24,7 @@ export function TopicCard({ topic, index }: TopicCardProps) {
       viewport={{ once: true, margin: "-30px" }}
     >
       <Link href={`/topic/${topic.id}`}>
-        <Card className="group h-full cursor-pointer overflow-hidden border border-[#D9DBE0] transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
+        <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg group-hover:text-[var(--color-dads-blue)] transition-colors">
@@ -40,7 +40,7 @@ export function TopicCard({ topic, index }: TopicCardProps) {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-[#626264] mb-3 line-clamp-2">
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
               {topic.description}
             </p>
             <div className="flex items-center text-sm text-[var(--color-dads-blue)] font-medium opacity-0 group-hover:opacity-100 transition-opacity">

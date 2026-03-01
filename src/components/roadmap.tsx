@@ -8,7 +8,7 @@ import { CheckCircle2 } from "lucide-react";
 const roadmapSteps = [
   {
     level: "入門",
-    color: "#259D63",
+    color: "var(--color-dads-success)",
     items: [
       "変数とデータ型",
       "制御構文 (if, for, while)",
@@ -19,7 +19,7 @@ const roadmapSteps = [
   },
   {
     level: "基礎",
-    color: "#0017C1",
+    color: "var(--color-dads-blue)",
     items: [
       "クラスとオブジェクト",
       "継承とポリモーフィズム",
@@ -30,7 +30,7 @@ const roadmapSteps = [
   },
   {
     level: "中級",
-    color: "#C26A00",
+    color: "var(--color-dads-warning)",
     items: [
       "ジェネリクス",
       "列挙型 (Enum)",
@@ -41,7 +41,7 @@ const roadmapSteps = [
   },
   {
     level: "上級",
-    color: "#6B21A8",
+    color: "var(--color-dads-purple)",
     items: [
       "並行処理 (Thread, ExecutorService)",
       "CompletableFuture",
@@ -52,7 +52,7 @@ const roadmapSteps = [
   },
   {
     level: "エキスパート",
-    color: "#EC0000",
+    color: "var(--color-dads-error)",
     items: [
       "パターンマッチング (Java 21)",
       "Stream Gatherers (Java 24)",
@@ -74,7 +74,7 @@ export function Roadmap() {
           transition={{ duration: 0.4, delay: index * 0.1 }}
           viewport={{ once: true }}
         >
-          <Card className="h-full border border-[#D9DBE0]">
+          <Card className="h-full border border-border">
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-4">
                 <div

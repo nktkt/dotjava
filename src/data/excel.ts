@@ -13,14 +13,14 @@ export interface ExcelChapter {
 }
 
 export const excelCategories = [
-  { id: "basic", name: "基本操作", color: "#0017C1" },
-  { id: "formula", name: "数式・関数", color: "#259D63" },
-  { id: "data", name: "データ管理", color: "#C26A00" },
-  { id: "chart", name: "グラフ・可視化", color: "#6B21A8" },
-  { id: "pivot", name: "ピボットテーブル", color: "#EC0000" },
-  { id: "practical", name: "実務テクニック", color: "#0891B2" },
-  { id: "advanced-func", name: "関数の応用", color: "#259D63" },
-  { id: "vba", name: "VBA・マクロ", color: "#546E7A" },
+  { id: "basic", name: "基本操作", color: "var(--color-dads-blue)" },
+  { id: "formula", name: "数式・関数", color: "var(--color-dads-success)" },
+  { id: "data", name: "データ管理", color: "var(--color-dads-warning)" },
+  { id: "chart", name: "グラフ・可視化", color: "var(--color-dads-purple)" },
+  { id: "pivot", name: "ピボットテーブル", color: "var(--color-dads-error)" },
+  { id: "practical", name: "実務テクニック", color: "var(--color-dads-cyan)" },
+  { id: "advanced-func", name: "関数の応用", color: "var(--color-dads-success)" },
+  { id: "vba", name: "VBA・マクロ", color: "var(--color-dads-gray)" },
 ] as const;
 
 export const excelChapters: ExcelChapter[] = [

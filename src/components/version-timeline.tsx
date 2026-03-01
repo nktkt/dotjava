@@ -8,7 +8,7 @@ import Link from "next/link";
 export function VersionTimeline() {
   return (
     <div className="relative">
-      <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-[#D9DBE0] md:-translate-x-px" />
+      <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-muted md:-translate-x-px" />
       <div className="space-y-8">
         {javaVersions.map((version, index) => (
           <motion.div
@@ -38,8 +38,8 @@ export function VersionTimeline() {
                     </span>
                   )}
                 </div>
-                <div className="text-sm text-[#626264]">{version.releaseDate}</div>
-                <p className="text-sm text-[#626264] mt-1 line-clamp-2">{version.summary}</p>
+                <div className="text-sm text-muted-foreground">{version.releaseDate}</div>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{version.summary}</p>
               </Link>
             </div>
           </motion.div>

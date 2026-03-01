@@ -5,6 +5,7 @@ import { webChapters } from "@/data/java-web";
 import { ioChapters } from "@/data/java-io";
 import { excelChapters } from "@/data/excel";
 import { oracleChapters } from "@/data/oracle";
+import { designPatterns } from "@/data/design-patterns";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -16,6 +17,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/excel`, priority: 0.8 },
     { url: `${baseUrl}/oracle`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
+    { url: `${baseUrl}/patterns`, priority: 0.8 },
+    { url: `${baseUrl}/errors`, priority: 0.7 },
+    { url: `${baseUrl}/quiz`, priority: 0.7 },
   ];
 
   const versionPages: MetadataRoute.Sitemap = javaVersions.map((v) => ({
@@ -48,6 +52,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const patternPages: MetadataRoute.Sitemap = designPatterns.map((p) => ({
+    url: `${baseUrl}/patterns/${p.id}`,
+    priority: 0.6,
+  }));
+
   return [
     ...staticPages,
     ...versionPages,
@@ -56,5 +65,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...ioPages,
     ...excelPages,
     ...oraclePages,
+    ...patternPages,
   ];
 }

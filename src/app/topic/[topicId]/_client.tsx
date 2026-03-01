@@ -39,7 +39,7 @@ export default function TopicClientPage({
       <div className="mb-6">
         <Link
           href="/#topics"
-          className="inline-flex items-center text-sm text-[#626264] hover:text-[var(--color-dads-blue)] transition-colors"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-[var(--color-dads-blue)] transition-colors"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           トピック一覧に戻る
@@ -64,7 +64,7 @@ export default function TopicClientPage({
                 {category?.name}
               </Badge>
             </div>
-            <p className="text-lg text-[#626264]">{topic.description}</p>
+            <p className="text-lg text-muted-foreground">{topic.description}</p>
           </motion.div>
 
           <div className="space-y-8 mb-12">
@@ -80,7 +80,7 @@ export default function TopicClientPage({
                     <CardTitle className="text-xl">{section.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-[#626264] mb-4">
+                    <p className="text-muted-foreground mb-4">
                       {section.content}
                     </p>
                     {section.code && <CodeBlock code={section.code} />}
@@ -121,7 +121,7 @@ export default function TopicClientPage({
         {sameCategoryTopics.length > 0 && (
           <div className="lg:w-64 shrink-0">
             <div className="sticky top-24">
-              <h3 className="font-semibold mb-3 text-sm text-[#626264] uppercase tracking-wide">
+              <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
                 {category?.name}の関連トピック
               </h3>
               <div className="space-y-1">

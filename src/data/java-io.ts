@@ -13,14 +13,14 @@ export interface IoChapter {
 }
 
 export const ioCategories = [
-  { id: "stream", name: "ストリーム基礎", color: "#0017C1" },
-  { id: "file", name: "ファイル操作", color: "#259D63" },
-  { id: "csv", name: "CSV", color: "#C26A00" },
-  { id: "json", name: "JSON", color: "#6B21A8" },
-  { id: "xml", name: "XML", color: "#EC0000" },
-  { id: "excel", name: "Excel", color: "#259D63" },
-  { id: "network", name: "ネットワークI/O", color: "#0891B2" },
-  { id: "advanced", name: "応用", color: "#546E7A" },
+  { id: "stream", name: "ストリーム基礎", color: "var(--color-dads-blue)" },
+  { id: "file", name: "ファイル操作", color: "var(--color-dads-success)" },
+  { id: "csv", name: "CSV", color: "var(--color-dads-warning)" },
+  { id: "json", name: "JSON", color: "var(--color-dads-purple)" },
+  { id: "xml", name: "XML", color: "var(--color-dads-error)" },
+  { id: "excel", name: "Excel", color: "var(--color-dads-success)" },
+  { id: "network", name: "ネットワークI/O", color: "var(--color-dads-cyan)" },
+  { id: "advanced", name: "応用", color: "var(--color-dads-gray)" },
 ] as const;
 
 export const ioChapters: IoChapter[] = [

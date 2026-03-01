@@ -13,15 +13,15 @@ export interface WebChapter {
 }
 
 export const webCategories = [
-  { id: "foundation", name: "Web基盤", color: "#0017C1" },
-  { id: "servlet", name: "Servlet/JSP", color: "#259D63" },
-  { id: "spring", name: "Spring Boot", color: "#259D63" },
-  { id: "data", name: "データアクセス", color: "#C26A00" },
-  { id: "security", name: "セキュリティ", color: "#EC0000" },
-  { id: "api", name: "API開発", color: "#6B21A8" },
-  { id: "testing", name: "テスト", color: "#0891B2" },
-  { id: "deploy", name: "ビルド・デプロイ", color: "#546E7A" },
-  { id: "tomcat", name: "Tomcat", color: "#000F80" },
+  { id: "foundation", name: "Web基盤", color: "var(--color-dads-blue)" },
+  { id: "servlet", name: "Servlet/JSP", color: "var(--color-dads-success)" },
+  { id: "spring", name: "Spring Boot", color: "var(--color-dads-success)" },
+  { id: "data", name: "データアクセス", color: "var(--color-dads-warning)" },
+  { id: "security", name: "セキュリティ", color: "var(--color-dads-error)" },
+  { id: "api", name: "API開発", color: "var(--color-dads-purple)" },
+  { id: "testing", name: "テスト", color: "var(--color-dads-cyan)" },
+  { id: "deploy", name: "ビルド・デプロイ", color: "var(--color-dads-gray)" },
+  { id: "tomcat", name: "Tomcat", color: "var(--color-dads-navy)" },
 ] as const;
 
 export const webChapters: WebChapter[] = [

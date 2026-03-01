@@ -41,7 +41,7 @@ export default function VersionClientPage({
       <div className="mb-6">
         <Link
           href="/#versions"
-          className="inline-flex items-center text-sm text-[#626264] hover:text-[var(--color-dads-blue)] transition-colors"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-[var(--color-dads-blue)] transition-colors"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           バージョン一覧に戻る
@@ -68,11 +68,11 @@ export default function VersionClientPage({
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2 text-[#626264] mb-4 ml-6">
+        <div className="flex items-center gap-2 text-muted-foreground mb-4 ml-6">
           <Calendar className="h-4 w-4" />
           <span>{version.releaseDate} リリース</span>
         </div>
-        <p className="text-lg text-[#626264] ml-6 max-w-3xl">
+        <p className="text-lg text-muted-foreground ml-6 max-w-3xl">
           {version.summary}
         </p>
       </motion.div>
@@ -99,7 +99,7 @@ export default function VersionClientPage({
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-[#626264] mb-4">
+                <p className="text-muted-foreground mb-4">
                   {feature.description}
                 </p>
                 {feature.code && <CodeBlock code={feature.code} />}

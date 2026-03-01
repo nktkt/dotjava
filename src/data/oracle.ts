@@ -13,15 +13,15 @@ export interface OracleChapter {
 }
 
 export const oracleCategories = [
-  { id: "sql-basic", name: "SQL基礎", color: "#0017C1" },
-  { id: "join-sub", name: "結合・サブクエリ", color: "#259D63" },
-  { id: "dml", name: "データ操作", color: "#C26A00" },
-  { id: "ddl", name: "テーブル設計・DDL", color: "#6B21A8" },
-  { id: "function", name: "組み込み関数", color: "#0891B2" },
-  { id: "plsql", name: "PL/SQL", color: "#259D63" },
-  { id: "performance", name: "パフォーマンス", color: "#EC0000" },
-  { id: "admin", name: "管理・運用", color: "#546E7A" },
-  { id: "sqlplus", name: "SQL*Plus", color: "#B45309" },
+  { id: "sql-basic", name: "SQL基礎", color: "var(--color-dads-blue)" },
+  { id: "join-sub", name: "結合・サブクエリ", color: "var(--color-dads-success)" },
+  { id: "dml", name: "データ操作", color: "var(--color-dads-warning)" },
+  { id: "ddl", name: "テーブル設計・DDL", color: "var(--color-dads-purple)" },
+  { id: "function", name: "組み込み関数", color: "var(--color-dads-cyan)" },
+  { id: "plsql", name: "PL/SQL", color: "var(--color-dads-success)" },
+  { id: "performance", name: "パフォーマンス", color: "var(--color-dads-error)" },
+  { id: "admin", name: "管理・運用", color: "var(--color-dads-gray)" },
+  { id: "sqlplus", name: "SQL*Plus", color: "var(--color-dads-amber)" },
 ] as const;
 
 export const oracleChapters: OracleChapter[] = [

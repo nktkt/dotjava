@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Coffee, Menu } from "lucide-react";
+import { Coffee, Menu, Sun, Moon } from "lucide-react";
 
 function XIcon({ className }: { className?: string }) {
   return (
@@ -24,17 +24,32 @@ const navLinks = [
   { href: "/excel", label: "Excel" },
   { href: "/oracle", label: "Oracle" },
   { href: "/glossary", label: "用語集" },
+  { href: "/patterns", label: "デザインパターン" },
+  { href: "/errors", label: "エラー集" },
+  { href: "/quiz", label: "クイズ" },
 ];
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+  };
 
   return (
     <motion.header
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      className="sticky top-0 z-50 border-b border-[#D9DBE0] bg-white/90 backdrop-blur-md"
+      className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md"
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
@@ -49,7 +64,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="px-3 py-2 text-sm font-medium text-[#626264] rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+              className="px-3 py-2 text-sm font-medium text-muted-foreground rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
             >
               {link.label}
             </Link>
@@ -58,44 +73,60 @@ export function Header() {
             href="https://x.com/naokitakata"
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-1 p-2 text-[#626264] rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+            className="ml-1 p-2 text-muted-foreground rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
           >
             <XIcon className="h-4 w-4" />
           </a>
+          <button
+            onClick={toggleTheme}
+            className="ml-1 p-2 text-muted-foreground rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+            aria-label="テーマ切替"
+          >
+            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
         </nav>
 
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="hover:bg-[var(--color-dads-blue-light)]">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-72">
-            <SheetTitle className="sr-only">ナビゲーション</SheetTitle>
-            <div className="flex flex-col gap-1 mt-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
+        <div className="flex items-center gap-1 md:hidden">
+          <button
+            onClick={toggleTheme}
+            className="p-2 text-muted-foreground rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+            aria-label="テーマ切替"
+          >
+            {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="hover:bg-[var(--color-dads-blue-light)]">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetTitle className="sr-only">ナビゲーション</SheetTitle>
+              <div className="flex flex-col gap-1 mt-8">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className="text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <a
+                  href="https://x.com/naokitakata"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
-                  className="text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+                  className="flex items-center gap-2 text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
                 >
-                  {link.label}
-                </Link>
-              ))}
-              <a
-                href="https://x.com/naokitakata"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2 text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
-              >
-                <XIcon className="h-4 w-4" />
-                X
-              </a>
-            </div>
-          </SheetContent>
-        </Sheet>
+                  <XIcon className="h-4 w-4" />
+                  X
+                </a>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </motion.header>
   );

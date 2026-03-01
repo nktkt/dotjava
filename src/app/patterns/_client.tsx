@@ -2,12 +2,12 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
-import { ioChapters, ioCategories } from "@/data/java-io";
+import { designPatterns, patternCategories } from "@/data/design-patterns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileInput, ArrowRight, BookOpen } from "lucide-react";
+import { Blocks, ArrowRight, BookOpen } from "lucide-react";
 
-export default function IoClientPage() {
+export default function PatternsClientPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero */}
@@ -18,25 +18,25 @@ export default function IoClientPage() {
         className="text-center mb-12"
       >
         <div className="inline-flex items-center gap-2 mb-4">
-          <FileInput className="h-8 w-8 text-[var(--color-dads-blue)]" />
+          <Blocks className="h-8 w-8 text-[var(--color-dads-warning)]" />
           <h1 className="text-3xl md:text-4xl font-bold">
-            Java <span className="text-[var(--color-dads-blue)]">入出力</span>ガイド
+            <span className="text-[var(--color-dads-warning)]">デザインパターン</span> ガイド
           </h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-          ストリームの基礎から CSV、JSON、XML、Excel の読み書き、
-          ネットワーク通信、文字エンコーディングまで、Java の入出力処理を網羅的に学習
+          GoF 23のデザインパターンをJavaのコード例と共に学習。
+          生成・構造・振る舞いパターンを網羅的に解説
         </p>
         <div className="mt-3 text-sm text-muted-foreground">
-          全 {ioChapters.length} チャプター /{" "}
-          {ioChapters.reduce((sum, c) => sum + c.sections.length, 0)} セクション
+          全 {designPatterns.length} パターン /{" "}
+          {designPatterns.reduce((sum, p) => sum + p.sections.length, 0)} セクション
         </div>
       </motion.div>
 
       {/* Category Sections */}
-      {ioCategories.map((category, catIndex) => {
-        const chapters = ioChapters.filter((c) => c.category === category.id);
-        if (chapters.length === 0) return null;
+      {patternCategories.map((category, catIndex) => {
+        const patterns = designPatterns.filter((p) => p.category === category.id);
+        if (patterns.length === 0) return null;
 
         return (
           <motion.section
@@ -58,29 +58,29 @@ export default function IoClientPage() {
                 className="text-xs"
                 style={{ borderColor: category.color, color: category.color }}
               >
-                {chapters.length} チャプター
+                {patterns.length} パターン
               </Badge>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {chapters.map((chapter) => (
-                <Link key={chapter.id} href={`/io/${chapter.id}`}>
-                  <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
+              {patterns.map((pattern) => (
+                <Link key={pattern.id} href={`/patterns/${pattern.id}`}>
+                  <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-warning)]">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg group-hover:text-[var(--color-dads-blue)] transition-colors">
-                        {chapter.title}
+                      <CardTitle className="text-lg group-hover:text-[var(--color-dads-warning)] transition-colors">
+                        {pattern.title}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {chapter.description}
+                        {pattern.description}
                       </p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <BookOpen className="h-3.5 w-3.5" />
-                          {chapter.sections.length} セクション
+                          {pattern.sections.length} セクション
                         </div>
-                        <div className="flex items-center text-sm text-[var(--color-dads-blue)] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center text-sm text-[var(--color-dads-warning)] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                           学習する
                           <ArrowRight className="h-4 w-4 ml-1" />
                         </div>
@@ -107,7 +107,7 @@ export default function IoClientPage() {
               推奨学習順序
             </h3>
             <div className="flex flex-wrap justify-center items-center gap-2">
-              {ioCategories.map((cat, index) => (
+              {patternCategories.map((cat, index) => (
                 <div key={cat.id} className="flex items-center gap-2">
                   <Badge
                     variant="outline"
@@ -116,7 +116,7 @@ export default function IoClientPage() {
                   >
                     {index + 1}. {cat.name}
                   </Badge>
-                  {index < ioCategories.length - 1 && (
+                  {index < patternCategories.length - 1 && (
                     <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   )}
                 </div>

@@ -23,11 +23,11 @@ export default function WebClientPage() {
             Java <span className="text-[var(--color-dads-blue)]">Web開発</span>ガイド
           </h1>
         </div>
-        <p className="text-[#626264] max-w-2xl mx-auto text-lg">
+        <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
           Servlet の基礎から Spring Boot、REST API 設計、セキュリティ、テスト、
           Docker デプロイまで、Java による Web アプリケーション開発を体系的に学習
         </p>
-        <div className="mt-3 text-sm text-[#626264]">
+        <div className="mt-3 text-sm text-muted-foreground">
           全 {webChapters.length} チャプター /{" "}
           {webChapters.reduce((sum, c) => sum + c.sections.length, 0)} セクション
         </div>
@@ -70,18 +70,18 @@ export default function WebClientPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {chapters.map((chapter, index) => (
                 <Link key={chapter.id} href={`/web/${chapter.id}`}>
-                  <Card className="group h-full cursor-pointer overflow-hidden border border-[#D9DBE0] transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
+                  <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg group-hover:text-[var(--color-dads-blue)] transition-colors">
                         {chapter.title}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-[#626264] mb-3 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                         {chapter.description}
                       </p>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs text-[#626264]">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <BookOpen className="h-3.5 w-3.5" />
                           {chapter.sections.length} セクション
                         </div>
@@ -106,7 +106,7 @@ export default function WebClientPage() {
         viewport={{ once: true }}
         className="mt-12 mb-8"
       >
-        <Card className="bg-[#F8F9FB]">
+        <Card className="bg-muted">
           <CardContent className="pt-6">
             <h3 className="text-lg font-bold mb-4 text-center">
               推奨学習順序
@@ -125,7 +125,7 @@ export default function WebClientPage() {
                     {index + 1}. {cat.name}
                   </Badge>
                   {index < webCategories.length - 1 && (
-                    <ArrowRight className="h-4 w-4 text-[#626264]" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   )}
                 </div>
               ))}
