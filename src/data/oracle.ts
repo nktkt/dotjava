@@ -634,6 +634,233 @@ FOR UPDATE SKIP LOCKED;`,
       },
     ],
   },
+  {
+    id: "bulk-insert",
+    title: "バルクインサート（一括挿入）",
+    category: "dml",
+    description:
+      "大量データを効率的に挿入するテクニック。INSERT ALL、INSERT SELECT、ダイレクトパスインサート、SQL*Loader、外部テーブルを学ぶ",
+    sections: [
+      {
+        title: "INSERT ALL（複数行の同時挿入）",
+        content:
+          "INSERT ALL は1つのSQL文で複数行を同時に挿入する構文です。VALUES句を複数記述することで、ネットワークラウンドトリップを削減し、大幅にパフォーマンスが向上します。条件付きINSERT ALL を使えば、条件に応じて異なるテーブルに振り分けることも可能です。",
+        code: `-- 基本: 同一テーブルに複数行を一括挿入
+INSERT ALL
+    INTO employees (employee_id, first_name, last_name, email, hire_date, job_id)
+        VALUES (1001, '太郎', '山田', 'yamada@example.com', DATE '2024-04-01', 'IT_PROG')
+    INTO employees (employee_id, first_name, last_name, email, hire_date, job_id)
+        VALUES (1002, '花子', '田中', 'tanaka@example.com', DATE '2024-04-01', 'SA_REP')
+    INTO employees (employee_id, first_name, last_name, email, hire_date, job_id)
+        VALUES (1003, '一郎', '佐藤', 'sato@example.com', DATE '2024-04-01', 'FI_ACCOUNT')
+SELECT * FROM DUAL;
+
+-- 条件付き INSERT ALL: 条件に応じて異なるテーブルへ振り分け
+INSERT ALL
+    WHEN salary >= 80000 THEN
+        INTO high_salary_emp (employee_id, name, salary)
+        VALUES (employee_id, first_name || ' ' || last_name, salary)
+    WHEN salary >= 40000 AND salary < 80000 THEN
+        INTO mid_salary_emp (employee_id, name, salary)
+        VALUES (employee_id, first_name || ' ' || last_name, salary)
+    ELSE
+        INTO low_salary_emp (employee_id, name, salary)
+        VALUES (employee_id, first_name || ' ' || last_name, salary)
+SELECT employee_id, first_name, last_name, salary
+FROM employees;
+
+-- INSERT FIRST: 最初に一致した条件にのみ挿入（重複なし）
+INSERT FIRST
+    WHEN department_id = 60 THEN INTO it_dept_emp VALUES (employee_id, first_name, salary)
+    WHEN salary > 100000   THEN INTO high_paid_emp VALUES (employee_id, first_name, salary)
+    ELSE                        INTO other_emp VALUES (employee_id, first_name, salary)
+SELECT employee_id, first_name, salary, department_id FROM employees;`,
+      },
+      {
+        title: "INSERT ... SELECT（問い合わせ結果の一括挿入）",
+        content:
+          "INSERT ... SELECT は他のテーブルやサブクエリの結果セットを一括で挿入する最も基本的なバルクインサートです。データ移行、集計テーブルの作成、バックアップ等に広く使われます。WHERE句やJOINで挿入するデータを絞り込めます。",
+        code: `-- 基本: SELECT結果を別テーブルに一括挿入
+INSERT INTO employees_backup (employee_id, first_name, last_name, salary, department_id)
+SELECT employee_id, first_name, last_name, salary, department_id
+FROM employees
+WHERE hire_date >= DATE '2024-01-01';
+
+-- テーブルの完全コピー（CREATE TABLE AS SELECT = CTAS）
+CREATE TABLE employees_archive AS
+SELECT * FROM employees WHERE status = 'INACTIVE';
+
+-- 集計結果の挿入
+INSERT INTO monthly_summary (dept_id, month, total_salary, emp_count)
+SELECT department_id,
+       TRUNC(SYSDATE, 'MM'),
+       SUM(salary),
+       COUNT(*)
+FROM employees
+GROUP BY department_id;
+
+-- JOINを使った複数テーブルからの挿入
+INSERT INTO sales_report (emp_name, dept_name, total_sales)
+SELECT e.first_name || ' ' || e.last_name,
+       d.department_name,
+       NVL(SUM(s.amount), 0)
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id
+LEFT JOIN sales s ON e.employee_id = s.employee_id
+GROUP BY e.first_name, e.last_name, d.department_name;`,
+      },
+      {
+        title: "ダイレクトパスインサート（APPENDヒント）",
+        content:
+          "ダイレクトパスインサートは、通常のバッファキャッシュ経由の書き込みをバイパスし、データファイルに直接書き込む高速な挿入方法です。/*+ APPEND */ ヒントを使用します。REDO ログの生成を最小化でき、大量データのロード時に劇的なパフォーマンス向上が得られます。ただし、テーブルに排他ロックがかかる点やロールバック時の注意点があります。",
+        code: `-- APPENDヒントによるダイレクトパスインサート
+INSERT /*+ APPEND */ INTO sales_history
+SELECT * FROM sales_staging;
+COMMIT;  -- ダイレクトパス後は必ずCOMMIT（同一トランザクション内でSELECT不可）
+
+-- NOLOGGING + APPEND で最速（ただしリカバリ不可に注意）
+ALTER TABLE sales_history NOLOGGING;
+INSERT /*+ APPEND NOLOGGING */ INTO sales_history
+SELECT * FROM sales_staging;
+COMMIT;
+ALTER TABLE sales_history LOGGING;  -- 元に戻す
+
+-- APPEND_VALUES: VALUES句でのダイレクトパス（12c以降）
+INSERT /*+ APPEND_VALUES */ INTO log_table (log_id, message, created_at)
+VALUES (log_seq.NEXTVAL, 'Batch process completed', SYSTIMESTAMP);
+
+-- パラレルダイレクトパスインサート（大量データ向け）
+ALTER SESSION ENABLE PARALLEL DML;
+INSERT /*+ APPEND PARALLEL(t, 4) */ INTO target_table t
+SELECT /*+ PARALLEL(s, 4) */ * FROM source_table s;
+COMMIT;
+
+-- 注意点:
+-- 1. APPEND後、同一トランザクション内で該当テーブルのSELECT/DMLはエラー
+-- 2. テーブルにHWM（ハイウォーターマーク）より上の領域に書き込む
+-- 3. 空き領域は再利用されない（定期的にSHRINKやMOVEが必要）`,
+      },
+      {
+        title: "SQL*Loaderによる外部ファイルの読み込み",
+        content:
+          "SQL*Loader はCSVやテキストファイルなどの外部データをOracle テーブルに高速にロードするユーティリティです。制御ファイル（.ctl）でデータの形式やマッピングを定義します。DIRECT=TRUE オプションでダイレクトパスロードを実行でき、大量データの初期ロードやバッチ取込に最適です。",
+        code: `-- ===== 制御ファイル (load_employees.ctl) =====
+-- CSVファイルからemployeesテーブルにロード
+LOAD DATA
+INFILE 'employees.csv'
+BADFILE 'employees.bad'
+DISCARDFILE 'employees.dsc'
+APPEND INTO TABLE employees
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+TRAILING NULLCOLS
+(
+    employee_id   INTEGER EXTERNAL,
+    first_name    CHAR(50),
+    last_name     CHAR(50),
+    email         CHAR(100),
+    hire_date     DATE "YYYY-MM-DD",
+    salary        DECIMAL EXTERNAL,
+    department_id INTEGER EXTERNAL
+)
+
+-- ===== 実行コマンド（OSコマンドライン） =====
+-- 通常ロード（バッファキャッシュ経由）
+-- sqlldr userid=scott/tiger control=load_employees.ctl log=load_employees.log
+
+-- ダイレクトパスロード（高速、REDOログ最小）
+-- sqlldr userid=scott/tiger control=load_employees.ctl direct=true
+
+-- パラレルダイレクトパスロード（最速）
+-- sqlldr userid=scott/tiger control=load_employees.ctl direct=true parallel=true
+
+-- ===== ロードモードの違い =====
+-- APPEND : 既存データに追加（デフォルト）
+-- INSERT : テーブルが空の場合のみ挿入
+-- REPLACE: 既存データを全削除してから挿入
+-- TRUNCATE: TRUNCATEしてから挿入（REPLACEより高速）`,
+      },
+      {
+        title: "外部テーブルとパフォーマンスTips",
+        content:
+          "外部テーブル（External Table）はCSV等の外部ファイルをSQLのSELECT文で直接参照できる機能です。SQL*Loaderの制御ファイルに似たアクセスパラメータを定義します。INSERT ... SELECT と組み合わせることで、SQLだけで外部データの取込が完結します。最後に、バルクインサート全般のパフォーマンスチューニングのポイントをまとめます。",
+        code: `-- ===== 外部テーブルの定義 =====
+CREATE DIRECTORY ext_dir AS '/data/csv';
+
+CREATE TABLE employees_ext (
+    employee_id   NUMBER,
+    first_name    VARCHAR2(50),
+    last_name     VARCHAR2(50),
+    email         VARCHAR2(100),
+    hire_date     DATE,
+    salary        NUMBER
+)
+ORGANIZATION EXTERNAL (
+    TYPE ORACLE_LOADER
+    DEFAULT DIRECTORY ext_dir
+    ACCESS PARAMETERS (
+        RECORDS DELIMITED BY NEWLINE
+        SKIP 1               -- ヘッダー行をスキップ
+        FIELDS TERMINATED BY ','
+        OPTIONALLY ENCLOSED BY '"'
+        MISSING FIELD VALUES ARE NULL
+        (
+            employee_id, first_name, last_name, email,
+            hire_date DATE "YYYY-MM-DD",
+            salary
+        )
+    )
+    LOCATION ('employees.csv')
+)
+REJECT LIMIT UNLIMITED;
+
+-- 外部テーブルから通常テーブルへ一括挿入
+INSERT /*+ APPEND */ INTO employees
+SELECT * FROM employees_ext;
+COMMIT;
+
+-- ===== パフォーマンスTips =====
+-- 1. インデックスを一時的に無効化 → ロード → 再構築
+ALTER INDEX idx_emp_dept UNUSABLE;
+INSERT /*+ APPEND */ INTO employees SELECT * FROM staging;
+COMMIT;
+ALTER INDEX idx_emp_dept REBUILD;
+
+-- 2. 制約を一時的に無効化（大量ロード時）
+ALTER TABLE employees DISABLE CONSTRAINT fk_dept;
+-- ... 大量INSERT ...
+ALTER TABLE employees ENABLE CONSTRAINT fk_dept;
+
+-- 3. バッチCOMMIT（PL/SQLでの分割コミット）
+DECLARE
+    v_batch_size CONSTANT PLS_INTEGER := 10000;
+    v_count PLS_INTEGER := 0;
+    CURSOR c IS SELECT * FROM staging_data;
+BEGIN
+    FOR rec IN c LOOP
+        INSERT INTO target_table VALUES rec;
+        v_count := v_count + 1;
+        IF MOD(v_count, v_batch_size) = 0 THEN
+            COMMIT;  -- 1万行ごとにコミット
+        END IF;
+    END LOOP;
+    COMMIT;  -- 残りをコミット
+END;
+/
+
+-- 4. FORALL を使った PL/SQL バルク処理（最も効率的）
+DECLARE
+    TYPE t_emp IS TABLE OF staging_data%ROWTYPE;
+    v_data t_emp;
+BEGIN
+    SELECT * BULK COLLECT INTO v_data FROM staging_data;
+    FORALL i IN v_data.FIRST .. v_data.LAST
+        INSERT INTO target_table VALUES v_data(i);
+    COMMIT;
+END;
+/`,
+      },
+    ],
+  },
 
   // ===== テーブル設計・DDL =====
   {

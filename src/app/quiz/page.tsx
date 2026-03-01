@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import ClientPage from "./_client";
 
 export const metadata: Metadata = {
-  title: "Java クイズ",
-  description: "Javaの知識をクイズで腕試し。基礎文法からモダンJavaまで、難易度別に挑戦できます。",
+  title: "クイズ",
+  description: "Java・Excel・Oracle/SQLの知識をクイズで腕試し。カテゴリや難易度を選んで挑戦できます。",
 };
 
 export default function Page() {

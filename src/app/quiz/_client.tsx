@@ -56,6 +56,7 @@ export default function QuizClientPage() {
   const [phase, setPhase] = useState<Phase>("select");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+  const [questionCount, setQuestionCount] = useState<number>(0); // 0 = all
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -85,14 +86,21 @@ export default function QuizClientPage() {
     );
   }, []);
 
+  const actualQuestionCount =
+    questionCount === 0
+      ? filteredQuestions.length
+      : Math.min(questionCount, filteredQuestions.length);
+
   const startQuiz = useCallback(() => {
     if (filteredQuestions.length === 0) return;
-    setQuestions(shuffleArray(filteredQuestions));
+    const shuffled = shuffleArray(filteredQuestions);
+    const count = questionCount === 0 ? shuffled.length : Math.min(questionCount, shuffled.length);
+    setQuestions(shuffled.slice(0, count));
     setCurrentIndex(0);
     setAnswers({});
     setShowAnswer(false);
     setPhase("quiz");
-  }, [filteredQuestions]);
+  }, [filteredQuestions, questionCount]);
 
   const selectAnswer = useCallback(
     (questionId: string, label: string) => {
@@ -151,10 +159,10 @@ export default function QuizClientPage() {
         >
           <div className="inline-flex items-center gap-2 mb-4">
             <Brain className="h-8 w-8 text-[var(--color-dads-blue)]" />
-            <h1 className="text-3xl md:text-4xl font-bold">Java クイズ</h1>
+            <h1 className="text-3xl md:text-4xl font-bold">クイズ</h1>
           </div>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Javaの知識をクイズで腕試し。カテゴリや難易度を選んで挑戦しましょう。
+            Java・Excel・Oracle/SQL の知識をクイズで腕試し。カテゴリや難易度を選んで挑戦しましょう。
           </p>
           <div className="mt-2 text-sm text-muted-foreground">
             全 {quizQuestions.length} 問収録
@@ -245,12 +253,47 @@ export default function QuizClientPage() {
             </CardContent>
           </Card>
 
-          {/* Question count & Start */}
+          {/* Question Count Selector */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">出題数</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {[10, 20, 30, 50, 0].map((n) => {
+                  const label = n === 0 ? "全問" : `${n}問`;
+                  const isSelected = questionCount === n;
+                  const isDisabled = n !== 0 && n > filteredQuestions.length;
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setQuestionCount(n)}
+                      disabled={isDisabled}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        isDisabled
+                          ? "bg-secondary text-muted-foreground/40 cursor-not-allowed"
+                          : isSelected
+                            ? "bg-[var(--color-dads-blue)] text-white"
+                            : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                対象問題数: {filteredQuestions.length} 問（ランダムに出題されます）
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Start Button */}
           <div className="text-center space-y-4">
             <p className="text-lg font-semibold text-foreground">
               出題数：
               <span className="text-[var(--color-dads-blue)]">
-                {filteredQuestions.length}
+                {actualQuestionCount}
               </span>{" "}
               問
             </p>
