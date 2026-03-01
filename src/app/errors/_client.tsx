@@ -164,8 +164,8 @@ export default function ErrorsClientPage() {
                     className="border border-border rounded-lg px-4 data-[state=open]:bg-muted"
                   >
                     <AccordionTrigger className="hover:no-underline py-3">
-                      <div className="flex items-center gap-3 text-left">
-                        <span className="font-semibold text-base">
+                      <div className="flex items-center gap-3 text-left min-w-0">
+                        <span className="font-semibold text-base break-all">
                           {error.title}
                         </span>
                         <Badge
