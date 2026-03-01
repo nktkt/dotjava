@@ -21,7 +21,7 @@ export function Hero() {
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-foreground">
             <span className="text-[var(--color-dads-blue)]">Java</span>を
             <br className="sm:hidden" />
-            完全に学ぶ
+            理解する
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
