@@ -26,6 +26,7 @@ import {
   ArrowRight,
   RotateCcw,
   Trophy,
+  List,
 } from "lucide-react";
 
 type Phase = "select" | "quiz" | "result";
@@ -587,6 +588,141 @@ export function MosQuiz() {
           もう一度挑戦
         </Button>
       </div>
+    </div>
+  );
+}
+
+export function MosQuestionList() {
+  const [filterDifficulty, setFilterDifficulty] = useState<string>("");
+
+  const displayQuestions = filterDifficulty
+    ? mosQuestions.filter((q) => q.difficulty === filterDifficulty)
+    : mosQuestions;
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="inline-flex items-center gap-2 mb-3">
+          <List className="h-7 w-7 text-[var(--color-dads-success)]" />
+          <h2 className="text-2xl font-bold">問題一覧</h2>
+        </div>
+        <p className="text-muted-foreground text-sm">
+          全 {mosQuestions.length} 問の問題と解答・解説を確認できます
+        </p>
+      </div>
+
+      {/* Filter */}
+      <div className="flex flex-wrap justify-center gap-2">
+        <button
+          onClick={() => setFilterDifficulty("")}
+          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            filterDifficulty === ""
+              ? "bg-[var(--color-dads-success)] text-white"
+              : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+          }`}
+        >
+          すべて ({mosQuestions.length})
+        </button>
+        {(["beginner", "intermediate", "advanced"] as Difficulty[]).map(
+          (d) => {
+            const count = mosQuestions.filter(
+              (q) => q.difficulty === d
+            ).length;
+            return (
+              <button
+                key={d}
+                onClick={() =>
+                  setFilterDifficulty(filterDifficulty === d ? "" : d)
+                }
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+                  filterDifficulty === d
+                    ? "text-white border-transparent"
+                    : "bg-background text-muted-foreground border-border hover:bg-secondary"
+                }`}
+                style={
+                  filterDifficulty === d
+                    ? { backgroundColor: difficultyColors[d] }
+                    : undefined
+                }
+              >
+                {difficultyLabels[d]} ({count})
+              </button>
+            );
+          }
+        )}
+      </div>
+
+      <p className="text-center text-sm text-muted-foreground">
+        表示中: {displayQuestions.length} 問
+      </p>
+
+      {/* Question List */}
+      <Accordion type="multiple" className="space-y-2">
+        {displayQuestions.map((q, idx) => (
+          <AccordionItem
+            key={q.id}
+            value={q.id}
+            className="border border-border rounded-lg px-4 data-[state=open]:bg-muted"
+          >
+            <AccordionTrigger className="hover:no-underline py-3">
+              <div className="flex items-center gap-3 text-left min-w-0">
+                <span className="text-sm text-muted-foreground shrink-0">
+                  {idx + 1}
+                </span>
+                <Badge
+                  variant="outline"
+                  className="shrink-0 text-xs"
+                  style={{
+                    borderColor: difficultyColors[q.difficulty],
+                    color: difficultyColors[q.difficulty],
+                  }}
+                >
+                  {difficultyLabels[q.difficulty]}
+                </Badge>
+                <span className="font-medium text-sm min-w-0">
+                  {q.question}
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-3 pt-1">
+                {q.code && <CodeBlock code={q.code} />}
+                <div className="space-y-1.5">
+                  {q.choices.map((choice) => {
+                    const isCorrectChoice =
+                      choice.label === q.correctLabel;
+                    return (
+                      <div
+                        key={choice.label}
+                        className={`flex items-center gap-2 text-sm p-2 rounded ${
+                          isCorrectChoice
+                            ? "bg-[var(--color-dads-success-light)] font-medium"
+                            : ""
+                        }`}
+                      >
+                        <span className="font-bold text-muted-foreground w-5">
+                          {choice.label}.
+                        </span>
+                        <span className="text-foreground">
+                          {choice.text}
+                        </span>
+                        {isCorrectChoice && (
+                          <CheckCircle2 className="h-4 w-4 text-[var(--color-dads-success)] ml-auto shrink-0" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="p-3 rounded-lg bg-background border border-border">
+                  <p className="text-sm leading-relaxed text-foreground">
+                    {q.explanation}
+                  </p>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
     </div>
   );
 }
