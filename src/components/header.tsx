@@ -23,6 +23,7 @@ const navLinks = [
   { href: "/web", label: "Web開発" },
   { href: "/excel", label: "Excel" },
   { href: "/oracle", label: "Oracle" },
+  { href: "/security", label: "セキュリティ" },
   { href: "/glossary", label: "用語集" },
   { href: "/patterns", label: "デザインパターン" },
   { href: "/errors", label: "エラー集" },

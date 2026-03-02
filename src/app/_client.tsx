@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe, ArrowRight, FileInput, Table2, Database, Blocks, AlertTriangle, Brain } from "lucide-react";
+import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Blocks, AlertTriangle, Brain } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -139,11 +139,11 @@ export default function HomePage() {
               実践ガイド
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              入出力処理、Web開発、Excel、Oracle Database を実践的に体系的に学習
+              入出力処理、Web開発、Excel、Oracle Database、セキュリティを実践的に体系的に学習
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -261,6 +261,38 @@ export default function HomePage() {
                       </p>
                       <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                         {["SQL", "PL/SQL", "チューニング", "DDL", "運用"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/security">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-navy)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-navy-light)] flex items-center justify-center shrink-0">
+                      <Shield className="h-7 w-7 text-[var(--color-dads-navy)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-navy)] transition-colors">
+                        セキュリティ ガイド
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        認証・認可、暗号化、Webセキュリティ、セキュアコーディング、テスト・運用まで全18チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["認証", "暗号化", "XSS", "CSRF", "JWT"].map((tag) => (
                           <Badge key={tag} variant="outline" className="text-xs">
                             {tag}
                           </Badge>
