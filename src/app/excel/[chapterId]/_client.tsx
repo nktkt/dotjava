@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MosQuiz } from "@/components/mos-quiz";
 
 export default function ExcelChapterClientPage({
   chapterId,
@@ -109,6 +110,19 @@ export default function ExcelChapterClientPage({
               </motion.div>
             ))}
           </div>
+
+          {/* MOS Quiz Section */}
+          {chapterId === "mos" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mb-12"
+            >
+              <Separator className="mb-10" />
+              <MosQuiz />
+            </motion.div>
+          )}
 
           <Separator className="mb-8" />
 

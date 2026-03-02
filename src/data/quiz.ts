@@ -18,6 +18,7 @@ export const quizCategories = [
   { id: "concurrency", name: "並行処理" },
   { id: "modern", name: "モダンJava" },
   { id: "excel", name: "Excel" },
+  { id: "mos", name: "MOS Excel 365" },
   { id: "oracle", name: "Oracle/SQL" },
 ] as const;
 
@@ -2394,6 +2395,1722 @@ System.out.println(s.replace('l', 'L'));`,
     explanation:
       "名前付き範囲の主な利点は、数式の可読性向上（=SUM(A1:A100) → =SUM(売上データ)）、範囲変更の一元管理、入力の簡素化です。ファイルサイズの大幅な削減効果はありません。名前はブック全体またはシートスコープで定義でき、数式バーの名前ボックスやCtrl+F3で管理できます。",
     category: "excel",
+    difficulty: "advanced",
+  },
+  // ============================================================
+  //  MOS Excel 365 対策 — Domain 1: ワークシートとブックの管理
+  // ============================================================
+  {
+    id: "mos-1",
+    question: "Excelでブックを PDF として保存する方法はどれですか？",
+    choices: [
+      { label: "A", text: "「ファイル」→「名前を付けて保存」→ファイルの種類で「PDF」を選択" },
+      { label: "B", text: "「ファイル」→「印刷」→「PDF変換」ボタンをクリック" },
+      { label: "C", text: "「挿入」タブから「PDF」を選択" },
+      { label: "D", text: "PDF出力はExcelではできない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ファイル」→「名前を付けて保存」（またはエクスポート）でファイルの種類をPDFに変更して保存します。また「ファイル」→「エクスポート」→「PDF/XPSドキュメントの作成」からも可能です。印刷範囲や品質のオプションも設定できます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-2",
+    question: "Excelで別のシートのセルA1を参照する正しい数式はどれですか？（シート名：「売上」）",
+    choices: [
+      { label: "A", text: "=売上.A1" },
+      { label: "B", text: "=売上!A1" },
+      { label: "C", text: "=売上:A1" },
+      { label: "D", text: "=[売上]A1" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "別シートの参照は「シート名!セル参照」の形式です。シート名にスペースや特殊文字が含まれる場合は 'シート名'!A1 のように単一引用符で囲みます。別ブックの参照は [ブック名]シート名!A1 の形式です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-3",
+    question: "Excelでウィンドウ枠を固定する目的として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "特定の行や列をスクロールしても常に表示されるようにする" },
+      { label: "B", text: "セルの内容を編集できなくする" },
+      { label: "C", text: "グラフの位置を固定する" },
+      { label: "D", text: "数式の参照先を固定する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "ウィンドウ枠の固定は「表示」タブから設定し、ヘッダー行や項目列をスクロールしても画面上に表示し続ける機能です。「先頭行の固定」「先頭列の固定」「ウィンドウ枠の固定」の3種類があります。セルの編集制限にはシートの保護を使います。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-4",
+    question: "Excelのヘッダーやフッターを設定できるのはどこですか？",
+    choices: [
+      { label: "A", text: "「ホーム」タブ" },
+      { label: "B", text: "「挿入」タブ →「テキスト」→「ヘッダーとフッター」" },
+      { label: "C", text: "「データ」タブ" },
+      { label: "D", text: "セルに直接入力する" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "ヘッダーとフッターは「挿入」タブの「テキスト」グループから設定します。ページレイアウトビューでも直接編集できます。ページ番号、日付、ファイル名、シート名などの自動フィールドを挿入できます。「ページ設定」ダイアログからも設定可能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-5",
+    question: "Excelで複数のシートを同時に選択して同じ内容を入力する方法はどれですか？",
+    choices: [
+      { label: "A", text: "シートタブをCtrlキーを押しながらクリックして選択し、データを入力する" },
+      { label: "B", text: "シートをコピーしてから入力する" },
+      { label: "C", text: "マクロを使わないと不可能" },
+      { label: "D", text: "「データ」タブの「グループ入力」を使用する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "Ctrlキーを押しながらシートタブをクリックするとシートのグループ化ができます（タイトルバーに「[グループ]」と表示）。グループ化した状態で入力すると全シートに同じ内容が入力されます。連続シートはShiftキーで範囲選択できます。作業後はグループ解除を忘れずに。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-6",
+    question: "Excelの「ページレイアウト」ビューの説明として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "印刷結果に近いレイアウトで表示し、ヘッダー/フッターも編集できる" },
+      { label: "B", text: "VBAコードを編集するビュー" },
+      { label: "C", text: "セルの数式を一覧表示するビュー" },
+      { label: "D", text: "グラフだけを表示するビュー" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "ページレイアウトビューは印刷時のページ区切り、余白、ヘッダー/フッターが確認・編集できるビューです。「表示」タブから切り替えます。他に「標準」ビュー、「改ページプレビュー」ビューがあります。数式の一覧表示はCtrl+`で切り替えられます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-7",
+    question: "Excelで行や列を非表示にする方法はどれですか？",
+    choices: [
+      { label: "A", text: "行/列を選択→右クリック→「非表示」" },
+      { label: "B", text: "行/列を選択→Deleteキー" },
+      { label: "C", text: "「表示」タブ→「非表示」" },
+      { label: "D", text: "行/列をドラッグして画面外に移動する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "行番号または列文字を選択して右クリック→「非表示」で非表示にできます。再表示は非表示部分の前後を選択して右クリック→「再表示」です。Deleteキーはセルの内容を削除するだけで行列自体は残ります。「ホーム」→「書式」→「非表示/再表示」からも操作できます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-8",
+    question: "Excelでシートを保護する際、特定のセルだけ編集可能にするにはどうしますか？",
+    choices: [
+      { label: "A", text: "編集可能にしたいセルの「ロック」を解除してからシートを保護する" },
+      { label: "B", text: "シートを保護した後に編集可能なセルを設定する" },
+      { label: "C", text: "特定セルの編集許可はできない" },
+      { label: "D", text: "セルにパスワードを個別に設定する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "デフォルトでは全セルが「ロック」されています。編集可能にしたいセルを選択→「セルの書式設定」→「保護」タブ→「ロック」のチェックを外します。その後「校閲」→「シートの保護」でシートを保護すると、ロック解除したセルのみ編集可能になります。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-9",
+    question: "Excelのプロパティ（ドキュメント情報）に設定できるものはどれですか？",
+    choices: [
+      { label: "A", text: "タイトル、作成者、コメント、タグ" },
+      { label: "B", text: "セルの書式設定のみ" },
+      { label: "C", text: "マクロの設定のみ" },
+      { label: "D", text: "ネットワーク共有の設定" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "ドキュメントのプロパティは「ファイル」→「情報」→「プロパティ」から設定できます。タイトル、作成者、会社名、タグ（キーワード）、カテゴリ、コメントなどのメタデータを設定できます。ファイルの検索性向上や管理に役立ちます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-10",
+    question: "Excelで印刷範囲を設定する方法はどれですか？",
+    choices: [
+      { label: "A", text: "印刷したい範囲を選択→「ページレイアウト」→「印刷範囲の設定」" },
+      { label: "B", text: "「ファイル」→「印刷範囲」" },
+      { label: "C", text: "Ctrl+Pで自動的に設定される" },
+      { label: "D", text: "印刷範囲は設定できず、常にシート全体が印刷される" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "印刷範囲は、対象セルを選択し「ページレイアウト」タブ→「印刷範囲」→「印刷範囲の設定」で設定します。印刷範囲はシートに保存され、印刷時に自動適用されます。「印刷範囲のクリア」で解除できます。複数の離れた範囲も設定でき、各範囲が別ページに印刷されます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  // ============================================================
+  //  MOS Excel 365 対策 — Domain 2: データセルと範囲の管理
+  // ============================================================
+  {
+    id: "mos-11",
+    question: "Excelで「形式を選択して貼り付け」で「値のみ」を貼り付けると何が起こりますか？",
+    choices: [
+      { label: "A", text: "数式と書式がそのまま貼り付けられる" },
+      { label: "B", text: "数式の計算結果だけが貼り付けられ、数式や書式は含まれない" },
+      { label: "C", text: "書式のみ貼り付けられ、値は含まれない" },
+      { label: "D", text: "コメントのみ貼り付けられる" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "「値のみ」貼り付けは数式の計算結果を静的な値として貼り付けます。元の数式、書式、罫線、コメントは含まれません。Ctrl+Alt+Vで「形式を選択して貼り付け」ダイアログが開きます。他に「数式」「書式」「列幅」「行列を入れ替え」などの選択肢があります。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-12",
+    question: "Excelのオートフィル機能で「月」「火」「水」の次に自動入力される値はどれですか？",
+    choices: [
+      { label: "A", text: "月" },
+      { label: "B", text: "木" },
+      { label: "C", text: "水" },
+      { label: "D", text: "何も入力されない" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "オートフィルはExcelに組み込まれた連続データリスト（曜日、月名など）を認識して自動入力します。「月」「火」「水」の次は「木」「金」「土」「日」と続きます。「1月」「2月」の連続や「第1四半期」「第2四半期」のようなカスタムリストも対応しています。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-13",
+    question: "Excelで複数セルにまとめて同じデータを入力するショートカットはどれですか？",
+    choices: [
+      { label: "A", text: "セルを選択→入力→Ctrl+Enter" },
+      { label: "B", text: "セルを選択→入力→Shift+Enter" },
+      { label: "C", text: "セルを選択→入力→Alt+Enter" },
+      { label: "D", text: "セルを選択→入力→Tab" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "複数セルを選択した状態でデータを入力し、Ctrl+Enterを押すと選択したすべてのセルに同じ値が一括入力されます。Shift+Enterは上のセルへ移動、Alt+Enterはセル内改行、Tabは右のセルへ移動します。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-14",
+    question: "Excelのフラッシュフィルの説明として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "入力パターンを認識して残りのデータを自動的に埋める機能" },
+      { label: "B", text: "セルの書式を一括で変更する機能" },
+      { label: "C", text: "データを検索して置換する機能" },
+      { label: "D", text: "マクロを自動記録する機能" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "フラッシュフィル（Excel 2013以降）は、隣接する列のデータからパターンを認識し、残りを自動入力します。例えば「山田 太郎」から「山田」を手動入力すると、残りの姓を自動抽出します。Ctrl+Eで実行するか、「データ」タブの「フラッシュフィル」をクリックします。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-15",
+    question: "Excelの「セルの結合」について正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "結合すると複数セルのデータがすべて保持される" },
+      { label: "B", text: "左上のセルの値のみ保持され、他のセルのデータは削除される" },
+      { label: "C", text: "結合したセルには数式を入力できない" },
+      { label: "D", text: "結合は元に戻せない" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "セルを結合すると、左上のセルの値のみ残り、他のセルのデータは失われます。結合セルは「ホーム」タブの「セルを結合して中央揃え」で作成します。結合の解除も同じボタンで可能です。テーブル内のセルは結合できません。並べ替えやフィルターに支障が出るため、多用は避けるべきです。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-16",
+    question: "Excelで数値の表示形式を「#,##0」に設定するとどう表示されますか？（値：1234567）",
+    choices: [
+      { label: "A", text: "1234567" },
+      { label: "B", text: "1,234,567" },
+      { label: "C", text: "1234567.00" },
+      { label: "D", text: "¥1,234,567" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "「#,##0」は3桁区切りのカンマ付き整数表示です。#は数値がある場合のみ表示、0は数値がなくても0を表示するプレースホルダーです。小数を含む場合は「#,##0.00」、通貨は「¥#,##0」、パーセントは「0.0%」のように設定します。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-17",
+    question: "Excelで名前付き範囲を作成する最も簡単な方法はどれですか？",
+    choices: [
+      { label: "A", text: "範囲を選択→名前ボックス（数式バーの左）に名前を入力してEnter" },
+      { label: "B", text: "範囲を選択→「データ」→「名前の管理」" },
+      { label: "C", text: "範囲を選択→右クリック→「名前の定義」" },
+      { label: "D", text: "VBAでしか作成できない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "範囲を選択して名前ボックス（数式バーの左にあるセルアドレス表示欄）に名前を入力し、Enterキーを押すのが最も簡単な方法です。「数式」→「名前の管理」（Ctrl+F3）からも作成・編集・削除ができます。名前はスペースを含められず、先頭は文字またはアンダースコアでなければなりません。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-18",
+    question: "Excelの「条件付き書式」でセルの値に応じてアイコンを表示する機能はどれですか？",
+    choices: [
+      { label: "A", text: "データバー" },
+      { label: "B", text: "カラースケール" },
+      { label: "C", text: "アイコンセット" },
+      { label: "D", text: "セルの強調表示ルール" },
+    ],
+    correctLabel: "C",
+    explanation:
+      "アイコンセットは値の大小に応じて矢印、信号、星などのアイコンをセルに表示します。データバーはセル内に棒グラフを表示、カラースケールは色の濃淡で値を表現します。セルの強調表示ルールは特定条件のセルの書式を変更します。すべて条件付き書式の機能です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-19",
+    question: "Excelのスパークラインについて正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "セル内に表示される小さなグラフで、折れ線・縦棒・勝敗の3種類がある" },
+      { label: "B", text: "通常のグラフと同じもので、名前が違うだけ" },
+      { label: "C", text: "印刷されない" },
+      { label: "D", text: "1シートに1つしか挿入できない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "スパークラインは「挿入」タブから作成できるセル内ミニグラフです。折れ線（トレンド）、縦棒（比較）、勝敗（+/-の表示）の3種類があります。通常のグラフとは異なり1つのセルに収まり、印刷も可能です。データの傾向を省スペースで表現できます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  // ============================================================
+  //  MOS Excel 365 対策 — Domain 3: テーブルとテーブルデータの管理
+  // ============================================================
+  {
+    id: "mos-20",
+    question: "Excelでデータ範囲をテーブルに変換するショートカットはどれですか？",
+    choices: [
+      { label: "A", text: "Ctrl+T" },
+      { label: "B", text: "Ctrl+L" },
+      { label: "C", text: "Ctrl+T または Ctrl+L（どちらも同じ）" },
+      { label: "D", text: "Alt+T" },
+    ],
+    correctLabel: "C",
+    explanation:
+      "Ctrl+T と Ctrl+L はどちらもデータ範囲をテーブルに変換するショートカットです。テーブルに変換すると、フィルターボタンの自動追加、構造化参照、自動拡張、交互の行色などの機能が使えるようになります。「挿入」→「テーブル」からも作成できます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-21",
+    question: "Excelのテーブル機能の利点として正しくないものはどれですか？",
+    choices: [
+      { label: "A", text: "データ追加時にテーブル範囲が自動拡張される" },
+      { label: "B", text: "構造化参照（[@列名]）が使える" },
+      { label: "C", text: "集計行を簡単に追加できる" },
+      { label: "D", text: "テーブル内のセルを結合できる" },
+    ],
+    correctLabel: "D",
+    explanation:
+      "テーブル内のセルは結合できません。テーブルの利点は自動拡張、構造化参照（例：=SUM(テーブル1[売上])）、集計行の追加、自動書式（縞模様）、フィルターの自動設定などです。テーブルはデータの一貫性を保つ設計のため、結合は許可されません。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-22",
+    question: "Excelのテーブルに集計行を追加するにはどうしますか？",
+    choices: [
+      { label: "A", text: "テーブル内をクリック→「テーブルデザイン」タブ→「集計行」にチェック" },
+      { label: "B", text: "テーブルの下にSUM関数を手動で入力する" },
+      { label: "C", text: "「データ」タブ→「集計」" },
+      { label: "D", text: "テーブルには集計行を追加できない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "テーブル内をクリックすると表示される「テーブルデザイン」タブで「集計行」のチェックボックスをオンにします。集計行の各セルのドロップダウンから合計、平均、個数、最大、最小などの集計方法を選択できます。SUBTOTAL関数が自動的に使用されます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-23",
+    question: "Excelでテーブルのフィルターで「上位10項目」を抽出する方法はどれですか？",
+    choices: [
+      { label: "A", text: "フィルターボタン→「数値フィルター」→「トップテン」" },
+      { label: "B", text: "フィルターボタン→「昇順で並べ替え」" },
+      { label: "C", text: "「データ」タブ→「上位10」" },
+      { label: "D", text: "LARGE関数を使用する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "数値列のフィルターボタンをクリックし、「数値フィルター」→「トップテン」を選択すると、上位/下位のN件やN%を抽出できます。件数やパーセンテージは自由に変更できます。テキスト列では「テキストフィルター」、日付列では「日付フィルター」が表示されます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-24",
+    question: "Excelでテーブルを通常の範囲に戻す方法はどれですか？",
+    choices: [
+      { label: "A", text: "テーブルを選択→Deleteキー" },
+      { label: "B", text: "「テーブルデザイン」タブ→「範囲に変換」" },
+      { label: "C", text: "テーブルは通常の範囲に戻せない" },
+      { label: "D", text: "Ctrl+Z で元に戻す" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "テーブル内をクリック→「テーブルデザイン」タブ→「範囲に変換」でテーブルを通常のセル範囲に戻せます。書式は保持されますが、テーブル固有の機能（自動拡張、構造化参照、集計行等）は失われます。データ自体は変わりません。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-25",
+    question: "Excelの並べ替えで、複数の基準（第1キー、第2キー）で並べ替える方法はどれですか？",
+    choices: [
+      { label: "A", text: "「データ」→「並べ替え」で「レベルの追加」をクリック" },
+      { label: "B", text: "1つの列でしか並べ替えられない" },
+      { label: "C", text: "フィルターボタンを2回クリックする" },
+      { label: "D", text: "「ホーム」→「並べ替え」→「複数キー」" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「データ」タブ→「並べ替え」で並べ替えダイアログを開き、「レベルの追加」で複数の並べ替え基準を設定できます。例えば「部門（昇順）」→「売上（降順）」のように、優先順位を付けた並べ替えが可能です。最大64レベルまで追加できます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  // ============================================================
+  //  MOS Excel 365 対策 — Domain 4: 数式と関数
+  // ============================================================
+  {
+    id: "mos-26",
+    question: "Excelで数式のセル参照をF4キーで切り替える順序として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "A1 → $A$1 → A$1 → $A1 → A1" },
+      { label: "B", text: "A1 → $A1 → A$1 → $A$1 → A1" },
+      { label: "C", text: "$A$1 → $A1 → A$1 → A1 → $A$1" },
+      { label: "D", text: "A1 → A$1 → $A1 → $A$1 → A1" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "数式の入力中にF4キーを押すたびに、A1（相対）→ $A$1（絶対）→ A$1（行のみ絶対）→ $A1（列のみ絶対）→ A1（相対）の順で切り替わります。セル参照を素早く変更できる重要なショートカットで、MOS試験でも頻出です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-27",
+    question: "=SUMIF(A:A, \"*東京*\", B:B) のワイルドカード「*」の意味は何ですか？",
+    choices: [
+      { label: "A", text: "任意の1文字" },
+      { label: "B", text: "0文字以上の任意の文字列" },
+      { label: "C", text: "数値のみ" },
+      { label: "D", text: "空白文字" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "SUMIF/COUNTIF等の条件で使えるワイルドカードは * (0文字以上の任意の文字列) と ? (任意の1文字) です。\"*東京*\" は「東京」を含む文字列全てにマッチします。\"東京*\" は「東京」で始まる文字列、\"???\" は3文字の文字列にマッチします。~を前置するとワイルドカードをエスケープできます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-28",
+    question: "=IF(AND(A1>=60, B1>=60), \"合格\", \"不合格\") の意味として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "A1またはB1が60以上なら合格" },
+      { label: "B", text: "A1かつB1が60以上なら合格" },
+      { label: "C", text: "A1とB1の合計が60以上なら合格" },
+      { label: "D", text: "A1が60以上かつB1が60未満なら合格" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "AND関数はすべての条件がTRUEの場合にTRUEを返します。A1>=60 と B1>=60 の両方を満たす場合のみ「合格」を返します。どちらか一方でも満たせば合格にするにはOR関数を使います。AND/ORはIF関数の中で複合条件を作るのに頻出です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-29",
+    question: "=COUNTA(A1:A10) と =COUNT(A1:A10) の違いは何ですか？",
+    choices: [
+      { label: "A", text: "全く同じ結果を返す" },
+      { label: "B", text: "COUNTAは空でないセルすべてを数え、COUNTは数値セルのみ数える" },
+      { label: "C", text: "COUNTAは数値のみ、COUNTは文字列のみ数える" },
+      { label: "D", text: "COUNTAはエラーを無視し、COUNTはエラーも数える" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "COUNT は数値が入力されたセルのみをカウントします（文字列や空白は含みません）。COUNTA は空でないセルすべてをカウントします（数値、文字列、論理値、エラー値を含む）。空白セルの数は COUNTBLANK 関数で数えられます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-30",
+    question: "=HLOOKUP の説明として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "垂直方向（列）にデータを検索する" },
+      { label: "B", text: "水平方向（行）にデータを検索し、指定した行の値を返す" },
+      { label: "C", text: "VLOOKUPと全く同じ動作をする" },
+      { label: "D", text: "ハイパーリンクを検索する関数" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "HLOOKUPは Horizontal（水平）の Lookup です。先頭行で検索値を探し、指定した行番号の値を返します。VLOOKUPは先頭列で検索して指定列の値を返す垂直検索です。データが横方向に並んでいる場合に使用しますが、XLOOKUP の登場により使用頻度は減少しています。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-31",
+    question: "Excelでセル内の文字列から空白を除去する関数はどれですか？",
+    choices: [
+      { label: "A", text: "=CLEAN(A1)" },
+      { label: "B", text: "=TRIM(A1)" },
+      { label: "C", text: "=STRIP(A1)" },
+      { label: "D", text: "=REMOVE(A1)" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "TRIM関数は文字列の先頭・末尾の空白と、単語間の余分な空白を除去します（単語間のスペース1つは残す）。CLEAN関数は印刷できない制御文字を除去する関数です。STRIP や REMOVE はExcelに存在しません。データクレンジングで頻出の関数です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-32",
+    question: "=CONCAT(A1, \" \", B1) と =A1 & \" \" & B1 の関係として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "全く異なる結果を返す" },
+      { label: "B", text: "どちらも同じ文字列結合の結果を返す" },
+      { label: "C", text: "CONCAT は数値のみ、& は文字列のみ結合する" },
+      { label: "D", text: "& 演算子はExcelでは使えない" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "CONCAT関数と&演算子はどちらも文字列を結合します。結果は同じです。CONCAT（Excel 2019以降）は CONCATENATE の後継で、セル範囲も引数にできます（例：=CONCAT(A1:A5)）。&演算子は古いバージョンでも使える汎用的な方法です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-33",
+    question: "=SWITCH(A1, 1, \"低\", 2, \"中\", 3, \"高\", \"不明\") の意味はどれですか？",
+    choices: [
+      { label: "A", text: "A1が1なら「低」、2なら「中」、3なら「高」、それ以外は「不明」" },
+      { label: "B", text: "A1を1→低、2→中、3→高に変換してセルに書き込む" },
+      { label: "C", text: "A1が「低」「中」「高」のいずれかかを判定する" },
+      { label: "D", text: "構文エラー" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "SWITCH関数（Excel 2019以降）は値に対応する結果を返します。=SWITCH(式, 値1, 結果1, 値2, 結果2, ..., デフォルト) の構文です。ネストしたIF関数の代替として可読性が高く、IFS関数とは異なり値の完全一致で判定します。最後の引数はどれにも一致しない場合のデフォルト値です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-34",
+    question: "Excelの数式で発生する #REF! エラーの原因はどれですか？",
+    choices: [
+      { label: "A", text: "ゼロで除算した" },
+      { label: "B", text: "参照先のセルや範囲が削除された" },
+      { label: "C", text: "関数名のスペルが間違っている" },
+      { label: "D", text: "検索値が見つからない" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "#REF! は無効な参照エラーです。数式が参照しているセル・行・列が削除されたときに発生します。#DIV/0! はゼロ除算、#NAME? は関数名の誤り、#N/A は検索値が見つからない場合です。エラーの種類を区別する知識はMOS試験で重要です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-35",
+    question: "=SUMPRODUCT((A2:A100=\"東京\")*(C2:C100)) はどんな計算をしますか？",
+    choices: [
+      { label: "A", text: "A列が「東京」のC列の値を合計する" },
+      { label: "B", text: "A列とC列を掛け算する" },
+      { label: "C", text: "東京の件数を数える" },
+      { label: "D", text: "構文エラー" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "SUMPRODUCTは配列同士の積の合計を返します。(A2:A100=\"東京\") は条件に一致すれば1、不一致なら0の配列になります。これとC2:C100を掛けると、東京以外は0になり、結果的に東京のC列の値だけが合計されます。SUMIFSの代替として複雑な条件にも対応できます。",
+    category: "mos",
+    difficulty: "advanced",
+  },
+  {
+    id: "mos-36",
+    question: "Excelで数式の検証に使う「参照元のトレース」機能は何を表示しますか？",
+    choices: [
+      { label: "A", text: "選択セルの数式が参照しているセルを矢印で表示する" },
+      { label: "B", text: "選択セルを参照している他のセルを矢印で表示する" },
+      { label: "C", text: "エラーのあるセルを赤く表示する" },
+      { label: "D", text: "数式を文字列に変換する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「参照元のトレース」（数式タブ）はアクティブセルの数式が参照しているセルを青い矢印で表示します。「参照先のトレース」はアクティブセルを参照している他のセルを表示します。「エラーチェック」はエラーの原因を特定するのに使います。数式のデバッグに重要な機能です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  // ============================================================
+  //  MOS Excel 365 対策 — Domain 5: グラフの管理
+  // ============================================================
+  {
+    id: "mos-37",
+    question: "Excelでデータを選択してグラフを素早く挿入するショートカットはどれですか？",
+    choices: [
+      { label: "A", text: "Alt+F1" },
+      { label: "B", text: "Ctrl+G" },
+      { label: "C", text: "F11" },
+      { label: "D", text: "AとCの両方（Alt+F1は埋め込み、F11はグラフシート）" },
+    ],
+    correctLabel: "D",
+    explanation:
+      "Alt+F1はアクティブシートに埋め込みグラフを挿入し、F11は新しいグラフシートにグラフを作成します。どちらもデフォルトのグラフの種類（通常は集合縦棒）が使われます。「挿入」タブの「おすすめグラフ」からデータに適したグラフを選択することもできます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-38",
+    question: "Excelのグラフで「第2軸」を追加する目的として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "値のスケールが大きく異なるデータ系列を同じグラフに表示するため" },
+      { label: "B", text: "グラフのタイトルを2つ付けるため" },
+      { label: "C", text: "グラフに3Dの奥行きを出すため" },
+      { label: "D", text: "凡例を2列に並べるため" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "第2軸（第2縦軸）は、値のスケールが大きく異なるデータ系列（例：売上金額と利益率）を1つのグラフに表示する際に使います。データ系列を右クリック→「データ系列の書式設定」→「第2軸」で設定します。複合グラフ（棒+折れ線）でよく使われるテクニックです。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-39",
+    question: "Excelのグラフで「データラベル」を表示すると何が表示されますか？",
+    choices: [
+      { label: "A", text: "グラフの各データポイントに値やカテゴリ名が表示される" },
+      { label: "B", text: "グラフのタイトルが表示される" },
+      { label: "C", text: "X軸のラベルが表示される" },
+      { label: "D", text: "凡例が表示される" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "データラベルはグラフの各データポイント（棒の上、折れ線の点など）に数値やカテゴリ名を直接表示する機能です。グラフを選択→「+」ボタン→「データラベル」で追加します。表示する内容（値、カテゴリ名、系列名、パーセンテージ等）は書式設定でカスタマイズできます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-40",
+    question: "円グラフの使い方として最も適切なものはどれですか？",
+    choices: [
+      { label: "A", text: "全体に対する各項目の割合を表現するとき" },
+      { label: "B", text: "時系列データの推移を表現するとき" },
+      { label: "C", text: "2つの変数の相関関係を表現するとき" },
+      { label: "D", text: "項目数が20以上ある場合の比較" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "円グラフは全体（100%）に対する各要素の構成比を表すのに適しています。項目数は5～7個程度が見やすく、多すぎると読みにくくなります。時系列は折れ線グラフ、相関は散布図、多数項目の比較は棒グラフが適切です。MOS試験ではグラフの種類の使い分けが問われます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-41",
+    question: "Excelのグラフ要素の「トレンドライン」の用途はどれですか？",
+    choices: [
+      { label: "A", text: "データの傾向（増加・減少）を視覚化する近似線を追加する" },
+      { label: "B", text: "グラフに目盛線を追加する" },
+      { label: "C", text: "グラフの色をトレンドに合わせて変更する" },
+      { label: "D", text: "データの最大値を強調する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "トレンドライン（近似曲線）はデータの傾向を視覚化する補助線です。線形、指数、対数、多項式、移動平均などの種類があります。データ系列を右クリック→「トレンドラインの追加」で設定します。R二乗値を表示して近似の精度を確認することもできます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-42",
+    question: "Excelのグラフのスタイルや色を素早く変更する方法はどれですか？",
+    choices: [
+      { label: "A", text: "グラフを選択→「グラフデザイン」タブ→「グラフスタイル」や「色の変更」" },
+      { label: "B", text: "グラフを右クリック→「グラフの削除」" },
+      { label: "C", text: "「ホーム」タブの書式設定を使用する" },
+      { label: "D", text: "グラフのスタイルは変更できない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "グラフを選択すると「グラフデザイン」タブが表示されます。「グラフスタイル」ギャラリーから見た目を一括変更でき、「色の変更」で配色セットを切り替えられます。また、グラフ右上の筆アイコンからもスタイルと色を変更できます。「グラフの種類の変更」でグラフタイプも変更可能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-43",
+    question: "Excelで「おすすめグラフ」機能を使うと何が起こりますか？",
+    choices: [
+      { label: "A", text: "Excelがデータの特性を分析して適切なグラフの種類を提案する" },
+      { label: "B", text: "インターネットからグラフのテンプレートをダウンロードする" },
+      { label: "C", text: "他のユーザーが作成したグラフを表示する" },
+      { label: "D", text: "グラフを自動的に挿入して確定する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「おすすめグラフ」（「挿入」タブ）はデータの構造を分析して最適なグラフの種類を提案します。複数の候補がプレビュー表示され、クリックするだけで挿入できます。「すべてのグラフ」タブに切り替えると、全種類から手動選択も可能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  // ============================================================
+  //  MOS Excel 365 対策 — 横断的な実務問題
+  // ============================================================
+  {
+    id: "mos-44",
+    question: "Excelでデータの入力規則を設定する場所はどこですか？",
+    choices: [
+      { label: "A", text: "「データ」タブ→「データの入力規則」" },
+      { label: "B", text: "「ホーム」タブ→「入力規則」" },
+      { label: "C", text: "「挿入」タブ→「入力規則」" },
+      { label: "D", text: "「校閲」タブ→「入力規則」" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "データの入力規則は「データ」タブの「データの入力規則」から設定します。整数、小数、リスト、日付、時刻、文字列の長さ、ユーザー設定（数式）の条件を設定できます。リストを使ったドロップダウンリストの作成もここから行います。入力メッセージやエラーメッセージのカスタマイズも可能です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-45",
+    question: "Excelでドロップダウンリストを作成する方法はどれですか？",
+    choices: [
+      { label: "A", text: "「データ」→「データの入力規則」→入力値の種類で「リスト」→元の値にリスト項目を入力" },
+      { label: "B", text: "「挿入」→「ドロップダウン」" },
+      { label: "C", text: "「ホーム」→「ドロップダウン」" },
+      { label: "D", text: "VBAでしか作成できない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「データ」→「データの入力規則」→入力値の種類を「リスト」に設定し、元の値にカンマ区切りで項目を入力するか、セル範囲を指定します。例：元の値に「東京,大阪,名古屋」またはセル範囲「=$F$1:$F$3」を設定します。名前付き範囲も使用可能です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-46",
+    question: "Excelのショートカット Ctrl+; は何をしますか？",
+    choices: [
+      { label: "A", text: "現在の日付を入力する" },
+      { label: "B", text: "現在の時刻を入力する" },
+      { label: "C", text: "セルを削除する" },
+      { label: "D", text: "コメントを挿入する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "Ctrl+; は現在の日付を静的な値として入力します。Ctrl+: は現在の時刻を入力します。TODAY()やNOW()と異なり、再計算されない固定値です。MOS試験ではショートカットキーの知識が問われることがあります。主要なショートカット：Ctrl+C（コピー）、Ctrl+V（貼り付け）、Ctrl+Z（元に戻す）、Ctrl+S（保存）。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-47",
+    question: "Excelの「検索と置換」（Ctrl+H）で正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "値のみ検索でき、書式では検索できない" },
+      { label: "B", text: "「オプション」を展開すると書式による検索・置換も可能" },
+      { label: "C", text: "シート内のみ検索でき、ブック全体は検索できない" },
+      { label: "D", text: "数式の中の文字列は検索できない" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "「検索と置換」ダイアログの「オプション」を展開すると、書式による検索・置換、検索範囲（シート/ブック）、検索対象（値/数式/メモ）、大文字小文字の区別、セル内容の完全一致などの詳細設定が可能です。ワイルドカード（* や ?）も使用できます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-48",
+    question: "Excelで重複するデータを削除する方法はどれですか？",
+    choices: [
+      { label: "A", text: "「データ」タブ→「重複の削除」" },
+      { label: "B", text: "「ホーム」タブ→「クリア」→「重複の削除」" },
+      { label: "C", text: "UNIQUE関数を使って元データを上書きする" },
+      { label: "D", text: "手動で1行ずつ削除するしかない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「データ」タブ→「重複の削除」で、重複行を自動的に検出・削除できます。どの列を基準に重複を判断するかを選択でき、削除された件数と残った件数が表示されます。テーブル内では「テーブルデザイン」タブからもアクセスできます。元データが変更されるため事前のバックアップを推奨します。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-49",
+    question: "Excelの「区切り位置」機能は何に使いますか？",
+    choices: [
+      { label: "A", text: "1つのセルに入った文字列をカンマやスペースで複数列に分割する" },
+      { label: "B", text: "グラフの軸に区切り線を追加する" },
+      { label: "C", text: "セル内改行を追加する" },
+      { label: "D", text: "テーブルを分割する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「データ」タブ→「区切り位置」は、1つのセルに入った文字列をカンマ、タブ、スペースなどの区切り文字、または固定幅で複数列に分割する機能です。CSVデータの整理やフルネームを姓と名に分ける際に便利です。Excel 2013以降ではフラッシュフィルも代替手段として使えます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-50",
+    question: "Excelで「#N/A」エラーが表示される最も一般的な原因はどれですか？",
+    choices: [
+      { label: "A", text: "数値をゼロで割った" },
+      { label: "B", text: "VLOOKUP やMATCH で検索値が見つからなかった" },
+      { label: "C", text: "参照先のセルが削除された" },
+      { label: "D", text: "関数名のスペルが間違っている" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "#N/A（Not Available）は検索関数（VLOOKUP, HLOOKUP, MATCH, XLOOKUP）で検索値が見つからない場合に発生します。対処法としてIFNA関数やIFERROR関数で代替値を返す方法があります。#DIV/0!はゼロ除算、#REF!は参照削除、#NAME?は名前の誤りです。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-51",
+    question: "Excelでセルにコメント（メモ）を追加するショートカットはどれですか？",
+    choices: [
+      { label: "A", text: "Shift+F2" },
+      { label: "B", text: "Ctrl+F2" },
+      { label: "C", text: "Alt+F2" },
+      { label: "D", text: "F2" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "Shift+F2でセルにメモ（旧コメント）を追加できます。F2はセルの編集モードへの切り替えです。Excel 365ではメモ（黄色い付箋）とコメント（スレッド形式で返信可能）が区別されています。右クリック→「メモの挿入」または「新しいコメント」からも追加可能です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-52",
+    question: "Excelの「クイック分析」ツール（Ctrl+Q）でできることはどれですか？",
+    choices: [
+      { label: "A", text: "書式設定、グラフ、合計、テーブル、スパークラインを素早く適用できる" },
+      { label: "B", text: "マクロを実行する" },
+      { label: "C", text: "データを印刷する" },
+      { label: "D", text: "ファイルを圧縮する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "データ範囲を選択すると右下に表示される「クイック分析」ボタン（またはCtrl+Q）から、書式設定（条件付き書式）、グラフ、合計（SUM等の自動挿入）、テーブル変換、スパークラインの挿入を素早く行えます。データ分析の最初の一歩として非常に便利な機能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-53",
+    question: "Excelで「ゴールシーク」機能の用途はどれですか？",
+    choices: [
+      { label: "A", text: "目標値を達成するために必要な入力値を逆算する" },
+      { label: "B", text: "データを自動的にフィルタリングする" },
+      { label: "C", text: "グラフのデータ範囲を変更する" },
+      { label: "D", text: "数式のエラーを自動修正する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "ゴールシーク（「データ」→「What-If分析」→「ゴールシーク」）は、目標とする結果から逆算して入力値を求める機能です。例えば「利益を100万円にするには売上がいくら必要か」のような分析に使います。数式セル、目標値、変化させるセルの3つを指定します。",
+    category: "mos",
+    difficulty: "advanced",
+  },
+  {
+    id: "mos-54",
+    question: "Excelのグラフで、データソースを変更する方法はどれですか？",
+    choices: [
+      { label: "A", text: "グラフを削除して作り直す" },
+      { label: "B", text: "グラフを選択→「グラフデザイン」→「データの選択」" },
+      { label: "C", text: "元データのセルを直接編集するしかない" },
+      { label: "D", text: "グラフのデータソースは変更できない" },
+    ],
+    correctLabel: "B",
+    explanation:
+      "グラフを選択→「グラフデザイン」タブ→「データの選択」でデータソースの範囲、系列の追加・削除・編集、軸ラベルの変更ができます。グラフを選択したときにシート上に表示される色付き枠をドラッグしてデータ範囲を変更することもできます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-55",
+    question: "Excelで「ブックの検査」機能で確認できるものはどれですか？",
+    choices: [
+      { label: "A", text: "非表示の行列、個人情報、コメント、非表示シートなどの潜在的な問題" },
+      { label: "B", text: "数式のエラーのみ" },
+      { label: "C", text: "ファイルサイズの最適化" },
+      { label: "D", text: "ウイルスの検出" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ファイル」→「情報」→「問題のチェック」→「ドキュメント検査」で、個人情報（作成者名等）、コメント、非表示の行列・シート、カスタムXMLデータなどを検出・削除できます。ファイルを外部に共有する前に実行することが推奨されます。アクセシビリティチェックも同メニューから実行できます。",
+    category: "mos",
+    difficulty: "advanced",
+  },
+  {
+    id: "mos-56",
+    question: "Excelの「アクセシビリティチェック」の目的はどれですか？",
+    choices: [
+      { label: "A", text: "障害のあるユーザーがコンテンツを利用しやすいか確認する" },
+      { label: "B", text: "ファイルのアクセス権限を確認する" },
+      { label: "C", text: "ネットワーク接続を確認する" },
+      { label: "D", text: "パスワードの強度を確認する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "アクセシビリティチェック（「校閲」→「アクセシビリティチェック」）は、スクリーンリーダー等の支援技術を使うユーザーにとって問題がないか確認します。画像の代替テキスト、テーブルのヘッダー、シート名の付け方、セルの結合などをチェックし、改善提案を表示します。",
+    category: "mos",
+    difficulty: "advanced",
+  },
+  // ============================================================
+  //  MOS 追加問題 — Domain 1 補完
+  // ============================================================
+  {
+    id: "mos-57",
+    question: "ExcelでCSVファイルをインポートする方法として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "「データ」タブ→「テキストまたはCSVから」を選択" },
+      { label: "B", text: "「ホーム」タブ→「貼り付け」→「CSVインポート」を選択" },
+      { label: "C", text: "「挿入」タブ→「CSVファイル」を選択" },
+      { label: "D", text: "「ファイル」タブ→「最近使ったファイル」から選択するしかない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "CSVやテキストファイルのインポートは「データ」タブ→「データの取得」→「テキストまたはCSVから」で行います。Power Queryエディターが開き、区切り文字の指定やデータ型の変更が可能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-58",
+    question: "Excelの「ブックの保護」と「シートの保護」の違いとして正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "ブックの保護はシートの追加・削除・移動・名前変更を防ぎ、シートの保護はセルの編集を防ぐ" },
+      { label: "B", text: "どちらも全く同じ機能で名前が違うだけ" },
+      { label: "C", text: "ブックの保護はファイルの読み取りを制限し、シートの保護はファイルの書き込みを制限する" },
+      { label: "D", text: "ブックの保護はセルの編集を防ぎ、シートの保護はシートの構成変更を防ぐ" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ブックの保護」（校閲タブ）はシート構成（シートの追加・削除・移動・名前変更・表示/非表示）を保護します。「シートの保護」は個々のシート内のセル編集を制限します。両方を組み合わせて使用することもできます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-59",
+    question: "Excelで改ページを手動で挿入する方法はどれですか？",
+    choices: [
+      { label: "A", text: "改ページを入れたい行を選択→「ページレイアウト」タブ→「改ページ」→「改ページの挿入」" },
+      { label: "B", text: "「ホーム」タブ→「セルの書式設定」→「改ページ」" },
+      { label: "C", text: "「挿入」タブ→「改ページ」を選択" },
+      { label: "D", text: "Ctrl+Enter で改ページを挿入" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "改ページの挿入は、挿入したい位置の行（または列）を選択して「ページレイアウト」タブ→「改ページ」→「改ページの挿入」で行います。改ページプレビューで青い線をドラッグして位置を調整することもできます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-60",
+    question: "Excelで印刷時に全ページの先頭に見出し行を繰り返し表示するにはどうしますか？",
+    choices: [
+      { label: "A", text: "「ページレイアウト」タブ→「印刷タイトル」→「タイトル行」に範囲を指定" },
+      { label: "B", text: "「ホーム」タブ→「繰り返し行」を設定" },
+      { label: "C", text: "見出し行をコピーして各ページの先頭に貼り付ける" },
+      { label: "D", text: "ウィンドウ枠の固定を設定すれば自動的に印刷でも繰り返される" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ページレイアウト」タブ→「印刷タイトル」で「ページ設定」ダイアログが開き、「タイトル行」に繰り返したい行（例: $1:$1）、「タイトル列」に繰り返したい列を指定します。ウィンドウ枠の固定は画面表示のみで印刷には影響しません。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-61",
+    question: "Excelのテンプレートファイルの拡張子はどれですか？",
+    choices: [
+      { label: "A", text: ".xltx" },
+      { label: "B", text: ".xlsx" },
+      { label: "C", text: ".xlsm" },
+      { label: "D", text: ".xltm" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "Excelテンプレートの拡張子は .xltx（マクロなし）、.xltm（マクロ有効）です。.xlsx は通常のブック、.xlsm はマクロ有効ブックです。テンプレートは「ファイル」→「名前を付けて保存」→ファイルの種類で「Excelテンプレート」を選択して保存します。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-62",
+    question: "Excelで名前ボックスを使ってセルE100に移動する方法はどれですか？",
+    choices: [
+      { label: "A", text: "名前ボックスに「E100」と入力してEnterを押す" },
+      { label: "B", text: "名前ボックスに「E100」と入力してTabを押す" },
+      { label: "C", text: "名前ボックスをダブルクリックする" },
+      { label: "D", text: "名前ボックスに「GO E100」と入力する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "名前ボックス（数式バーの左にあるセル参照表示部分）にセル参照（例: E100）や名前付き範囲名を入力してEnterキーを押すと、そのセルに即座にジャンプします。複数セルの範囲（例: A1:D10）を入力するとその範囲を選択できます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-63",
+    question: "Excelで数式の表示と値の表示を切り替えるショートカットはどれですか？",
+    choices: [
+      { label: "A", text: "Ctrl+`（バッククォート）" },
+      { label: "B", text: "Ctrl+Shift+@" },
+      { label: "C", text: "Alt+F11" },
+      { label: "D", text: "F9" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "Ctrl+`（バッククォート）を押すと、ワークシート上のすべてのセルが計算結果ではなく数式を表示するモードに切り替わります。もう一度押すと元の値表示に戻ります。「数式」タブ→「数式の表示」からも同じ操作ができます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-64",
+    question: "Excelの「ドキュメント検査」で検出・削除できるものはどれですか？",
+    choices: [
+      { label: "A", text: "個人情報、コメント、非表示の行列、ヘッダー/フッターの情報" },
+      { label: "B", text: "ウイルスやマルウェア" },
+      { label: "C", text: "文法の間違い" },
+      { label: "D", text: "数式のエラー" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ファイル」→「情報」→「問題のチェック」→「ドキュメント検査」で、コメント、ドキュメントのプロパティと個人情報、非表示の行と列、非表示のワークシート、カスタムXMLデータなどを検出し、必要に応じて削除できます。配布前のプライバシー保護に使用します。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  // ============================================================
+  //  MOS 追加問題 — Domain 2 補完
+  // ============================================================
+  {
+    id: "mos-65",
+    question: "Excelの条件付き書式で「セルの強調表示ルール」→「重複する値」を設定すると何が起こりますか？",
+    choices: [
+      { label: "A", text: "選択範囲内で重複している値のセルが強調表示される" },
+      { label: "B", text: "重複する値が自動的に削除される" },
+      { label: "C", text: "重複する値がある行全体が非表示になる" },
+      { label: "D", text: "重複する値に連番が振られる" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ホーム」タブ→「条件付き書式」→「セルの強調表示ルール」→「重複する値」で、選択範囲内の重複値（または一意の値）に色を付けて視覚的に強調できます。データの削除は行わず、表示のみ変更します。削除には「データ」タブ→「重複の削除」を使います。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-66",
+    question: "Excelの条件付き書式で「データバー」を設定すると何が表示されますか？",
+    choices: [
+      { label: "A", text: "セル内に値の大きさに比例した棒グラフが表示される" },
+      { label: "B", text: "セルの背景色がグラデーションで変化する" },
+      { label: "C", text: "セルに矢印アイコンが表示される" },
+      { label: "D", text: "セルの罫線の太さが値に応じて変わる" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "データバーは、セル内に値の大きさに応じた横棒を表示します。値の比較を視覚的に行えます。カラースケールはグラデーションで分布を表示、アイコンセットは矢印や信号機などのアイコンで状態を表示する機能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-67",
+    question: "Excelの「形式を選択して貼り付け」で「行列を入れ替える」を選択すると何が起こりますか？",
+    choices: [
+      { label: "A", text: "行と列が入れ替わって貼り付けられる（縦横の転置）" },
+      { label: "B", text: "行の順序が逆転して貼り付けられる" },
+      { label: "C", text: "列の幅と行の高さが入れ替わる" },
+      { label: "D", text: "セルの結合が入れ替わる" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「形式を選択して貼り付け」（Ctrl+Alt+V）で「行列を入れ替える」にチェックを入れると、元データの行が列に、列が行に転置されて貼り付けられます。横長のデータを縦長に変換する場合などに便利です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-68",
+    question: "Excelでセル内のテキストが長い場合、セル内で自動的に改行して全体を表示する設定はどれですか？",
+    choices: [
+      { label: "A", text: "「ホーム」タブ→「折り返して全体を表示する」" },
+      { label: "B", text: "「ホーム」タブ→「セルの結合」" },
+      { label: "C", text: "「ホーム」タブ→「インデント」を設定" },
+      { label: "D", text: "「表示」タブ→「テキストの折り返し」" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ホーム」タブの「配置」グループにある「折り返して全体を表示する」をクリックすると、セルの幅に合わせてテキストが自動改行されます。「セルの書式設定」→「配置」タブの「折り返して全体を表示する」からも設定可能。「縮小して全体を表示する」はフォントサイズを自動縮小します。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-69",
+    question: "Excelのユーザー定義の表示形式「0.0%」でセルの値が0.856の場合、どのように表示されますか？",
+    choices: [
+      { label: "A", text: "85.6%" },
+      { label: "B", text: "0.856%" },
+      { label: "C", text: "0.9%" },
+      { label: "D", text: "856%" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "パーセンテージ形式では、セルの値に100を掛けた値が表示されます。0.856 × 100 = 85.6 で、小数第1位まで表示する「0.0%」の形式により「85.6%」と表示されます。「0%」なら「86%」、「0.00%」なら「85.60%」と表示されます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-70",
+    question: "Excelで行や列を「グループ化」する操作の説明として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "行や列をまとめて折りたたみ/展開できるアウトラインを作成する" },
+      { label: "B", text: "行や列を結合して1つのセルにする" },
+      { label: "C", text: "行や列を非表示にして再表示できなくする" },
+      { label: "D", text: "行や列を別シートに移動する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「データ」タブ→「グループ化」で、選択した行や列にアウトラインを作成し、+/-ボタンで折りたたみ/展開ができるようになります。アウトラインレベルの番号（1, 2, 3）をクリックすると、そのレベルまで一括で表示切替できます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-71",
+    question: "Excelの「小計」機能を使う前に必要な操作はどれですか？",
+    choices: [
+      { label: "A", text: "グループ化の基準となる列でデータを並べ替えておく" },
+      { label: "B", text: "テーブルに変換しておく" },
+      { label: "C", text: "ピボットテーブルを作成しておく" },
+      { label: "D", text: "特に事前の操作は不要" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「データ」タブ→「小計」を使う前に、グループ化したい列でデータを並べ替えておく必要があります。例えば「部署別の売上合計」を求める場合、まず部署列で昇順に並べ替えてから小計を実行します。テーブルでは小計は使用できないため、通常のセル範囲で行います。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-72",
+    question: "Excelの書式のコピー/貼り付け（ハケアイコン）をダブルクリックすると何が起こりますか？",
+    choices: [
+      { label: "A", text: "連続して複数のセルに書式を貼り付けられるモードになる" },
+      { label: "B", text: "書式と値の両方がコピーされる" },
+      { label: "C", text: "書式の設定ダイアログが開く" },
+      { label: "D", text: "元のセルの書式がクリアされる" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "書式のコピー/貼り付けボタン（ハケアイコン）を1回クリックすると1回だけ書式を貼り付けて解除されますが、ダブルクリックすると連続貼り付けモードになり、複数のセルや範囲に続けて書式を適用できます。Escキーで連続モードを解除します。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  // ============================================================
+  //  MOS 追加問題 — Domain 3 補完
+  // ============================================================
+  {
+    id: "mos-73",
+    question: "Excelのテーブルで構造化参照「=SUM(テーブル1[売上])」の意味はどれですか？",
+    choices: [
+      { label: "A", text: "テーブル1の「売上」列のすべての値を合計する" },
+      { label: "B", text: "テーブル1のすべての列を合計する" },
+      { label: "C", text: "「売上」という名前のテーブルを合計する" },
+      { label: "D", text: "テーブル1の1行目の「売上」セルだけを参照する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "テーブルの構造化参照では、テーブル名[列名]で特定の列全体を参照できます。テーブルにデータが追加されると自動的に参照範囲が拡張されます。[@列名]は同じ行の値を参照する記法です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-74",
+    question: "Excelでテーブルのサイズを変更（範囲を拡張/縮小）するにはどうしますか？",
+    choices: [
+      { label: "A", text: "「テーブルデザイン」タブ→「テーブルのサイズ変更」で新しい範囲を指定する" },
+      { label: "B", text: "テーブルの枠線をドラッグして拡大する" },
+      { label: "C", text: "テーブルを削除して新しいテーブルを作り直す" },
+      { label: "D", text: "「ホーム」タブ→「セルのサイズ」から変更する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "テーブル内のセルを選択して表示される「テーブルデザイン」タブ→「テーブルのサイズ変更」をクリックし、新しいデータ範囲を指定します。また、テーブル右下隅のハンドルをドラッグしても行列を追加/削除できます。テーブルの最終行の次にデータを入力すると自動的に拡張されます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-75",
+    question: "Excelのテーブルに「スライサー」を挿入する目的はどれですか？",
+    choices: [
+      { label: "A", text: "視覚的なボタンでデータをフィルターする" },
+      { label: "B", text: "テーブルのデータを並べ替える" },
+      { label: "C", text: "テーブルのデータを別シートにコピーする" },
+      { label: "D", text: "テーブルにグラフを埋め込む" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "スライサーはテーブルやピボットテーブルのフィルターを視覚的なボタン形式で提供する機能です。「テーブルデザイン」タブ→「スライサーの挿入」で追加できます。複数のスライサーを連動させてインタラクティブなダッシュボードを作成できます。Ctrlキーを押しながらクリックで複数項目を選択できます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-76",
+    question: "Excelでテーブル名を変更する方法はどれですか？",
+    choices: [
+      { label: "A", text: "テーブル内をクリックして「テーブルデザイン」タブの「テーブル名」ボックスで変更する" },
+      { label: "B", text: "テーブルを右クリックして「名前の変更」を選択する" },
+      { label: "C", text: "「数式」タブ→「名前の管理」からテーブル名を変更する" },
+      { label: "D", text: "テーブル名は変更できない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "テーブル内のセルを選択すると「テーブルデザイン」タブが表示され、左端にある「テーブル名」ボックスで名前を変更できます。テーブル名は数式の構造化参照で使用されるため、分かりやすい名前を付けると管理が容易になります。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-77",
+    question: "Excelのテーブルでフィルターのドロップダウンからワイルドカードを使うとき、「任意の1文字」を表す記号はどれですか？",
+    choices: [
+      { label: "A", text: "?（疑問符）" },
+      { label: "B", text: "*（アスタリスク）" },
+      { label: "C", text: "#（シャープ）" },
+      { label: "D", text: "%（パーセント）" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "Excelのフィルターや検索で使えるワイルドカードは、*（アスタリスク）= 任意の文字列（0文字以上）、?（疑問符）= 任意の1文字です。例えば「田?」で「田中」「田口」にマッチし、「*東京*」で「東京」を含む文字列にマッチします。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  // ============================================================
+  //  MOS 追加問題 — Domain 4 補完
+  // ============================================================
+  {
+    id: "mos-78",
+    question: "=VLOOKUP(A1, B:D, 3, FALSE) の第4引数「FALSE」の意味はどれですか？",
+    choices: [
+      { label: "A", text: "完全一致で検索する" },
+      { label: "B", text: "近似一致で検索する" },
+      { label: "C", text: "検索を逆順で行う" },
+      { label: "D", text: "大文字と小文字を区別する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "VLOOKUPの第4引数はFALSE（完全一致）またはTRUE（近似一致）を指定します。FALSEは検索値と完全に一致する値のみを返し、見つからなければ#N/Aエラーになります。TRUE（または省略）は昇順に並べ替えられたデータで近似一致を行います。通常はFALSEの使用が推奨されます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-79",
+    question: "XLOOKUP関数のVLOOKUPに対する利点として正しくないものはどれですか？",
+    choices: [
+      { label: "A", text: "検索範囲より左側の列も戻り値にできる" },
+      { label: "B", text: "見つからない場合の既定値を指定できる" },
+      { label: "C", text: "完全一致がデフォルト" },
+      { label: "D", text: "2次元の検索（行と列の交差点）ができる" },
+    ],
+    correctLabel: "D",
+    explanation:
+      "XLOOKUPはVLOOKUPの後継関数で、左方向検索が可能（A）、見つからない場合の値を指定可能（B）、完全一致がデフォルト（C）という利点があります。2次元検索にはINDEX+MATCHの組み合わせやXLOOKUPのネストが必要です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-80",
+    question: "=COUNTIF(A:A, \">=60\") は何を求めますか？",
+    choices: [
+      { label: "A", text: "A列で60以上の値を持つセルの個数" },
+      { label: "B", text: "A列の合計が60以上かを判定" },
+      { label: "C", text: "A列で60以上の値の合計" },
+      { label: "D", text: "A列の60番目のセルの値" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "COUNTIFは条件に合うセルの個数を数えます。=COUNTIF(範囲, 条件) の形式で、条件に比較演算子を使う場合は \">=60\" のように文字列で指定します。SUMIFは条件に合う値の合計、COUNTIFは条件に合うセルの個数を返します。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-81",
+    question: "=COUNTIFS(A:A, \"東京\", B:B, \">=100\") の意味はどれですか？",
+    choices: [
+      { label: "A", text: "A列が「東京」かつB列が100以上のセルの個数" },
+      { label: "B", text: "A列が「東京」またはB列が100以上のセルの個数" },
+      { label: "C", text: "A列が「東京」のセルの個数とB列が100以上の個数の合計" },
+      { label: "D", text: "A列が「東京」の行のB列の合計が100以上か判定" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "COUNTIFSは複数の条件をすべて満たす（AND条件）セルの個数を数えます。各条件は「範囲, 条件」のペアで指定します。OR条件が必要な場合はCOUNTIF同士を足し算するか、SUMPRODUCT関数を使用します。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-82",
+    question: "=AVERAGEIF(B:B, \"営業部\", C:C) は何を計算しますか？",
+    choices: [
+      { label: "A", text: "B列が「営業部」の行のC列の値の平均" },
+      { label: "B", text: "B列とC列の「営業部」の平均" },
+      { label: "C", text: "B列が「営業部」のセルの個数" },
+      { label: "D", text: "C列の全データの平均" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "AVERAGEIF(条件範囲, 条件, 平均対象範囲)は、条件に合うデータの平均値を求めます。AVERAGEIFSは複数条件に対応し、AVERAGEIFS(平均対象範囲, 条件範囲1, 条件1, 条件範囲2, 条件2, ...)の形式です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-83",
+    question: "IFS関数の使い方として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "=IFS(条件1, 値1, 条件2, 値2, TRUE, 既定値)" },
+      { label: "B", text: "=IFS(値, 条件1, 結果1, 条件2, 結果2)" },
+      { label: "C", text: "=IFS(条件1 AND 条件2, 値)" },
+      { label: "D", text: "=IFS(範囲, 条件, 結果)" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "IFS関数は=IFS(条件1, 値1, 条件2, 値2, ...)の形式で、最初にTRUEになった条件の値を返します。どの条件にも一致しない場合のデフォルト値は最後に「TRUE, 既定値」を追加して設定します。IF関数の多重ネストの代替として使用できます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-84",
+    question: "=LEFT(\"Microsoft Excel\", 5) の結果はどれですか？",
+    choices: [
+      { label: "A", text: "Micro" },
+      { label: "B", text: "Excel" },
+      { label: "C", text: "Micro " },
+      { label: "D", text: "M" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "LEFT(文字列, 文字数)は文字列の左側（先頭）から指定した文字数を取り出します。\"Microsoft Excel\"の左から5文字は\"Micro\"です。RIGHT(文字列, 文字数)は右側から、MID(文字列, 開始位置, 文字数)は任意の位置から取り出します。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-85",
+    question: "=MID(\"ABCDEFG\", 3, 2) の結果はどれですか？",
+    choices: [
+      { label: "A", text: "CD" },
+      { label: "B", text: "BC" },
+      { label: "C", text: "CDE" },
+      { label: "D", text: "DE" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "MID(文字列, 開始位置, 文字数)は文字列の指定した開始位置から指定した文字数を取り出します。開始位置3（C）から2文字を取り出すので\"CD\"です。開始位置は1から始まります。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-86",
+    question: "=TEXT(44927, \"yyyy/mm/dd\") は何を行いますか？",
+    choices: [
+      { label: "A", text: "シリアル値を指定した日付形式の文字列に変換する" },
+      { label: "B", text: "日付を数値に変換する" },
+      { label: "C", text: "テキストを日付に変換する" },
+      { label: "D", text: "数値にカンマ区切りを追加する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "TEXT(値, 表示形式)は数値を指定した書式の文字列に変換します。日付のシリアル値に\"yyyy/mm/dd\"を適用すると「2023/01/01」のような文字列になります。数値の場合は\"#,##0\"でカンマ区切り、\"0.00\"で小数2桁表示などに変換できます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-87",
+    question: "=TODAY() と =NOW() の違いとして正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "TODAYは今日の日付のみ、NOWは現在の日付と時刻を返す" },
+      { label: "B", text: "TODAYは昨日の日付、NOWは今日の日付を返す" },
+      { label: "C", text: "TODAYは文字列、NOWは数値を返す" },
+      { label: "D", text: "TODAYはブックを開いた日、NOWは保存した日を返す" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "TODAY()は今日の日付（時刻なし）を返し、NOW()は現在の日付と時刻を返します。どちらもワークシートを再計算するたびに更新されます。固定の日付が必要な場合はDATE関数やCtrl+;（日付入力）を使用します。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-88",
+    question: "=DATE(2024, 3, 15) は何を返しますか？",
+    choices: [
+      { label: "A", text: "2024年3月15日を表す日付のシリアル値" },
+      { label: "B", text: "文字列「2024/3/15」" },
+      { label: "C", text: "数値 20240315" },
+      { label: "D", text: "エラーが発生する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "DATE(年, 月, 日)は指定した年月日の日付シリアル値を返します。表示形式により「2024/3/15」等で表示されますが、内部的には数値です。YEAR(), MONTH(), DAY()で日付から各要素を取り出すことができます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-89",
+    question: "=ROUND(3.456, 1) の結果はどれですか？",
+    choices: [
+      { label: "A", text: "3.5" },
+      { label: "B", text: "3.4" },
+      { label: "C", text: "4" },
+      { label: "D", text: "3.46" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "ROUND(数値, 桁数)は指定した桁数で四捨五入します。桁数1は小数第1位まで残す（第2位を四捨五入）ので、3.456→3.5になります。ROUNDUP(切り上げ)なら3.5、ROUNDDOWN(切り捨て)なら3.4になります。桁数0は整数に、-1は10の位に丸めます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-90",
+    question: "=IFERROR(A1/B1, \"計算不可\") の動作として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "A1/B1がエラーの場合は「計算不可」を表示し、正常なら計算結果を表示する" },
+      { label: "B", text: "常に「計算不可」を表示する" },
+      { label: "C", text: "A1/B1の結果が0の場合に「計算不可」を表示する" },
+      { label: "D", text: "エラーがあるセルを赤く強調する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "IFERROR(値, エラーの場合の値)は、第1引数がエラー（#DIV/0!, #N/A, #VALUE!等）の場合に第2引数を返し、エラーでない場合は第1引数の結果をそのまま返します。B1が0の場合の#DIV/0!エラーを「計算不可」や空白(\"\")で置き換えるのが典型的な使い方です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-91",
+    question: "=LARGE(A1:A10, 2) は何を返しますか？",
+    choices: [
+      { label: "A", text: "A1:A10の中で2番目に大きい値" },
+      { label: "B", text: "A1:A10の中で2番目に小さい値" },
+      { label: "C", text: "A1:A10の上位2つの合計" },
+      { label: "D", text: "A1:A10の2番目のセルの値" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "LARGE(範囲, 順位)は指定した範囲のn番目に大きい値を返します。LARGE(A1:A10, 1)は最大値（MAX関数と同じ）、LARGE(A1:A10, 2)は2番目に大きい値です。SMALL関数はn番目に小さい値を返します。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-92",
+    question: "=RANK.EQ(B2, B:B) は何を返しますか？",
+    choices: [
+      { label: "A", text: "B列の中でのB2の値の降順での順位" },
+      { label: "B", text: "B列の中でのB2の値の昇順での順位" },
+      { label: "C", text: "B2セルの行番号" },
+      { label: "D", text: "B列のデータの個数" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "RANK.EQ(数値, 範囲, 順序)は範囲内での順位を返します。第3引数を省略またはは0にすると降順（大きい順）、1にすると昇順（小さい順）の順位になります。同じ値がある場合は同順位になり、次の順位はスキップされます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-93",
+    question: "=LEN(\"Excel 365\") の結果はどれですか？",
+    choices: [
+      { label: "A", text: "9" },
+      { label: "B", text: "8" },
+      { label: "C", text: "10" },
+      { label: "D", text: "6" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "LEN(文字列)は文字列の文字数を返します。\"Excel 365\"はスペースを含めて9文字です。LEN関数はスペースも1文字としてカウントします。LENB関数はバイト数を返し、全角文字は2バイトとしてカウントされます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-94",
+    question: "=SUBSTITUTE(A1, \"株式会社\", \"(株)\") の動作はどれですか？",
+    choices: [
+      { label: "A", text: "A1の文字列中の「株式会社」をすべて「(株)」に置換する" },
+      { label: "B", text: "A1が「株式会社」の場合だけ「(株)」に変更する" },
+      { label: "C", text: "A1の先頭の「株式会社」だけを置換する" },
+      { label: "D", text: "A1のセルの値を直接書き換える" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "SUBSTITUTE(文字列, 検索文字列, 置換文字列)は文字列中の該当箇所をすべて置換した結果を返します。第4引数に置換対象の出現回数を指定すると、n回目の出現のみ置換できます。元のセルの値は変更されず、新しい文字列を返します。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-95",
+    question: "Excelで「#VALUE!」エラーが発生する原因として最も一般的なものはどれですか？",
+    choices: [
+      { label: "A", text: "数値が必要な場所に文字列が入力されている" },
+      { label: "B", text: "参照先のセルが削除された" },
+      { label: "C", text: "0で除算しようとした" },
+      { label: "D", text: "VLOOKUP で値が見つからなかった" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "#VALUE!は数値が期待される場所に文字列が使われた場合などに発生します。#REF!は参照先の削除、#DIV/0!は0除算、#N/Aは値が見つからない場合です。主なエラーの意味を把握しておくことが試験対策として重要です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  // ============================================================
+  //  MOS 追加問題 — Domain 5 補完
+  // ============================================================
+  {
+    id: "mos-96",
+    question: "Excelでグラフを別のシート（グラフシート）に移動する方法はどれですか？",
+    choices: [
+      { label: "A", text: "グラフを右クリック→「グラフの移動」→「新しいシート」を選択" },
+      { label: "B", text: "グラフを切り取って別シートに貼り付ける" },
+      { label: "C", text: "「ファイル」→「名前を付けて保存」でグラフのみ保存する" },
+      { label: "D", text: "グラフはシート上にのみ配置でき、移動はできない" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "グラフを右クリック→「グラフの移動」で、「新しいシート」（グラフ専用シート）または「オブジェクト」（既存シート上に埋め込み）を選択できます。グラフシートにするとシート全体がグラフになり、大きく表示してプレゼンテーションに使用できます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-97",
+    question: "Excelのグラフで軸の最小値・最大値・目盛間隔を変更するにはどうしますか？",
+    choices: [
+      { label: "A", text: "軸をダブルクリック→「軸の書式設定」で数値を指定する" },
+      { label: "B", text: "「グラフデザイン」タブ→「軸の設定」から変更する" },
+      { label: "C", text: "データの値を変更してグラフを更新する" },
+      { label: "D", text: "グラフの種類を変更して再作成する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "軸をダブルクリック（または右クリック→「軸の書式設定」）すると書式設定ウィンドウが開き、最小値・最大値・目盛間隔・表示単位（百、千、万など）を設定できます。「自動」を解除して任意の値を入力します。対数目盛の設定もここで行えます。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-98",
+    question: "Excelのグラフで右上の「+」ボタンをクリックすると何ができますか？",
+    choices: [
+      { label: "A", text: "グラフ要素（タイトル、凡例、データラベル、目盛線等）の追加/削除" },
+      { label: "B", text: "グラフのスタイルと色の変更" },
+      { label: "C", text: "グラフのフィルター（表示するデータの選択）" },
+      { label: "D", text: "新しいデータ系列の追加" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "グラフ選択時に右上に表示される3つのボタンは: 「+」= グラフ要素の追加/削除（タイトル・軸ラベル・データラベル・凡例・目盛線・データテーブル等）、筆アイコン = スタイルと色、フィルターアイコン = データのフィルターです。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-99",
+    question: "Excelのグラフの凡例の位置を変更するにはどうしますか？",
+    choices: [
+      { label: "A", text: "凡例を右クリック→「凡例の書式設定」で位置（上/下/左/右）を選択" },
+      { label: "B", text: "凡例はグラフの下にのみ表示でき、位置は変更できない" },
+      { label: "C", text: "「ページレイアウト」タブから凡例の位置を変更する" },
+      { label: "D", text: "凡例を削除して新しく追加する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "凡例を右クリック→「凡例の書式設定」、またはグラフの「+」ボタン→「凡例」の右矢印から、上・下・左・右・右上の位置を選択できます。凡例をドラッグして任意の位置に移動することも可能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-100",
+    question: "Excelでグラフの種類を変更する方法はどれですか？",
+    choices: [
+      { label: "A", text: "グラフを右クリック→「グラフの種類の変更」を選択" },
+      { label: "B", text: "グラフを削除して新しい種類のグラフを挿入する" },
+      { label: "C", text: "「データ」タブ→「グラフの変換」を選択" },
+      { label: "D", text: "グラフを選択して「ホーム」タブ→「書式の変更」" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "グラフを右クリック→「グラフの種類の変更」、または「グラフデザイン」タブ→「グラフの種類の変更」で変更できます。同じダイアログ内で複合グラフ（例: 棒と折れ線の組み合わせ）の設定も可能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-101",
+    question: "Excelの複合グラフの説明として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "1つのグラフ内に異なる種類のグラフ（例: 縦棒と折れ線）を組み合わせたもの" },
+      { label: "B", text: "複数のグラフを横に並べて表示するもの" },
+      { label: "C", text: "3D表示で複数の面を持つグラフ" },
+      { label: "D", text: "複数のシートのデータを1つのグラフにまとめたもの" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "複合グラフは1つのグラフ内に異なる種類のグラフを組み合わせたものです。「グラフの種類の変更」→「組み合わせ」から設定し、各データ系列ごとにグラフの種類と第2軸の使用を指定できます。単位の異なるデータを同時に比較する場合に便利です。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-102",
+    question: "Excelのグラフに「代替テキスト（Altテキスト）」を設定する目的はどれですか？",
+    choices: [
+      { label: "A", text: "スクリーンリーダーがグラフの内容を読み上げるための説明を提供する" },
+      { label: "B", text: "グラフにマウスを重ねたときにツールチップを表示する" },
+      { label: "C", text: "グラフのタイトルを変更する" },
+      { label: "D", text: "グラフのデータソースを説明する注釈を追加する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "代替テキスト（Altテキスト）はアクセシビリティのために設定します。視覚障害のあるユーザーがスクリーンリーダーでグラフの内容を理解できるよう、グラフの概要を説明するテキストです。グラフを右クリック→「代替テキストの編集」から設定します。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-103",
+    question: "Excelのグラフで「行/列の切り替え」を行うと何が変わりますか？",
+    choices: [
+      { label: "A", text: "X軸（項目軸）とデータ系列（凡例）が入れ替わる" },
+      { label: "B", text: "グラフの向きが横から縦に変わる" },
+      { label: "C", text: "グラフのデータが昇順/降順に切り替わる" },
+      { label: "D", text: "グラフのタイトルと凡例の位置が入れ替わる" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「グラフデザイン」タブ→「行/列の切り替え」をクリックすると、元データの行と列の解釈が入れ替わります。例えば月別データで系列が商品だったものが、商品別データで系列が月に切り替わります。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  // ============================================================
+  //  MOS 追加問題 — 横断的な実践問題 補完
+  // ============================================================
+  {
+    id: "mos-104",
+    question: "Excelでハイパーリンクを挿入する方法はどれですか？",
+    choices: [
+      { label: "A", text: "「挿入」タブ→「リンク」をクリック" },
+      { label: "B", text: "「ホーム」タブ→「リンクの貼り付け」をクリック" },
+      { label: "C", text: "「データ」タブ→「外部参照」をクリック" },
+      { label: "D", text: "「表示」タブ→「ハイパーリンク」をクリック" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "ハイパーリンクは「挿入」タブ→「リンク」、またはCtrl+K（ショートカット）で挿入します。Webページ、同じブック内の別シート/セル、メールアドレス、ファイルへのリンクを作成できます。セルを右クリック→「リンク」からも設定可能です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-105",
+    question: "Excelの条件付き書式で、ルールの優先順位を変更する方法はどれですか？",
+    choices: [
+      { label: "A", text: "「ホーム」タブ→「条件付き書式」→「ルールの管理」で上下に移動" },
+      { label: "B", text: "条件付き書式は設定した順番で固定され変更できない" },
+      { label: "C", text: "「書式」タブ→「優先順位」で変更する" },
+      { label: "D", text: "すべてのルールを削除して正しい順序で再設定する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ホーム」タブ→「条件付き書式」→「ルールの管理」で「条件付き書式ルールの管理」ダイアログを開き、上矢印/下矢印ボタンでルールの優先順位を変更できます。上位のルールが優先されます。「条件を満たす場合は停止」にチェックすると、そのルールが適用された時点で以降のルールは評価されません。",
+    category: "mos",
+    difficulty: "advanced",
+  },
+  {
+    id: "mos-106",
+    question: "Excelでフィルターのオン/オフを切り替えるショートカットはどれですか？",
+    choices: [
+      { label: "A", text: "Ctrl+Shift+L" },
+      { label: "B", text: "Ctrl+F" },
+      { label: "C", text: "Ctrl+L" },
+      { label: "D", text: "Ctrl+Shift+F" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "Ctrl+Shift+L でオートフィルターのオン/オフを切り替えられます。または「データ」タブ→「フィルター」ボタンからも設定可能です。Ctrl+F は検索、Ctrl+L はテーブルの作成ダイアログ（Ctrl+Tと同じ）です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-107",
+    question: "Excelのカラースケール（条件付き書式）の説明として正しいものはどれですか？",
+    choices: [
+      { label: "A", text: "セルの値に応じて背景色がグラデーションで変化する" },
+      { label: "B", text: "セル内に値の大きさに比例した棒グラフが表示される" },
+      { label: "C", text: "セルに矢印や信号機のアイコンが表示される" },
+      { label: "D", text: "セルのフォントカラーが自動的に変更される" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "カラースケールは値の分布をグラデーション（例: 赤→黄→緑）で表現します。最小値・中間値・最大値にそれぞれ色を設定でき、データの分布や傾向を一目で把握できます。データバー（棒グラフ）やアイコンセット（矢印等）とは別の視覚化方法です。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-108",
+    question: "Excelでセル内で強制的に改行する（Alt+Enter）とセルはどうなりますか？",
+    choices: [
+      { label: "A", text: "セル内で改行され、行の高さが自動的に広がる" },
+      { label: "B", text: "次のセルに移動する" },
+      { label: "C", text: "セルが結合される" },
+      { label: "D", text: "改行はできずエラーになる" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "Alt+Enter でセル内に改行を挿入できます。自動的に「折り返して全体を表示する」が有効になり、行の高さが調整されます。セル内の改行はCLEAN関数で削除したり、CHAR(10)として検索・置換で操作できます。",
+    category: "mos",
+    difficulty: "beginner",
+  },
+  {
+    id: "mos-109",
+    question: "Excelの「データの入力規則」で設定できないものはどれですか？",
+    choices: [
+      { label: "A", text: "セルの背景色を自動変更する" },
+      { label: "B", text: "入力できる値の範囲（整数、小数、日付など）を制限する" },
+      { label: "C", text: "ドロップダウンリストから選択させる" },
+      { label: "D", text: "無効なデータ入力時のエラーメッセージを表示する" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "データの入力規則（「データ」タブ→「データの入力規則」）では、入力値の制限（整数・小数・リスト・日付・時刻・文字列の長さ等）、入力時のメッセージ、エラー時のアラートを設定できます。セルの書式設定（背景色）は変更できません。背景色の自動変更には条件付き書式を使用します。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-110",
+    question: "Excelでセルに「2024/4/1」と入力したら数値として認識されず文字列になりました。原因として考えられるのはどれですか？",
+    choices: [
+      { label: "A", text: "セルの表示形式が「文字列」に設定されている" },
+      { label: "B", text: "日付は必ず「2024年4月1日」と入力する必要がある" },
+      { label: "C", text: "シートが保護されている" },
+      { label: "D", text: "ブックが読み取り専用になっている" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "セルの表示形式が「文字列」に設定されていると、日付や数値を入力しても文字列として扱われます。表示形式を「標準」や「日付」に変更してから再入力するか、VALUE関数やDATEVALUE関数で変換する必要があります。セルが左揃えで表示される場合は文字列として認識されている可能性があります。",
+    category: "mos",
+    difficulty: "intermediate",
+  },
+  {
+    id: "mos-111",
+    question: "Excelで複数条件のOR条件で合計を求めたい場合、最も適切な方法はどれですか？",
+    choices: [
+      { label: "A", text: "SUMIF関数を条件ごとに使って結果を足し算する" },
+      { label: "B", text: "SUMIFS関数に複数条件を指定する" },
+      { label: "C", text: "SUM関数にIF関数をネストする" },
+      { label: "D", text: "AVERAGEIF関数を使う" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "SUMIFSは複数条件のAND（すべて満たす）で合計しますが、OR条件（いずれかを満たす）には対応していません。OR条件の場合は =SUMIF(条件1) + SUMIF(条件2) のように各条件のSUMIFを足すか、SUMPRODUCT関数で配列計算を行います。",
+    category: "mos",
+    difficulty: "advanced",
+  },
+  {
+    id: "mos-112",
+    question: "Excelで印刷時に「白黒印刷」を設定する場所はどこですか？",
+    choices: [
+      { label: "A", text: "「ページレイアウト」タブ→「ページ設定」ダイアログ→「シート」タブ" },
+      { label: "B", text: "「ファイル」→「印刷」→「カラー/白黒」ボタン" },
+      { label: "C", text: "「ホーム」タブ→「フォントの色」を黒に変更" },
+      { label: "D", text: "「表示」タブ→「白黒表示」" },
+    ],
+    correctLabel: "A",
+    explanation:
+      "「ページレイアウト」タブ→「ページ設定」ダイアログの「シート」タブで「白黒印刷」にチェックを入れます。同じタブには「行のタイトル」「列のタイトル」（印刷タイトル）、「セル枠線の印刷」、「行列番号の印刷」なども設定できます。",
+    category: "mos",
     difficulty: "advanced",
   },
   // ============================================================
