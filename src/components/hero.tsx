@@ -15,7 +15,7 @@ export function Hero() {
         >
           <Badge variant="outline" className="mb-6 px-4 py-1.5 text-sm border-[var(--color-dads-blue)] text-[var(--color-dads-blue)] bg-background">
             <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-            Java 8 ~ Java 24 対応
+            Java 8 ~ Java 26 対応
           </Badge>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-foreground">

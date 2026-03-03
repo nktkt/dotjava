@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Blocks, AlertTriangle, Brain } from "lucide-react";
+import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Code, Blocks, AlertTriangle, Brain, MessageCircleQuestion, Binary } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -33,7 +33,7 @@ export default function HomePage() {
               バージョン別ガイド
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Java 8 から最新の Java 24 まで、各バージョンで追加された機能を詳しく解説
+              Java 8 から最新の Java 26 まで、各バージョンで追加された機能を詳しく解説
             </p>
           </motion.div>
 
@@ -139,11 +139,11 @@ export default function HomePage() {
               実践ガイド
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              入出力処理、Web開発、Excel、Oracle Database、セキュリティを実践的に体系的に学習
+              入出力処理、Web開発、Excel、Oracle Database、セキュリティ、Eclipse IDE、アルゴリズムを実践的に体系的に学習
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -303,6 +303,70 @@ export default function HomePage() {
                 </Card>
               </Link>
             </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/eclipse-ide">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-purple)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-purple)]/10 flex items-center justify-center shrink-0">
+                      <Code className="h-7 w-7 text-[var(--color-dads-purple)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-purple)] transition-colors">
+                        Eclipse IDE ガイド
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        基本操作、エディタ機能、デバッグ、リファクタリング、ビルド、プラグインまで全16チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["デバッグ", "リファクタリング", "Maven", "JUnit", "Git"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/algorithm">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-cyan)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-cyan)]/10 flex items-center justify-center shrink-0">
+                      <Binary className="h-7 w-7 text-[var(--color-dads-cyan)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-cyan)] transition-colors">
+                        アルゴリズム学習
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        計算量、ソート、探索、データ構造、グラフ、動的計画法まで全12チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["ソート", "探索", "グラフ", "DP", "再帰"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -322,11 +386,11 @@ export default function HomePage() {
               学習ツール
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              クイズ、デザインパターン、エラー集で理解を深める
+              クイズ、面接対策、デザインパターン、エラー集で理解を深める
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -365,6 +429,38 @@ export default function HomePage() {
               transition={{ delay: 0.1 }}
               viewport={{ once: true }}
             >
+              <Link href="/interview">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-navy)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-blue-light)] flex items-center justify-center shrink-0">
+                      <MessageCircleQuestion className="h-7 w-7 text-[var(--color-dads-navy)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-navy)] transition-colors">
+                        面接質問100選
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        Java面接でよく聞かれる質問を基礎・中級・上級に分けてコード例付きで解説
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["基礎", "OOP", "Spring", "設計"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              viewport={{ once: true }}
+            >
               <Link href="/patterns">
                 <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-warning)]">
                   <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
@@ -394,7 +490,7 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.3 }}
               viewport={{ once: true }}
             >
               <Link href="/errors">

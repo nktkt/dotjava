@@ -11,7 +11,7 @@ export function Footer() {
             <span className="font-semibold">Java学習サイト</span>
           </div>
           <p className="text-sm text-muted-foreground text-center">
-            Java 8 ~ Java 24 の全機能を網羅した学習リファレンス
+            Java 8 ~ Java 26 の全機能を網羅した学習リファレンス
           </p>
         </div>
       </div>

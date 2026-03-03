@@ -7,6 +7,8 @@ import { excelChapters } from "@/data/excel";
 import { oracleChapters } from "@/data/oracle";
 import { designPatterns } from "@/data/design-patterns";
 import { securityChapters } from "@/data/java-security";
+import { eclipseChapters } from "@/data/eclipse-ide";
+import { algorithmChapters } from "@/data/algorithm";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -18,9 +20,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/excel`, priority: 0.8 },
     { url: `${baseUrl}/oracle`, priority: 0.8 },
     { url: `${baseUrl}/security`, priority: 0.8 },
+    { url: `${baseUrl}/eclipse-ide`, priority: 0.8 },
+    { url: `${baseUrl}/eclipse-ide/glossary`, priority: 0.7 },
+    { url: `${baseUrl}/algorithm`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
     { url: `${baseUrl}/patterns`, priority: 0.8 },
     { url: `${baseUrl}/errors`, priority: 0.7 },
+    { url: `${baseUrl}/interview`, priority: 0.8 },
     { url: `${baseUrl}/quiz`, priority: 0.7 },
   ];
 
@@ -59,6 +65,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const eclipsePages: MetadataRoute.Sitemap = eclipseChapters.map((c) => ({
+    url: `${baseUrl}/eclipse-ide/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const algorithmPages: MetadataRoute.Sitemap = algorithmChapters.map((c) => ({
+    url: `${baseUrl}/algorithm/${c.id}`,
+    priority: 0.6,
+  }));
+
   const patternPages: MetadataRoute.Sitemap = designPatterns.map((p) => ({
     url: `${baseUrl}/patterns/${p.id}`,
     priority: 0.6,
@@ -73,6 +89,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...excelPages,
     ...oraclePages,
     ...securityPages,
+    ...eclipsePages,
+    ...algorithmPages,
     ...patternPages,
   ];
 }

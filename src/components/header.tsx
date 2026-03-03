@@ -5,7 +5,15 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Coffee, Menu, Sun, Moon } from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import { Coffee, Menu, Sun, Moon, ChevronDown } from "lucide-react";
 
 function XIcon({ className }: { className?: string }) {
   return (
@@ -15,24 +23,42 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
-const navLinks = [
-  { href: "/", label: "ホーム" },
-  { href: "/#versions", label: "バージョン別" },
-  { href: "/#topics", label: "トピック別" },
-  { href: "/io", label: "入出力" },
-  { href: "/web", label: "Web開発" },
-  { href: "/excel", label: "Excel" },
-  { href: "/oracle", label: "Oracle" },
-  { href: "/security", label: "セキュリティ" },
-  { href: "/glossary", label: "用語集" },
-  { href: "/patterns", label: "デザインパターン" },
-  { href: "/errors", label: "エラー集" },
-  { href: "/quiz", label: "クイズ" },
+const navGroups = [
+  {
+    label: "Java学習",
+    items: [
+      { href: "/#versions", label: "バージョン別" },
+      { href: "/#topics", label: "トピック別" },
+    ],
+  },
+  {
+    label: "実践ガイド",
+    items: [
+      { href: "/io", label: "入出力" },
+      { href: "/web", label: "Web開発" },
+      { href: "/excel", label: "Excel" },
+      { href: "/oracle", label: "Oracle" },
+      { href: "/security", label: "セキュリティ" },
+      { href: "/eclipse-ide", label: "Eclipse" },
+      { href: "/algorithm", label: "アルゴリズム" },
+    ],
+  },
+  {
+    label: "学習ツール",
+    items: [
+      { href: "/glossary", label: "用語集" },
+      { href: "/patterns", label: "デザインパターン" },
+      { href: "/errors", label: "エラー集" },
+      { href: "/interview", label: "面接対策" },
+      { href: "/quiz", label: "クイズ" },
+    ],
+  },
 ];
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
@@ -43,6 +69,10 @@ export function Header() {
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
+  };
+
+  const toggleMobileGroup = (label: string) => {
+    setMobileExpanded((prev) => (prev === label ? null : label));
   };
 
   return (
@@ -60,16 +90,43 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="px-3 py-2 text-sm font-medium text-muted-foreground rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-1">
+          <Link
+            href="/"
+            className="px-3 py-2 text-sm font-medium text-muted-foreground rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+          >
+            ホーム
+          </Link>
+
+          <NavigationMenu>
+            <NavigationMenuList>
+              {navGroups.map((group) => (
+                <NavigationMenuItem key={group.label}>
+                  <NavigationMenuTrigger className="px-3 py-2 text-sm font-medium text-muted-foreground bg-transparent hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] data-[state=open]:bg-[var(--color-dads-blue-light)] data-[state=open]:text-[var(--color-dads-blue)]">
+                    {group.label}
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-48 gap-1 p-2">
+                      {group.items.map((item) => (
+                        <li key={item.href}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              href={item.href}
+                              className="block select-none rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+                            >
+                              {item.label}
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
+
           <a
             href="https://x.com/naokitakata"
             target="_blank"
@@ -85,8 +142,9 @@ export function Header() {
           >
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-        </nav>
+        </div>
 
+        {/* Mobile Navigation */}
         <div className="flex items-center gap-1 md:hidden">
           <button
             onClick={toggleTheme}
@@ -104,25 +162,53 @@ export function Header() {
             <SheetContent side="right" className="w-72">
               <SheetTitle className="sr-only">ナビゲーション</SheetTitle>
               <div className="flex flex-col gap-1 mt-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className="text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
-                  >
-                    {link.label}
-                  </Link>
+                <Link
+                  href="/"
+                  onClick={() => setOpen(false)}
+                  className="text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+                >
+                  ホーム
+                </Link>
+
+                {navGroups.map((group) => (
+                  <div key={group.label}>
+                    <button
+                      onClick={() => toggleMobileGroup(group.label)}
+                      className="flex items-center justify-between w-full text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+                    >
+                      {group.label}
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          mobileExpanded === group.label ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                    {mobileExpanded === group.label && (
+                      <div className="ml-4 flex flex-col gap-0.5">
+                        {group.items.map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setOpen(false)}
+                            className="text-sm font-medium px-4 py-2.5 rounded-lg text-muted-foreground hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
+
                 <a
                   href="https://x.com/naokitakata"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 text-base font-medium px-4 py-3 rounded-lg hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+                  className="inline-flex items-center px-4 py-3 rounded-lg text-muted-foreground hover:text-[var(--color-dads-blue)] hover:bg-[var(--color-dads-blue-light)] transition-colors"
+                  aria-label="X"
                 >
                   <XIcon className="h-4 w-4" />
-                  X
                 </a>
               </div>
             </SheetContent>

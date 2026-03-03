@@ -1453,4 +1453,345 @@ for (var method : model.methods()) {
       },
     ],
   },
+  {
+    id: "java-25",
+    version: 25,
+    name: "Java 25",
+    releaseDate: "2025年9月",
+    lts: true,
+    color: "var(--color-dads-blue)",
+    summary: "LTS版。Scoped Values (正式版)、Module Import Declarations、Compact Source Files、Flexible Constructor Bodies (正式版)、Compact Object Headers",
+    features: [
+      {
+        title: "Scoped Values (正式版)",
+        description: "スレッド内で安全にデータを共有する仕組みが正式機能に。ThreadLocalの代替として、不変で軽量なスコープ限定値を提供する。Virtual Threadsとの相性も良い。",
+        code: `// Scoped Values（正式版）
+static final ScopedValue<String> CURRENT_USER = ScopedValue.newInstance();
+
+void handleRequest(Request req) {
+    String user = authenticate(req);
+
+    // スコープ内でのみ値が有効
+    ScopedValue.where(CURRENT_USER, user).run(() -> {
+        processRequest();    // CURRENT_USER.get() → user
+        auditLog();          // CURRENT_USER.get() → user
+
+        // ネストしたスコープ（一時的に上書き）
+        ScopedValue.where(CURRENT_USER, "system").run(() -> {
+            systemOperation(); // CURRENT_USER.get() → "system"
+        });
+        // 元のスコープに戻る
+        // CURRENT_USER.get() → user
+    });
+    // スコープ外 → CURRENT_USER.get() は NoSuchElementException
+}
+
+// ThreadLocal との違い:
+// - ScopedValue は不変（set() がない）
+// - スコープ終了時に自動クリーンアップ
+// - Virtual Thread でもメモリ効率が良い`,
+      },
+      {
+        title: "Module Import Declarations (正式版)",
+        description: "モジュール単位でインポートを宣言できる機能。モジュールがエクスポートする全パッケージを一括インポートでき、コードの冒頭のimport文を大幅に削減できる。",
+        code: `// モジュールインポート宣言（正式版）
+// java.baseモジュールの全パッケージを一括インポート
+import module java.base;
+
+// java.sqlモジュールの全パッケージを一括インポート
+import module java.sql;
+
+// これにより以下の個別importが不要に:
+// import java.util.*;
+// import java.util.stream.*;
+// import java.io.*;
+// import java.nio.file.*;
+// import java.sql.*;
+// ...
+
+public class Example {
+    public static void main(String[] args) {
+        // List, Map, Stream 等がそのまま使える
+        var list = List.of("a", "b", "c");
+        var result = list.stream()
+            .filter(s -> !s.isEmpty())
+            .toList();
+
+        // Path, Files もそのまま使える
+        var path = Path.of("file.txt");
+        var content = Files.readString(path);
+    }
+}`,
+      },
+      {
+        title: "Compact Source Files (正式版)",
+        description: "初心者向けに、mainメソッドの宣言やクラス宣言を省略できる機能が正式化。小さなプログラムを簡潔に記述できる。",
+        code: `// Java 24以前
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}
+
+// Java 25 Compact Source Files（正式版）
+// クラス宣言もmainの修飾子も不要
+void main() {
+    println("Hello, World!");
+}
+
+// インスタンスメインメソッド
+// java.io.IO のメソッドが暗黙的に利用可能
+void main() {
+    String name = readln("名前を入力: ");
+    println("こんにちは、" + name + "さん！");
+
+    // 複数行入力
+    println("趣味を入力（空行で終了）:");
+    var hobbies = new ArrayList<String>();
+    String line;
+    while (!(line = readln()).isEmpty()) {
+        hobbies.add(line);
+    }
+    println("趣味: " + hobbies);
+}`,
+      },
+      {
+        title: "Flexible Constructor Bodies (正式版)",
+        description: "コンストラクタでsuper()やthis()の前にフィールド初期化やバリデーションを行える機能が正式化。",
+        code: `// Flexible Constructor Bodies（正式版）
+public class PositiveRange extends Range {
+    private final int validatedMin;
+    private final int validatedMax;
+
+    public PositiveRange(int min, int max) {
+        // super()の前にバリデーションとフィールド初期化が可能
+        if (min < 0 || max < 0) {
+            throw new IllegalArgumentException("負の値は不可");
+        }
+        if (min > max) {
+            throw new IllegalArgumentException("min > max");
+        }
+        this.validatedMin = min;
+        this.validatedMax = max;
+        super(min, max); // バリデーション後にsuper()呼び出し
+    }
+}
+
+// this()の前でも同様
+public class Server {
+    public Server(String host, int port) {
+        // this()の前でバリデーション
+        Objects.requireNonNull(host, "host is null");
+        if (port < 0 || port > 65535) {
+            throw new IllegalArgumentException("Invalid port: " + port);
+        }
+        this(host + ":" + port);
+    }
+
+    private Server(String address) { /* ... */ }
+}`,
+      },
+      {
+        title: "Compact Object Headers",
+        description: "オブジェクトヘッダーのサイズを従来の128ビットから64ビットに縮小。メモリ使用量を削減し、データ密度とGC効率を向上させる。",
+        code: `// Compact Object Headers（JEP 519）
+// オブジェクトヘッダーが128ビット → 64ビットに縮小
+
+// 効果: ヒープ使用量が約10-20%削減
+// 特に小さなオブジェクトが多いアプリケーションで効果大
+
+// 有効化（デフォルトで有効）
+// java -XX:+UseCompactObjectHeaders MyApp
+
+// 確認方法
+// java -XX:+PrintFlagsFinal -version 2>&1 | grep CompactObjectHeaders
+
+// メモリ効率の改善例:
+// Integer オブジェクト: 16バイト → 12バイト (25%削減)
+// Boolean オブジェクト: 16バイト → 9バイト  (44%削減)
+// 空の ArrayList:      40バイト → 32バイト (20%削減)
+
+// 大量のオブジェクトを扱うアプリケーションで
+// ヒープサイズの削減とGCの効率化が期待できる`,
+      },
+      {
+        title: "Key Derivation Function API (正式版)",
+        description: "秘密鍵から追加の鍵を導出するための標準API。TLS、暗号プロトコルの実装に使用される。",
+        code: `// Key Derivation Function API（正式版）
+import javax.crypto.KDF;
+
+// HKDF（HMAC-based Key Derivation Function）の使用
+KDF hkdf = KDF.getInstance("HKDF-SHA256");
+
+// 入力鍵マテリアルから鍵を導出
+SecretKey inputKey = /* 元の秘密鍵 */;
+
+// Extract-then-Expand
+KDF.Parameters params = HKDFParameterSpec.expandOnly(
+    inputKey,
+    "application-key".getBytes(),  // info
+    32                              // 出力長（バイト）
+);
+
+SecretKey derivedKey = hkdf.deriveKey("AES", params);
+
+// 複数の鍵を同じ入力から導出
+SecretKey encKey = hkdf.deriveKey("AES",
+    HKDFParameterSpec.expandOnly(inputKey, "enc".getBytes(), 32));
+SecretKey macKey = hkdf.deriveKey("HmacSHA256",
+    HKDFParameterSpec.expandOnly(inputKey, "mac".getBytes(), 32));`,
+      },
+    ],
+  },
+  {
+    id: "java-26",
+    version: 26,
+    name: "Java 26",
+    releaseDate: "2026年3月",
+    lts: false,
+    color: "var(--color-dads-cyan)",
+    summary: "HTTP/3対応、Ahead-of-Time Object Caching、G1 GCスループット改善、Applet API削除",
+    features: [
+      {
+        title: "HTTP/3 for HTTP Client API (正式版)",
+        description: "標準HTTPクライアントがHTTP/3（QUIC）プロトコルに対応。低遅延・高信頼性のHTTP通信が可能に。",
+        code: `// HTTP/3 対応（正式版）
+HttpClient client = HttpClient.newBuilder()
+    .version(HttpClient.Version.HTTP_3) // HTTP/3を指定
+    .connectTimeout(Duration.ofSeconds(10))
+    .build();
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://api.example.com/data"))
+    .header("Accept", "application/json")
+    .GET()
+    .build();
+
+// HTTP/3 で通信（QUICベース）
+HttpResponse<String> response = client.send(
+    request, HttpResponse.BodyHandlers.ofString());
+
+System.out.println("Protocol: " + response.version()); // HTTP_3
+System.out.println("Body: " + response.body());
+
+// HTTP/3 の利点:
+// - QUIC（UDPベース）による低遅延接続
+// - ヘッドオブラインブロッキングの解消
+// - 接続の高速なマイグレーション（WiFi↔モバイル）
+// - TLS 1.3 が組み込み
+
+// 非同期リクエストも同様に利用可能
+client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+    .thenApply(HttpResponse::body)
+    .thenAccept(System.out::println);`,
+      },
+      {
+        title: "Ahead-of-Time Object Caching",
+        description: "事前コンパイル時にオブジェクトをキャッシュし、アプリケーションの起動時間とウォームアップ時間を大幅に短縮。ZGCを含むすべてのGCで利用可能に。",
+        code: `// Ahead-of-Time Object Caching（JEP 516）
+// 任意のGCで AOT キャッシュを利用可能に
+
+// Step 1: トレーニング実行でキャッシュを作成
+// $ java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconf -jar app.jar
+// $ java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconf \\
+//        -XX:AOTCache=app.aot -jar app.jar
+
+// Step 2: キャッシュを使ってアプリケーションを起動
+// $ java -XX:AOTCache=app.aot -jar app.jar
+
+// ZGC（低遅延GC）でも利用可能
+// $ java -XX:+UseZGC -XX:AOTCache=app.aot -jar app.jar
+
+// 効果:
+// - 起動時間の大幅な短縮
+// - ウォームアップ時間の短縮
+// - クラスのロードとリンクが事前完了
+// - String やその他のオブジェクトがキャッシュ済み`,
+      },
+      {
+        title: "G1 GC スループット改善",
+        description: "G1ガベージコレクタの同期処理を削減し、スループットを向上。特にマルチスレッド環境での性能が改善される。",
+        code: `// G1 GC: Improve Throughput by Reducing Synchronization（JEP 522）
+// G1 GCの内部同期を削減してスループットを向上
+
+// G1 GCはJavaのデフォルトGC
+// $ java -XX:+UseG1GC MyApp  // デフォルトで有効
+
+// 主な改善点:
+// - カードテーブルの更新における同期の削減
+// - 並行マーキング中のスレッド間競合の軽減
+// - リージョン管理の効率化
+
+// パフォーマンス比較（概算）:
+// JDK 25 G1 GC: ベースライン
+// JDK 26 G1 GC: スループット約5-15%向上（ワークロード依存）
+
+// GCログで確認
+// $ java -Xlog:gc*:file=gc.log -jar app.jar
+
+// JFR（Java Flight Recorder）で詳細なGC分析
+// $ java -XX:StartFlightRecording=filename=recording.jfr -jar app.jar`,
+      },
+      {
+        title: "Applet API の削除",
+        description: "Java 9で非推奨化され、Java 17で削除予定としてマークされていたApplet APIが完全に削除。",
+        code: `// Applet API の削除（JEP 504）
+// 以下のクラスとインターフェースが削除:
+// - java.applet.Applet
+// - java.applet.AppletContext
+// - java.applet.AppletStub
+// - java.applet.AudioClip
+// - javax.swing.JApplet
+
+// 歴史:
+// Java 9  (2017): @Deprecated
+// Java 17 (2021): @Deprecated(forRemoval=true)
+// Java 26 (2026): 完全削除
+
+// 移行ガイド:
+// Applet → Java Web Start → デスクトップアプリ or Webアプリ
+
+// 代替手段:
+// 1. JavaFX でデスクトップGUIアプリケーション
+// 2. Spring Boot + Web フロントエンド
+// 3. jpackage でネイティブインストーラー作成
+// $ jpackage --input lib --main-jar app.jar \\
+//   --main-class com.example.Main --name MyApp`,
+      },
+      {
+        title: "Lazy Constants (第2プレビュー)",
+        description: "遅延初期化される定数を安全かつ簡潔に定義するAPI。初回アクセス時にのみ計算され、以降はキャッシュされる。",
+        code: `// Lazy Constants（第2プレビュー）
+import java.lang.StableValue;
+
+class AppConfig {
+    // 遅延初期化される定数
+    // 初回アクセス時にのみ計算、以降はキャッシュ
+    private static final StableValue<DatabaseConnection> DB_CONN =
+        StableValue.of(() -> {
+            System.out.println("DB接続を初期化...");
+            return new DatabaseConnection("jdbc:...");
+        });
+
+    // スレッドセーフに初回アクセス時のみ初期化
+    public static DatabaseConnection getConnection() {
+        return DB_CONN.get();
+    }
+}
+
+// 従来のdouble-checked lockingパターンが不要に:
+// private static volatile Connection instance;
+// public static Connection get() {
+//     if (instance == null) {
+//         synchronized (AppConfig.class) {
+//             if (instance == null) {
+//                 instance = new Connection();
+//             }
+//         }
+//     }
+//     return instance;
+// }`,
+      },
+    ],
+  },
 ];
