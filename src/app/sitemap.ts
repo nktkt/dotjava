@@ -9,6 +9,13 @@ import { designPatterns } from "@/data/design-patterns";
 import { securityChapters } from "@/data/java-security";
 import { eclipseChapters } from "@/data/eclipse-ide";
 import { algorithmChapters } from "@/data/algorithm";
+import { javascriptChapters } from "@/data/javascript";
+import { htmlChapters } from "@/data/html";
+import { htmxChapters } from "@/data/htmx";
+import { cssChapters } from "@/data/css";
+import { bootstrapChapters } from "@/data/bootstrap";
+import { postgresqlChapters } from "@/data/postgresql";
+import { awsChapters } from "@/data/aws";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -23,6 +30,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/eclipse-ide`, priority: 0.8 },
     { url: `${baseUrl}/eclipse-ide/glossary`, priority: 0.7 },
     { url: `${baseUrl}/algorithm`, priority: 0.8 },
+    { url: `${baseUrl}/javascript`, priority: 0.8 },
+    { url: `${baseUrl}/html`, priority: 0.8 },
+    { url: `${baseUrl}/htmx`, priority: 0.8 },
+    { url: `${baseUrl}/css`, priority: 0.8 },
+    { url: `${baseUrl}/bootstrap`, priority: 0.8 },
+    { url: `${baseUrl}/postgresql`, priority: 0.8 },
+    { url: `${baseUrl}/aws`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
     { url: `${baseUrl}/patterns`, priority: 0.8 },
     { url: `${baseUrl}/errors`, priority: 0.7 },
@@ -75,6 +89,41 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const javascriptPages: MetadataRoute.Sitemap = javascriptChapters.map((c) => ({
+    url: `${baseUrl}/javascript/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const htmlPages: MetadataRoute.Sitemap = htmlChapters.map((c) => ({
+    url: `${baseUrl}/html/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const htmxPages: MetadataRoute.Sitemap = htmxChapters.map((c) => ({
+    url: `${baseUrl}/htmx/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const postgresqlPages: MetadataRoute.Sitemap = postgresqlChapters.map((c) => ({
+    url: `${baseUrl}/postgresql/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const bootstrapPages: MetadataRoute.Sitemap = bootstrapChapters.map((c) => ({
+    url: `${baseUrl}/bootstrap/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const awsPages: MetadataRoute.Sitemap = awsChapters.map((c) => ({
+    url: `${baseUrl}/aws/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const cssPages: MetadataRoute.Sitemap = cssChapters.map((c) => ({
+    url: `${baseUrl}/css/${c.id}`,
+    priority: 0.6,
+  }));
+
   const patternPages: MetadataRoute.Sitemap = designPatterns.map((p) => ({
     url: `${baseUrl}/patterns/${p.id}`,
     priority: 0.6,
@@ -91,6 +140,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...securityPages,
     ...eclipsePages,
     ...algorithmPages,
+    ...javascriptPages,
+    ...htmlPages,
+    ...htmxPages,
+    ...cssPages,
+    ...bootstrapPages,
+    ...postgresqlPages,
+    ...awsPages,
     ...patternPages,
   ];
 }

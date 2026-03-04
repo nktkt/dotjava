@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Code, Blocks, AlertTriangle, Brain, MessageCircleQuestion, Binary } from "lucide-react";
+import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Code, Blocks, AlertTriangle, Brain, MessageCircleQuestion, Binary, Braces, Code2, Zap, Paintbrush, LayoutGrid, DatabaseZap, Cloud } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -139,7 +139,7 @@ export default function HomePage() {
               実践ガイド
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              入出力処理、Web開発、Excel、Oracle Database、セキュリティ、Eclipse IDE、アルゴリズムを実践的に体系的に学習
+              入出力処理、Web開発、Excel、Oracle Database、セキュリティ、Eclipse IDE、アルゴリズム、JavaScript、HTML、HTMX、CSS、Bootstrap、PostgreSQL、AWSを実践的に体系的に学習
             </p>
           </motion.div>
 
@@ -357,6 +357,229 @@ export default function HomePage() {
                       </p>
                       <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                         {["ソート", "探索", "グラフ", "DP", "再帰"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/javascript">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-amber)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-amber)]/10 flex items-center justify-center shrink-0">
+                      <Braces className="h-7 w-7 text-[var(--color-dads-amber)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-amber)] transition-colors">
+                        JavaScript 学習
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        基礎文法、関数・スコープ、オブジェクト・配列、非同期処理、DOM操作、モダンJS、実践パターンまで全16チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["ES6+", "Promise", "DOM", "関数型", "モジュール"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/html">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-warning)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-warning)]/10 flex items-center justify-center shrink-0">
+                      <Code2 className="h-7 w-7 text-[var(--color-dads-warning)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-warning)] transition-colors">
+                        HTML 学習
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        基礎構造、フォーム、メディア、セマンティクス、アクセシビリティ、SEO、モダンHTMLまで全16チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["セマンティクス", "フォーム", "SEO", "ARIA", "レスポンシブ"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/htmx">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-purple)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-purple)]/10 flex items-center justify-center shrink-0">
+                      <Zap className="h-7 w-7 text-[var(--color-dads-purple)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-purple)] transition-colors">
+                        HTMX 学習
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        HTML属性だけでAJAX、WebSocket、SSEを実現する軽量ライブラリを体系的に学習。全16チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["hx-get", "hx-swap", "SSE", "WebSocket", "OOB"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/css">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-blue-light)] flex items-center justify-center shrink-0">
+                      <Paintbrush className="h-7 w-7 text-[var(--color-dads-blue)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-blue)] transition-colors">
+                        CSS 学習
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        セレクタ、Flexbox、Grid、アニメーション、レスポンシブデザイン、モダンCSSまで全16チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["Flexbox", "Grid", "変数", "アニメーション", ":has()"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/bootstrap">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-purple)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-purple)]/10 flex items-center justify-center shrink-0">
+                      <LayoutGrid className="h-7 w-7 text-[var(--color-dads-purple)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-purple)] transition-colors">
+                        Bootstrap CSS 学習
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        グリッド、コンポーネント、フォーム、ユーティリティ、Sassカスタマイズまで全16チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["Grid", "Navbar", "Card", "Flex", "Sass"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/postgresql">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-blue)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-blue-light)] flex items-center justify-center shrink-0">
+                      <DatabaseZap className="h-7 w-7 text-[var(--color-dads-blue)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-blue)] transition-colors">
+                        PostgreSQL 学習
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        JSONB、ウィンドウ関数、CTE、PL/pgSQL、インデックス最適化、トランザクション管理まで全16チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["JSONB", "Window関数", "CTE", "PL/pgSQL", "Index"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/aws">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-warning)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-warning-light)] flex items-center justify-center shrink-0">
+                      <Cloud className="h-7 w-7 text-[var(--color-dads-warning)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-warning)] transition-colors">
+                        AWS 学習
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        EC2、S3、Lambda、VPC、IAM、ECS、CloudFormation、CloudWatch、Bedrock、Well-Architectedまで全22チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["EC2", "S3", "Lambda", "VPC", "IAM"].map((tag) => (
                           <Badge key={tag} variant="outline" className="text-xs">
                             {tag}
                           </Badge>

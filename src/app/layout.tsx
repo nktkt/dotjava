@@ -3,6 +3,7 @@ import { Geist_Mono } from "next/font/google";
 import "@fontsource-variable/noto-sans-jp";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { GrokButton } from "@/components/grok-button";
 import "./globals.css";
 
 const geistMono = Geist_Mono({
@@ -59,6 +60,7 @@ export default function RootLayout({
         <Header />
         <main className="min-h-screen">{children}</main>
         <Footer />
+        <GrokButton />
       </body>
     </html>
   );
