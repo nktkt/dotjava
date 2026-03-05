@@ -16,6 +16,8 @@ import { cssChapters } from "@/data/css";
 import { bootstrapChapters } from "@/data/bootstrap";
 import { postgresqlChapters } from "@/data/postgresql";
 import { awsChapters } from "@/data/aws";
+import { javaCertChapters } from "@/data/java-cert";
+import { oracleCertChapters } from "@/data/oracle-cert";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -37,6 +39,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/bootstrap`, priority: 0.8 },
     { url: `${baseUrl}/postgresql`, priority: 0.8 },
     { url: `${baseUrl}/aws`, priority: 0.8 },
+    { url: `${baseUrl}/java-cert`, priority: 0.8 },
+    { url: `${baseUrl}/oracle-cert`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
     { url: `${baseUrl}/patterns`, priority: 0.8 },
     { url: `${baseUrl}/errors`, priority: 0.7 },
@@ -119,6 +123,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const javaCertPages: MetadataRoute.Sitemap = javaCertChapters.map((c) => ({
+    url: `${baseUrl}/java-cert/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const oracleCertPages: MetadataRoute.Sitemap = oracleCertChapters.map((c) => ({
+    url: `${baseUrl}/oracle-cert/${c.id}`,
+    priority: 0.6,
+  }));
+
   const cssPages: MetadataRoute.Sitemap = cssChapters.map((c) => ({
     url: `${baseUrl}/css/${c.id}`,
     priority: 0.6,
@@ -147,6 +161,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...bootstrapPages,
     ...postgresqlPages,
     ...awsPages,
+    ...javaCertPages,
+    ...oracleCertPages,
     ...patternPages,
   ];
 }

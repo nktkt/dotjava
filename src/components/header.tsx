@@ -48,6 +48,8 @@ const navGroups = [
       { href: "/bootstrap", label: "Bootstrap" },
       { href: "/postgresql", label: "PostgreSQL" },
       { href: "/aws", label: "AWS" },
+      { href: "/java-cert", label: "Java資格" },
+      { href: "/oracle-cert", label: "Oracle資格" },
     ],
   },
   {
@@ -168,7 +170,7 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <SheetTitle className="sr-only">ナビゲーション</SheetTitle>
-              <div className="flex flex-col gap-1 mt-8">
+              <div className="flex flex-col gap-1 mt-8 overflow-y-auto max-h-[calc(100vh-6rem)]">
                 <Link
                   href="/"
                   onClick={() => setOpen(false)}
