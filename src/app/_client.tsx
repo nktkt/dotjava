@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Code, Blocks, AlertTriangle, Brain, MessageCircleQuestion, Binary, Braces, Code2, Zap, Paintbrush, LayoutGrid, DatabaseZap, Cloud } from "lucide-react";
+import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Code, Blocks, AlertTriangle, Brain, MessageCircleQuestion, Binary, Braces, Code2, Zap, Paintbrush, LayoutGrid, DatabaseZap, Cloud, Award } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -139,7 +139,7 @@ export default function HomePage() {
               実践ガイド
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              入出力処理、Web開発、Excel、Oracle Database、セキュリティ、Eclipse IDE、アルゴリズム、JavaScript、HTML、HTMX、CSS、Bootstrap、PostgreSQL、AWSを実践的に体系的に学習
+              入出力処理、Web開発、Excel、Oracle Database、セキュリティ、Eclipse IDE、アルゴリズム、JavaScript、HTML、HTMX、CSS、Bootstrap、PostgreSQL、AWS、Java資格対策を実践的に体系的に学習
             </p>
           </motion.div>
 
@@ -580,6 +580,38 @@ export default function HomePage() {
                       </p>
                       <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                         {["EC2", "S3", "Lambda", "VPC", "IAM"].map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.4 }}
+              viewport={{ once: true }}
+            >
+              <Link href="/java-cert">
+                <Card className="group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[var(--color-dads-success)]">
+                  <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-dads-success-light)] flex items-center justify-center shrink-0">
+                      <Award className="h-7 w-7 text-[var(--color-dads-success)]" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-success)] transition-colors">
+                        Java資格試験対策
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        Bronze・Silver・Goldの資格対策。出題範囲、頻出パターン、模擬問題で合格力を養成する全16チャプター
+                      </p>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                        {["Bronze", "Silver", "Gold", "模擬問題", "OOP"].map((tag) => (
                           <Badge key={tag} variant="outline" className="text-xs">
                             {tag}
                           </Badge>

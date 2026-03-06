@@ -18,6 +18,8 @@ import { postgresqlChapters } from "@/data/postgresql";
 import { awsChapters } from "@/data/aws";
 import { javaCertChapters } from "@/data/java-cert";
 import { oracleCertChapters } from "@/data/oracle-cert";
+import { clangChapters } from "@/data/c-lang";
+import { cppLangChapters } from "@/data/cpp-lang";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -41,6 +43,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/aws`, priority: 0.8 },
     { url: `${baseUrl}/java-cert`, priority: 0.8 },
     { url: `${baseUrl}/oracle-cert`, priority: 0.8 },
+    { url: `${baseUrl}/c-lang`, priority: 0.8 },
+    { url: `${baseUrl}/cpp-lang`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
     { url: `${baseUrl}/patterns`, priority: 0.8 },
     { url: `${baseUrl}/errors`, priority: 0.7 },
@@ -133,6 +137,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const clangPages: MetadataRoute.Sitemap = clangChapters.map((c) => ({
+    url: `${baseUrl}/c-lang/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const cppLangPages: MetadataRoute.Sitemap = cppLangChapters.map((c) => ({
+    url: `${baseUrl}/cpp-lang/${c.id}`,
+    priority: 0.6,
+  }));
+
   const cssPages: MetadataRoute.Sitemap = cssChapters.map((c) => ({
     url: `${baseUrl}/css/${c.id}`,
     priority: 0.6,
@@ -163,6 +177,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...awsPages,
     ...javaCertPages,
     ...oracleCertPages,
+    ...clangPages,
+    ...cppLangPages,
     ...patternPages,
   ];
 }
