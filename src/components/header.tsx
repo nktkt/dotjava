@@ -57,6 +57,7 @@ const navGroups = [
   {
     label: "学習ツール",
     items: [
+      { href: "/docs", label: "APIリファレンス" },
       { href: "/glossary", label: "用語集" },
       { href: "/patterns", label: "デザインパターン" },
       { href: "/errors", label: "エラー集" },
