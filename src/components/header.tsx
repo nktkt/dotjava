@@ -41,6 +41,7 @@ const navGroups = [
       { href: "/security", label: "セキュリティ" },
       { href: "/eclipse-ide", label: "Eclipse" },
       { href: "/algorithm", label: "アルゴリズム" },
+      { href: "/testing", label: "テスト" },
     ],
   },
   {
