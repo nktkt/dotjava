@@ -1058,6 +1058,2509 @@ End Sub`,
       },
     ],
   },
+  // ===== VBA 変数・データ型・演算子 =====
+  {
+    id: "vba-variables-types",
+    title: "VBA 変数・データ型・演算子",
+    category: "vba",
+    description:
+      "変数宣言、データ型の使い分け、Option Explicit、定数、配列、演算子",
+    sections: [
+      {
+        title: "変数宣言と Option Explicit",
+        content:
+          "VBA では Dim, Public, Private, Static を使って変数を宣言します。Option Explicit をモジュールの先頭に記述すると、未宣言の変数を使用した場合にコンパイルエラーが発生します。これにより、タイプミスによるバグの混入を防止できます。VBE の「ツール」→「オプション」→「変数の宣言を強制する」にチェックを入れると、新規モジュールに自動挿入されます。",
+        code: `Option Explicit
+
+' モジュールレベル変数（モジュール内で共有）
+Private mCount As Long
+
+Sub VariableDeclarations()
+    ' ローカル変数（プロシージャ内のみ有効）
+    Dim userName As String
+    Dim age As Integer
+    Dim salary As Double
+
+    ' Static 変数（プロシージャ終了後も値を保持）
+    Static callCount As Long
+    callCount = callCount + 1
+
+    userName = "田中太郎"
+    age = 35
+    salary = 450000
+
+    ' 変数の値を表示
+    Debug.Print "名前: " & userName
+    Debug.Print "年齢: " & age
+    Debug.Print "給与: " & Format(salary, "#,##0") & "円"
+    Debug.Print "呼出回数: " & callCount
+End Sub
+
+' Public 変数（他のモジュールからもアクセス可能）
+Public gAppName As String`,
+      },
+      {
+        title: "データ型の詳細",
+        content:
+          "VBA には多くのデータ型があり、用途に応じて使い分けます。String は文字列、Integer は -32,768～32,767 の整数、Long は約±21億の整数です。Double は浮動小数点数、Currency は通貨計算に適した固定小数点型です。Variant はどんな型でも格納できますが、メモリ消費が大きく処理も遅いため、明示的な型指定が推奨されます。",
+        code: `Sub DataTypes()
+    ' 文字列型
+    Dim fullName As String
+    fullName = "山田花子"
+
+    ' 整数型（小さい範囲）
+    Dim score As Integer  ' -32,768 ～ 32,767
+
+    ' 長整数型（大きい範囲）- 行番号に最適
+    Dim rowNum As Long    ' -2,147,483,648 ～ 2,147,483,647
+
+    ' 浮動小数点型
+    Dim rate As Double    ' 15桁の精度
+    rate = 0.08
+
+    ' 通貨型（誤差なし、小数4桁）
+    Dim price As Currency
+    price = 19800.5
+
+    ' 日付型
+    Dim today As Date
+    today = Date  ' 本日の日付
+
+    ' ブール型
+    Dim isValid As Boolean
+    isValid = True
+
+    ' Variant型（型が不定の場合のみ使用）
+    Dim anything As Variant
+    anything = "文字列も数値も格納可能"
+
+    ' Object型
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(1)
+
+    Debug.Print TypeName(fullName)  ' String
+    Debug.Print TypeName(rate)      ' Double
+    Debug.Print TypeName(today)     ' Date
+End Sub`,
+      },
+      {
+        title: "定数と列挙型",
+        content:
+          "Const を使うと値が変更できない定数を定義できます。マジックナンバーを避け、コードの可読性を高めるために活用します。Enum を使うと関連する定数をグループ化できます。また VBA には vbCrLf（改行）、vbTab（タブ）などの組み込み定数が用意されています。",
+        code: `' 定数の宣言
+Const TAX_RATE As Double = 0.1
+Const MAX_ROWS As Long = 1000
+Const APP_TITLE As String = "売上管理システム"
+
+' 列挙型の定義
+Enum Department
+    Sales = 1
+    Marketing = 2
+    Engineering = 3
+    HumanResources = 4
+    Finance = 5
+End Enum
+
+Sub UseConstants()
+    ' 定数を使った計算
+    Dim price As Currency
+    price = 10000
+    Dim taxIncluded As Currency
+    taxIncluded = price * (1 + TAX_RATE)
+
+    ' 列挙型の使用
+    Dim dept As Department
+    dept = Sales
+
+    ' 組み込み定数の活用
+    Dim msg As String
+    msg = "商品名: Excel教本" & vbCrLf
+    msg = msg & "価格: " & Format(price, "#,##0") & "円" & vbCrLf
+    msg = msg & "税込: " & Format(taxIncluded, "#,##0") & "円"
+
+    MsgBox msg, vbInformation, APP_TITLE
+End Sub`,
+      },
+      {
+        title: "配列",
+        content:
+          "配列は同じ型のデータを連続して格納できるデータ構造です。静的配列はサイズが固定で、動的配列は ReDim でサイズを変更できます。ReDim Preserve を使うと既存のデータを保持したままサイズを拡張できます。UBound と LBound で配列の上限・下限のインデックスを取得できます。",
+        code: `Sub ArrayExamples()
+    ' 静的配列（固定サイズ）
+    Dim scores(1 To 5) As Long
+    scores(1) = 85
+    scores(2) = 92
+    scores(3) = 78
+    scores(4) = 95
+    scores(5) = 88
+
+    ' 動的配列
+    Dim names() As String
+    ReDim names(1 To 3)
+    names(1) = "佐藤"
+    names(2) = "鈴木"
+    names(3) = "高橋"
+
+    ' ReDim Preserve でサイズ拡張（データ保持）
+    ReDim Preserve names(1 To 5)
+    names(4) = "田中"
+    names(5) = "伊藤"
+
+    ' Array関数で初期化
+    Dim fruits As Variant
+    fruits = Array("りんご", "みかん", "ぶどう")
+
+    ' UBound / LBound で範囲を取得
+    Dim i As Long
+    For i = LBound(scores) To UBound(scores)
+        Debug.Print "スコア" & i & ": " & scores(i)
+    Next i
+
+    ' 多次元配列（行×列）
+    Dim matrix(1 To 3, 1 To 2) As String
+    matrix(1, 1) = "田中"
+    matrix(1, 2) = "営業部"
+    matrix(2, 1) = "鈴木"
+    matrix(2, 2) = "開発部"
+    matrix(3, 1) = "佐藤"
+    matrix(3, 2) = "総務部"
+End Sub`,
+      },
+      {
+        title: "演算子",
+        content:
+          "VBA の算術演算子には +, -, *, /, \\（整数除算）, Mod（剰余）, ^（べき乗）があります。比較演算子は =, <>, <, >, <=, >= で、論理演算子は And, Or, Not, Xor です。文字列の連結には & 演算子を使います。+ でも連結できますが、型の不一致でエラーになる可能性があるため & が推奨されます。",
+        code: `Sub OperatorExamples()
+    ' 算術演算子
+    Debug.Print 10 + 3    ' 13（加算）
+    Debug.Print 10 - 3    ' 7（減算）
+    Debug.Print 10 * 3    ' 30（乗算）
+    Debug.Print 10 / 3    ' 3.333...（除算）
+    Debug.Print 10 \\ 3    ' 3（整数除算）
+    Debug.Print 10 Mod 3  ' 1（剰余）
+    Debug.Print 2 ^ 10    ' 1024（べき乗）
+
+    ' 比較演算子
+    Dim x As Long: x = 50
+    Debug.Print x > 30    ' True
+    Debug.Print x = 50    ' True
+    Debug.Print x <> 100  ' True
+
+    ' 論理演算子
+    Dim a As Boolean: a = True
+    Dim b As Boolean: b = False
+    Debug.Print a And b   ' False
+    Debug.Print a Or b    ' True
+    Debug.Print Not a     ' False
+
+    ' 実用例: 条件の組み合わせ
+    Dim age As Long: age = 25
+    Dim score As Long: score = 80
+    If age >= 20 And score >= 70 Then
+        Debug.Print "合格条件を満たしています"
+    End If
+
+    ' 文字列連結（& を推奨）
+    Dim firstName As String: firstName = "太郎"
+    Dim lastName As String: lastName = "山田"
+    Debug.Print lastName & " " & firstName  ' 山田 太郎
+End Sub`,
+      },
+    ],
+  },
+  // ===== VBA 制御構造 =====
+  {
+    id: "vba-control-flow",
+    title: "VBA 制御構造",
+    category: "vba",
+    description:
+      "条件分岐、繰り返し、Select Case、エラー処理の完全ガイド",
+    sections: [
+      {
+        title: "If文の応用",
+        content:
+          "If...Then...ElseIf...Else...End If は最も基本的な条件分岐です。複数の条件を ElseIf で連結でき、ネストも可能です。1行で書ける IIf 関数もありますが、両方の引数が評価される点に注意が必要です。実務では入力チェックや条件に応じたセル書式の変更などに多用されます。",
+        code: `Sub IfStatementExamples()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' 各行の売上データを評価して判定列に結果を出力
+    Dim i As Long
+    For i = 2 To lastRow
+        Dim sales As Double
+        sales = ws.Cells(i, 2).Value  ' B列: 売上金額
+
+        ' 複数条件の分岐
+        If sales >= 1000000 Then
+            ws.Cells(i, 3).Value = "S ランク"
+            ws.Cells(i, 3).Font.Color = RGB(0, 128, 0)
+        ElseIf sales >= 500000 Then
+            ws.Cells(i, 3).Value = "A ランク"
+            ws.Cells(i, 3).Font.Color = RGB(0, 0, 255)
+        ElseIf sales >= 200000 Then
+            ws.Cells(i, 3).Value = "B ランク"
+            ws.Cells(i, 3).Font.Color = RGB(0, 0, 0)
+        Else
+            ws.Cells(i, 3).Value = "C ランク"
+            ws.Cells(i, 3).Font.Color = RGB(255, 0, 0)
+        End If
+
+        ' IIf関数（1行If）
+        ws.Cells(i, 4).Value = IIf(sales >= 500000, "目標達成", "未達成")
+    Next i
+
+    MsgBox "評価が完了しました", vbInformation
+End Sub`,
+      },
+      {
+        title: "Select Case",
+        content:
+          "Select Case は複数の値を比較する場合に If 文よりも読みやすいコードが書けます。数値範囲の指定には To 演算子、比較には Is 演算子を使います。Case Else ですべての条件に一致しない場合の処理を記述できます。文字列の比較や複数値の列挙も可能です。",
+        code: `Sub SelectCaseExamples()
+    ' 点数に応じた成績判定
+    Dim score As Long
+    score = Range("A1").Value
+
+    Select Case score
+        Case 90 To 100
+            MsgBox "秀（A+）"
+        Case 80 To 89
+            MsgBox "優（A）"
+        Case 70 To 79
+            MsgBox "良（B）"
+        Case 60 To 69
+            MsgBox "可（C）"
+        Case Is < 60
+            MsgBox "不可（F）"
+        Case Else
+            MsgBox "不正な点数です"
+    End Select
+
+    ' 文字列の比較
+    Dim dept As String
+    dept = Range("B1").Value
+
+    Select Case dept
+        Case "営業", "マーケティング"
+            MsgBox "フロントオフィス部門です"
+        Case "開発", "インフラ"
+            MsgBox "テクノロジー部門です"
+        Case "人事", "総務", "経理"
+            MsgBox "バックオフィス部門です"
+        Case Else
+            MsgBox "不明な部門: " & dept
+    End Select
+End Sub`,
+      },
+      {
+        title: "For ループ",
+        content:
+          "For...Next は回数が決まっている繰り返しに使います。Step で増分を指定でき、負の値にすれば逆順ループも可能です。For Each...Next はコレクションや配列の全要素を順に処理する場合に最適です。Exit For でループを途中で抜けることもできます。",
+        code: `Sub ForLoopExamples()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' 基本的な For ループ（1～10行目に連番を入力）
+    Dim i As Long
+    For i = 1 To 10
+        ws.Cells(i, 1).Value = i
+    Next i
+
+    ' Step を使った逆順ループ（空白行の削除に便利）
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim r As Long
+    For r = lastRow To 1 Step -1
+        If ws.Cells(r, 1).Value = "" Then
+            ws.Rows(r).Delete
+        End If
+    Next r
+
+    ' For Each でセル範囲を処理
+    Dim cell As Range
+    For Each cell In ws.Range("B2:B100")
+        If IsNumeric(cell.Value) And cell.Value <> "" Then
+            If cell.Value < 0 Then
+                cell.Font.Color = RGB(255, 0, 0)  ' 負の値は赤
+            End If
+        End If
+    Next cell
+
+    ' For Each でシートを処理
+    Dim sht As Worksheet
+    For Each sht In ThisWorkbook.Worksheets
+        Debug.Print sht.Name & ": " & sht.UsedRange.Rows.Count & "行"
+    Next sht
+End Sub`,
+      },
+      {
+        title: "Do ループ",
+        content:
+          "Do While...Loop は条件が True の間繰り返し、Do Until...Loop は条件が True になるまで繰り返します。条件をループの先頭に置く前判定と、末尾に置く後判定があり、後判定は最低1回実行されます。無限ループ防止のため、カウンタ変数やタイムアウト処理を入れることが重要です。",
+        code: `Sub DoLoopExamples()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' Do While...Loop（空でないセルを順に処理）
+    Dim r As Long: r = 1
+    Do While ws.Cells(r, 1).Value <> ""
+        ws.Cells(r, 2).Value = UCase(ws.Cells(r, 1).Value)
+        r = r + 1
+    Loop
+    Debug.Print r - 1 & "行を処理しました"
+
+    ' Do Until...Loop（条件が満たされるまで繰り返す）
+    Dim total As Double: total = 0
+    Dim row As Long: row = 2
+    Do Until total >= 1000000
+        If ws.Cells(row, 3).Value = "" Then Exit Do
+        total = total + ws.Cells(row, 3).Value
+        row = row + 1
+    Loop
+    Debug.Print "合計が100万に達した行: " & row
+
+    ' 後判定ループ（最低1回実行）
+    Dim input_ As String
+    Do
+        input_ = InputBox("パスワードを入力してください")
+        If input_ = "" Then Exit Do  ' キャンセル対策
+    Loop While input_ <> "pass1234"
+
+    ' 無限ループ防止のカウンタ
+    Dim safeCount As Long: safeCount = 0
+    Do While True
+        safeCount = safeCount + 1
+        If safeCount > 10000 Then
+            MsgBox "ループ上限に達しました", vbExclamation
+            Exit Do
+        End If
+        ' 処理...
+        If ws.Cells(safeCount, 1).Value = "END" Then Exit Do
+    Loop
+End Sub`,
+      },
+      {
+        title: "エラー処理",
+        content:
+          "On Error GoTo でエラー発生時にラベルにジャンプし、Err オブジェクトでエラー情報を取得します。On Error Resume Next は次の行に処理を続行しますが、必ず直後にエラーチェックを行う必要があります。堅牢なマクロにはエラーハンドラが不可欠で、リソースの解放や画面更新の復帰処理も忘れずに記述します。",
+        code: `Sub ErrorHandlingExample()
+    On Error GoTo ErrorHandler
+
+    ' 画面更新を停止（高速化）
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+
+    ' メイン処理
+    Dim wb As Workbook
+    Set wb = Workbooks.Open("C:\\Data\\売上データ.xlsx")
+
+    Dim ws As Worksheet
+    Set ws = wb.Sheets("月次集計")
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    Dim total As Double
+    Dim i As Long
+    For i = 2 To lastRow
+        total = total + ws.Cells(i, 4).Value
+    Next i
+
+    MsgBox "合計: " & Format(total, "#,##0") & "円"
+
+CleanUp:
+    ' リソース解放（エラー時も必ず実行）
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+    Exit Sub
+
+ErrorHandler:
+    ' エラー情報を表示
+    MsgBox "エラーが発生しました" & vbCrLf & _
+           "エラー番号: " & Err.Number & vbCrLf & _
+           "説明: " & Err.Description, vbCritical
+    Resume CleanUp
+End Sub`,
+      },
+    ],
+  },
+  // ===== VBA セル・範囲操作の完全ガイド =====
+  {
+    id: "vba-cells-ranges",
+    title: "VBA セル・範囲操作の完全ガイド",
+    category: "vba",
+    description:
+      "Range, Cells, Offset, Resize, CurrentRegion, SpecialCells",
+    sections: [
+      {
+        title: "Range と Cells",
+        content:
+          "セルの参照には Range と Cells の2つの方法があります。Range(\"A1\") はアドレス文字列で指定し、Cells(1,1) は行番号と列番号で指定します。変数でループ処理する場合は Cells が便利で、固定のセル範囲を指定する場合は Range が読みやすくなります。名前付き範囲は Range(\"売上合計\") のように名前で参照できます。",
+        code: `Sub RangeAndCells()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' Range でセルを参照
+    ws.Range("A1").Value = "商品名"
+    ws.Range("B1").Value = "価格"
+    ws.Range("C1").Value = "数量"
+    ws.Range("D1").Value = "小計"
+
+    ' Cells で行・列番号を使って参照
+    Dim i As Long
+    For i = 2 To 11
+        ws.Cells(i, 1).Value = "商品" & (i - 1)
+        ws.Cells(i, 2).Value = Int(Rnd() * 1000 + 100)  ' 価格
+        ws.Cells(i, 3).Value = Int(Rnd() * 50 + 1)      ' 数量
+        ws.Cells(i, 4).Formula = "=B" & i & "*C" & i     ' 小計
+    Next i
+
+    ' 範囲を一括で参照
+    ws.Range("A1:D1").Font.Bold = True
+    ws.Range("A1:D1").Interior.Color = RGB(200, 220, 255)
+
+    ' 名前付き範囲の作成と参照
+    ws.Names.Add Name:="商品リスト", RefersTo:=ws.Range("A2:A11")
+    Debug.Print ws.Range("商品リスト").Cells.Count & "件の商品"
+
+    ' Range と Cells の組み合わせ
+    Dim rng As Range
+    Set rng = ws.Range(ws.Cells(2, 1), ws.Cells(11, 4))
+    rng.Borders.LineStyle = xlContinuous
+End Sub`,
+      },
+      {
+        title: "セルの読み書き",
+        content:
+          "Value プロパティでセルの値を読み書きします。Value2 は Date 型や Currency 型を Double として返すため高速です。Text プロパティは表示されている文字列を取得します。Formula で数式を設定でき、PasteSpecial で値のみ・書式のみの貼り付けが可能です。",
+        code: `Sub ReadWriteCells()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' 値の書き込み
+    ws.Range("A1").Value = "テスト"
+    ws.Range("B1").Value = 12345.678
+    ws.Range("C1").Value = Now  ' 現在の日時
+
+    ' 値の読み取り
+    Dim val1 As Variant
+    val1 = ws.Range("B1").Value   ' 12345.678（Currency/Date型を保持）
+    Dim val2 As Double
+    val2 = ws.Range("B1").Value2  ' 高速（型変換なし）
+    Dim txt As String
+    txt = ws.Range("B1").Text     ' 表示文字列 "12,346" など
+
+    ' 数式の設定
+    ws.Range("D1").Formula = "=SUM(B1:B100)"
+    ws.Range("D2").FormulaR1C1 = "=SUM(R1C2:R100C2)"
+
+    ' コピー＆ペースト
+    ws.Range("A1:D1").Copy
+    ws.Range("A10").PasteSpecial xlPasteValues      ' 値のみ貼付
+    ws.Range("A11").PasteSpecial xlPasteFormats      ' 書式のみ貼付
+    ws.Range("A12").PasteSpecial xlPasteFormulas     ' 数式のみ貼付
+    Application.CutCopyMode = False  ' コピーモード解除
+
+    ' セル内容のクリア
+    ws.Range("A20").ClearContents  ' 値のみクリア
+    ws.Range("A21").ClearFormats   ' 書式のみクリア
+    ws.Range("A22").Clear          ' すべてクリア
+End Sub`,
+      },
+      {
+        title: "範囲の動的取得",
+        content:
+          "CurrentRegion はアクティブセルを含む連続データ範囲を自動検出します。End プロパティは Ctrl+矢印キーと同じ動きで、最終行や最終列の取得に使います。UsedRange はシート上の使用済み範囲全体を返します。これらを組み合わせることで、データ量が変化しても正確に範囲を特定できます。",
+        code: `Sub DynamicRanges()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' 最終行の取得（最も信頼性の高い方法）
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Debug.Print "A列の最終行: " & lastRow
+
+    ' 最終列の取得
+    Dim lastCol As Long
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    Debug.Print "1行目の最終列: " & lastCol
+
+    ' データ範囲全体を取得
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A1").CurrentRegion
+    Debug.Print "データ範囲: " & dataRange.Address
+    Debug.Print "行数: " & dataRange.Rows.Count
+    Debug.Print "列数: " & dataRange.Columns.Count
+
+    ' UsedRange（シート全体の使用範囲）
+    Debug.Print "使用範囲: " & ws.UsedRange.Address
+
+    ' 動的範囲の指定（ヘッダー除く）
+    Dim bodyRange As Range
+    Set bodyRange = ws.Range("A2:A" & lastRow)
+
+    ' 動的に全データ範囲を選択
+    Dim fullRange As Range
+    Set fullRange = ws.Range(ws.Cells(1, 1), ws.Cells(lastRow, lastCol))
+    fullRange.Borders.LineStyle = xlContinuous
+
+    ' データの件数を表示
+    MsgBox "データ件数: " & (lastRow - 1) & "件" & vbCrLf & _
+           "列数: " & lastCol & "列", vbInformation
+End Sub`,
+      },
+      {
+        title: "Offset と Resize",
+        content:
+          "Offset は基準セルから行方向・列方向に相対移動した位置のセルを返します。Resize は範囲のサイズ（行数・列数）を変更します。この2つを組み合わせると、ヘッダー行を除いたデータ範囲の取得や、動的にサイズが変わる範囲の指定が簡潔に書けます。",
+        code: `Sub OffsetAndResize()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim baseCell As Range
+    Set baseCell = ws.Range("B2")
+
+    ' Offset: 基準セルからの相対移動
+    baseCell.Offset(0, 0).Value = "基準"   ' B2（移動なし）
+    baseCell.Offset(1, 0).Value = "1行下"  ' B3
+    baseCell.Offset(0, 1).Value = "1列右"  ' C2
+    baseCell.Offset(-1, 0).Value = "1行上" ' B1
+    baseCell.Offset(2, 3).Value = "2行下3列右" ' E4
+
+    ' Resize: 範囲サイズの変更
+    Dim singleCell As Range
+    Set singleCell = ws.Range("A1")
+
+    ' 1セルを5行×3列に拡大
+    singleCell.Resize(5, 3).Interior.Color = RGB(255, 255, 200)
+
+    ' CurrentRegion からヘッダーを除外
+    Dim fullRange As Range
+    Set fullRange = ws.Range("A1").CurrentRegion
+
+    ' ヘッダー行を除いたデータ範囲
+    Dim dataRange As Range
+    Set dataRange = fullRange.Offset(1, 0).Resize(fullRange.Rows.Count - 1)
+    Debug.Print "データ範囲: " & dataRange.Address
+
+    ' 実用例: 最終行の次の行にデータを追加
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim newRow As Range
+    Set newRow = ws.Cells(lastRow, 1).Offset(1, 0).Resize(1, 4)
+    newRow.Value = Array("新商品", 5000, 10, 50000)
+End Sub`,
+      },
+      {
+        title: "SpecialCells と Find",
+        content:
+          "SpecialCells メソッドで空白セル、数式セル、定数セル、可視セルなど特定の条件に合うセルだけを取得できます。Find メソッドはセル内の文字列を検索し、FindNext で次の一致を探します。Replace メソッドで一括置換も可能です。これらはデータのクリーニングや検索処理で頻繁に使用されます。",
+        code: `Sub SpecialCellsAndFind()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim rng As Range
+
+    ' 空白セルを取得して「N/A」を入力
+    On Error Resume Next
+    Set rng = ws.UsedRange.SpecialCells(xlCellTypeBlanks)
+    On Error GoTo 0
+    If Not rng Is Nothing Then
+        rng.Value = "N/A"
+        Debug.Print "空白セル数: " & rng.Cells.Count
+    End If
+
+    ' 数式セルだけを取得
+    On Error Resume Next
+    Set rng = ws.UsedRange.SpecialCells(xlCellTypeFormulas)
+    On Error GoTo 0
+    If Not rng Is Nothing Then
+        rng.Font.Color = RGB(0, 0, 255)  ' 数式セルを青字に
+    End If
+
+    ' Find でセルを検索
+    Dim foundCell As Range
+    Set foundCell = ws.Range("A:A").Find( _
+        What:="東京", LookIn:=xlValues, LookAt:=xlPart)
+
+    If Not foundCell Is Nothing Then
+        Dim firstAddr As String
+        firstAddr = foundCell.Address
+        Do
+            Debug.Print "発見: " & foundCell.Address & " = " & foundCell.Value
+            Set foundCell = ws.Range("A:A").FindNext(foundCell)
+        Loop While Not foundCell Is Nothing And foundCell.Address <> firstAddr
+    End If
+
+    ' Replace で一括置換
+    ws.Range("A:A").Replace What:="旧会社名", _
+        Replacement:="新会社名", LookAt:=xlPart
+End Sub`,
+      },
+    ],
+  },
+  // ===== VBA シート・ブック操作 =====
+  {
+    id: "vba-worksheet-workbook",
+    title: "VBA シート・ブック操作",
+    category: "vba",
+    description:
+      "シートの追加・削除・コピー、ブックの開閉・保存、ファイル操作",
+    sections: [
+      {
+        title: "シート操作",
+        content:
+          "Worksheets.Add でシートを追加し、Name プロパティで名前を変更できます。Copy メソッドでシートを複製、Move で移動、Delete で削除します。削除時の確認ダイアログは Application.DisplayAlerts = False で抑制できます。Visible プロパティでシートの表示・非表示・完全非表示を制御できます。",
+        code: `Sub SheetOperations()
+    Dim wb As Workbook
+    Set wb = ThisWorkbook
+
+    ' シートの追加（末尾に追加）
+    Dim newSheet As Worksheet
+    Set newSheet = wb.Worksheets.Add(After:=wb.Sheets(wb.Sheets.Count))
+    newSheet.Name = "集計_" & Format(Date, "yyyymmdd")
+
+    ' シートのコピー（指定シートの後ろに複製）
+    wb.Sheets("テンプレート").Copy After:=wb.Sheets(wb.Sheets.Count)
+    ActiveSheet.Name = "報告書_" & Format(Date, "yyyymm")
+
+    ' シートの表示/非表示
+    wb.Sheets("設定").Visible = xlSheetHidden      ' 非表示（ユーザーが再表示可能）
+    wb.Sheets("マスタ").Visible = xlSheetVeryHidden ' 完全非表示（VBAでのみ再表示）
+
+    ' シートの存在確認
+    Dim sheetExists As Boolean
+    Dim ws As Worksheet
+    For Each ws In wb.Worksheets
+        If ws.Name = "集計" Then
+            sheetExists = True
+            Exit For
+        End If
+    Next ws
+
+    ' シートの削除（確認ダイアログを抑制）
+    If sheetExists Then
+        Application.DisplayAlerts = False
+        wb.Sheets("集計").Delete
+        Application.DisplayAlerts = True
+    End If
+
+    ' シート一覧を出力
+    For Each ws In wb.Worksheets
+        Debug.Print ws.Index & ": " & ws.Name
+    Next ws
+End Sub`,
+      },
+      {
+        title: "ブック操作",
+        content:
+          "Workbooks.Open でブックを開き、Workbooks.Add で新規ブックを作成します。Save で上書き保存、SaveAs で別名保存、Close で閉じます。ブック間のデータコピーでは、ソースと先のワークシートを明示的に指定することが重要です。",
+        code: `Sub WorkbookOperations()
+    ' 既存ブックを開く
+    Dim srcWB As Workbook
+    Set srcWB = Workbooks.Open("C:\\Data\\元データ.xlsx", ReadOnly:=True)
+
+    ' 新規ブックの作成
+    Dim newWB As Workbook
+    Set newWB = Workbooks.Add
+
+    ' ブック間のデータコピー
+    Dim srcWS As Worksheet
+    Set srcWS = srcWB.Sheets("売上")
+    Dim dstWS As Worksheet
+    Set dstWS = newWB.Sheets(1)
+    dstWS.Name = "売上コピー"
+
+    ' データ範囲をコピー
+    Dim lastRow As Long
+    lastRow = srcWS.Cells(srcWS.Rows.Count, 1).End(xlUp).Row
+    srcWS.Range("A1:D" & lastRow).Copy dstWS.Range("A1")
+
+    ' 別名で保存
+    Dim savePath As String
+    savePath = "C:\\Data\\売上レポート_" & Format(Date, "yyyymmdd") & ".xlsx"
+    newWB.SaveAs Filename:=savePath, FileFormat:=xlOpenXMLWorkbook
+
+    ' ブックを閉じる
+    srcWB.Close SaveChanges:=False
+    MsgBox "保存完了: " & savePath, vbInformation
+End Sub`,
+      },
+      {
+        title: "ファイルダイアログ",
+        content:
+          "Application.FileDialog を使うと、ユーザーにファイルやフォルダを選択させるダイアログを表示できます。msoFileDialogFilePicker でファイル選択、msoFileDialogFolderPicker でフォルダ選択が可能です。フィルター設定で特定の拡張子のみ表示でき、複数ファイルの選択にも対応しています。",
+        code: `Sub FileDialogExamples()
+    ' ファイル選択ダイアログ
+    Dim fd As FileDialog
+    Set fd = Application.FileDialog(msoFileDialogFilePicker)
+
+    With fd
+        .Title = "取り込むファイルを選択してください"
+        .InitialFileName = "C:\\Data\\"
+        .AllowMultiSelect = True
+        .Filters.Clear
+        .Filters.Add "Excelファイル", "*.xlsx; *.xlsm; *.xls"
+        .Filters.Add "CSVファイル", "*.csv"
+        .Filters.Add "すべてのファイル", "*.*"
+
+        If .Show = -1 Then
+            Dim i As Long
+            For i = 1 To .SelectedItems.Count
+                Debug.Print "選択: " & .SelectedItems(i)
+            Next i
+        Else
+            MsgBox "キャンセルされました"
+            Exit Sub
+        End If
+    End With
+
+    ' フォルダ選択ダイアログ
+    Dim fdFolder As FileDialog
+    Set fdFolder = Application.FileDialog(msoFileDialogFolderPicker)
+
+    With fdFolder
+        .Title = "出力先フォルダを選択してください"
+        .InitialFileName = "C:\\Output\\"
+        If .Show = -1 Then
+            Dim folderPath As String
+            folderPath = .SelectedItems(1)
+            Debug.Print "出力先: " & folderPath
+        End If
+    End With
+End Sub`,
+      },
+      {
+        title: "ファイルシステム操作",
+        content:
+          "Dir 関数を使うとフォルダ内のファイル一覧を取得できます。FileSystemObject（FSO）を使うとファイルやフォルダのより高度な操作が可能です。フォルダ内の全 Excel ファイルを順に処理するマクロは、月次データの一括集計などで頻繁に使用されます。",
+        code: `Sub FileSystemExamples()
+    ' Dir関数でフォルダ内のファイルを順に処理
+    Dim folderPath As String
+    folderPath = "C:\\Data\\月次報告\\"
+
+    Dim fileName As String
+    fileName = Dir(folderPath & "*.xlsx")
+
+    Do While fileName <> ""
+        Debug.Print "処理中: " & fileName
+
+        Dim wb As Workbook
+        Set wb = Workbooks.Open(folderPath & fileName, ReadOnly:=True)
+
+        ' データ処理...
+        Dim lastRow As Long
+        lastRow = wb.Sheets(1).Cells(wb.Sheets(1).Rows.Count, 1).End(xlUp).Row
+        Debug.Print "  行数: " & lastRow
+
+        wb.Close SaveChanges:=False
+        fileName = Dir()  ' 次のファイル
+    Loop
+
+    ' FileSystemObject を使った高度な操作
+    Dim fso As Object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    ' フォルダの存在確認と作成
+    If Not fso.FolderExists("C:\\Data\\出力") Then
+        fso.CreateFolder "C:\\Data\\出力"
+    End If
+
+    ' ファイルのコピー
+    If fso.FileExists("C:\\Data\\元.xlsx") Then
+        fso.CopyFile "C:\\Data\\元.xlsx", "C:\\Data\\出力\\バックアップ.xlsx"
+    End If
+
+    ' ファイル情報の取得
+    Dim f As Object
+    Set f = fso.GetFile("C:\\Data\\元.xlsx")
+    Debug.Print "サイズ: " & f.Size & " bytes"
+    Debug.Print "更新日: " & f.DateLastModified
+End Sub`,
+      },
+      {
+        title: "CSV/テキストファイル操作",
+        content:
+          "Open ステートメントで CSV やテキストファイルの読み書きができます。Input モードで読み込み、Output/Append モードで書き込みます。文字コードの指定が必要な場合は ADODB.Stream を使用します。大量データの CSV 処理は QueryTable や Power Query との組み合わせも検討しましょう。",
+        code: `Sub CSVOperations()
+    ' CSVファイルの読み込み
+    Dim filePath As String
+    filePath = "C:\\Data\\売上データ.csv"
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets.Add
+    ws.Name = "CSV取込"
+
+    Dim fileNum As Integer
+    fileNum = FreeFile
+    Open filePath For Input As #fileNum
+
+    Dim row As Long: row = 1
+    Dim line As String
+    Do While Not EOF(fileNum)
+        Line Input #fileNum, line
+        Dim cols As Variant
+        cols = Split(line, ",")
+        Dim col As Long
+        For col = 0 To UBound(cols)
+            ws.Cells(row, col + 1).Value = cols(col)
+        Next col
+        row = row + 1
+    Loop
+    Close #fileNum
+
+    ' CSVファイルの書き出し
+    Dim outPath As String
+    outPath = "C:\\Data\\出力結果.csv"
+    fileNum = FreeFile
+    Open outPath For Output As #fileNum
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim i As Long
+    For i = 1 To lastRow
+        Dim csvLine As String
+        csvLine = ws.Cells(i, 1).Value & "," & _
+                  ws.Cells(i, 2).Value & "," & _
+                  ws.Cells(i, 3).Value
+        Print #fileNum, csvLine
+    Next i
+    Close #fileNum
+
+    ' UTF-8 対応（ADODB.Stream）
+    Dim stm As Object
+    Set stm = CreateObject("ADODB.Stream")
+    stm.Type = 2  ' テキスト
+    stm.Charset = "UTF-8"
+    stm.Open
+    stm.WriteText "名前,部門,売上" & vbCrLf
+    stm.WriteText "田中,営業,500000" & vbCrLf
+    stm.SaveToFile "C:\\Data\\utf8出力.csv", 2  ' 上書き
+    stm.Close
+End Sub`,
+      },
+    ],
+  },
+  // ===== VBA 書式設定・表の作成 =====
+  {
+    id: "vba-formatting",
+    title: "VBA 書式設定・表の作成",
+    category: "vba",
+    description:
+      "フォント、罫線、色、条件付き書式、テーブル作成の自動化",
+    sections: [
+      {
+        title: "フォント設定",
+        content:
+          "Font オブジェクトのプロパティでフォント名、サイズ、太字、斜体、色などを設定できます。Color プロパティには RGB 関数で色を指定し、ColorIndex では Excel の標準56色パレットのインデックスを使います。複数のプロパティを With ステートメントでまとめて設定すると効率的です。",
+        code: `Sub FontSettings()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' 基本的なフォント設定
+    With ws.Range("A1")
+        .Value = "売上レポート"
+        .Font.Name = "メイリオ"
+        .Font.Size = 16
+        .Font.Bold = True
+        .Font.Color = RGB(0, 51, 102)  ' 濃い青
+    End With
+
+    ' 範囲に一括でフォント設定
+    With ws.Range("A3:E3")  ' ヘッダー行
+        .Font.Name = "游ゴシック"
+        .Font.Size = 11
+        .Font.Bold = True
+        .Font.Color = RGB(255, 255, 255)  ' 白文字
+        .Interior.Color = RGB(0, 102, 153) ' 背景色
+    End With
+
+    ' データ部分のフォント
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    With ws.Range("A4:E" & lastRow)
+        .Font.Name = "游ゴシック"
+        .Font.Size = 10
+    End With
+
+    ' 特定条件でフォントを変更
+    Dim cell As Range
+    For Each cell In ws.Range("E4:E" & lastRow)
+        If IsNumeric(cell.Value) Then
+            If cell.Value < 0 Then
+                cell.Font.Color = RGB(255, 0, 0)
+                cell.Font.Bold = True
+            ElseIf cell.Value >= 1000000 Then
+                cell.Font.Color = RGB(0, 128, 0)
+            End If
+        End If
+    Next cell
+End Sub`,
+      },
+      {
+        title: "セルの書式",
+        content:
+          "NumberFormat で日付、通貨、パーセントなどの表示形式を設定します。HorizontalAlignment と VerticalAlignment でセル内の文字位置を制御します。MergeCells でセルの結合、WrapText で文字の折り返し、RowHeight と ColumnWidth でサイズを調整できます。",
+        code: `Sub CellFormatting()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' 表示形式の設定
+    ws.Range("A2:A100").NumberFormat = "yyyy/mm/dd"       ' 日付
+    ws.Range("B2:B100").NumberFormat = "#,##0"             ' 数値（千桁カンマ）
+    ws.Range("C2:C100").NumberFormat = "\\¥#,##0"           ' 通貨
+    ws.Range("D2:D100").NumberFormat = "0.0%"              ' パーセント
+    ws.Range("E2:E100").NumberFormat = "000-0000"          ' 郵便番号
+
+    ' 文字の配置
+    With ws.Range("A1:F1")
+        .HorizontalAlignment = xlCenter    ' 水平: 中央揃え
+        .VerticalAlignment = xlCenter      ' 垂直: 中央揃え
+    End With
+    ws.Range("B2:D100").HorizontalAlignment = xlRight  ' 数値は右揃え
+
+    ' セルの結合
+    ws.Range("A1:F1").Merge
+    ws.Range("A1").Value = "月次売上レポート"
+    ws.Range("A1").Font.Size = 14
+
+    ' 文字の折り返し
+    ws.Range("F2:F100").WrapText = True
+
+    ' 行の高さ・列の幅
+    ws.Rows(1).RowHeight = 30
+    ws.Rows("2:100").RowHeight = 20
+    ws.Columns("A").ColumnWidth = 12
+    ws.Columns("F").ColumnWidth = 30
+
+    ' 列幅の自動調整
+    ws.Range("A:E").Columns.AutoFit
+End Sub`,
+      },
+      {
+        title: "罫線",
+        content:
+          "Borders コレクションで罫線のスタイル、太さ、色を設定できます。xlEdgeTop, xlEdgeBottom, xlInsideHorizontal などの定数で個別の辺を指定します。格子線を一括設定するには Borders 全体に LineStyle を設定し、外枠だけ太線にするなどの調整が可能です。",
+        code: `Sub BorderSettings()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A2:E" & lastRow)
+
+    ' 格子線（内側の罫線）
+    With dataRange.Borders
+        .LineStyle = xlContinuous  ' 実線
+        .Weight = xlThin           ' 細線
+        .Color = RGB(180, 180, 180) ' グレー
+    End With
+
+    ' ヘッダー行の下線を太く
+    With ws.Range("A2:E2").Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(0, 0, 0)
+    End With
+
+    ' 表全体の外枠を太線
+    Dim tableRange As Range
+    Set tableRange = ws.Range("A2:E" & lastRow)
+    With tableRange
+        .Borders(xlEdgeTop).Weight = xlMedium
+        .Borders(xlEdgeBottom).Weight = xlMedium
+        .Borders(xlEdgeLeft).Weight = xlMedium
+        .Borders(xlEdgeRight).Weight = xlMedium
+    End With
+
+    ' 罫線をクリア
+    ' ws.Range("A1:E1").Borders.LineStyle = xlNone
+
+    ' 実用的な表作成マクロ
+    Dim headerRange As Range
+    Set headerRange = ws.Range("A2:E2")
+    headerRange.Borders(xlEdgeBottom).LineStyle = xlDouble  ' 二重線
+    headerRange.Borders(xlEdgeBottom).Weight = xlThick
+End Sub`,
+      },
+      {
+        title: "色と塗りつぶし",
+        content:
+          "Interior.Color に RGB 関数で任意の色を設定できます。交互に行を色分け（縞模様）すると表が見やすくなります。Theme Color を使うとブックのテーマに連動した色を設定でき、統一感のあるデザインが実現できます。",
+        code: `Sub ColorSettings()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' ヘッダー行の背景色
+    With ws.Range("A2:E2")
+        .Interior.Color = RGB(0, 102, 153)      ' 濃い青緑
+        .Font.Color = RGB(255, 255, 255)         ' 白文字
+    End With
+
+    ' 交互に行を色分け（縞模様）
+    Dim i As Long
+    For i = 3 To lastRow
+        If i Mod 2 = 1 Then  ' 奇数行
+            ws.Range("A" & i & ":E" & i).Interior.Color = RGB(230, 240, 250)
+        Else  ' 偶数行
+            ws.Range("A" & i & ":E" & i).Interior.Color = RGB(255, 255, 255)
+        End If
+    Next i
+
+    ' 条件に応じた色分け
+    Dim cell As Range
+    For Each cell In ws.Range("E3:E" & lastRow)
+        If IsNumeric(cell.Value) And cell.Value <> "" Then
+            Select Case cell.Value
+                Case Is >= 1000000
+                    cell.Interior.Color = RGB(198, 239, 206)  ' 緑（達成）
+                Case Is >= 500000
+                    cell.Interior.Color = RGB(255, 235, 156)  ' 黄（要注意）
+                Case Else
+                    cell.Interior.Color = RGB(255, 199, 206)  ' 赤（未達）
+            End Select
+        End If
+    Next cell
+
+    ' 合計行のスタイル
+    With ws.Range("A" & lastRow + 1 & ":E" & lastRow + 1)
+        .Interior.Color = RGB(220, 220, 220)
+        .Font.Bold = True
+    End With
+End Sub`,
+      },
+      {
+        title: "条件付き書式の自動化",
+        content:
+          "FormatConditions.Add メソッドで VBA から条件付き書式を設定できます。数値の大小、セルの値、数式による条件を指定し、フォント色や背景色を動的に変更できます。アイコンセット、データバー、カラースケールなどの高度な書式も VBA で追加可能です。",
+        code: `Sub ConditionalFormatting()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim dataRange As Range
+    Set dataRange = ws.Range("E3:E" & lastRow)
+
+    ' 既存の条件付き書式をクリア
+    dataRange.FormatConditions.Delete
+
+    ' 条件1: 100万以上は緑背景
+    With dataRange.FormatConditions.Add(Type:=xlCellValue, _
+        Operator:=xlGreaterEqual, Formula1:="1000000")
+        .Interior.Color = RGB(198, 239, 206)
+        .Font.Color = RGB(0, 97, 0)
+    End With
+
+    ' 条件2: 50万未満は赤背景
+    With dataRange.FormatConditions.Add(Type:=xlCellValue, _
+        Operator:=xlLess, Formula1:="500000")
+        .Interior.Color = RGB(255, 199, 206)
+        .Font.Color = RGB(156, 0, 6)
+    End With
+
+    ' データバーの追加
+    Dim dbRange As Range
+    Set dbRange = ws.Range("D3:D" & lastRow)
+    dbRange.FormatConditions.Delete
+    Dim db As Object
+    Set db = dbRange.FormatConditions.AddDatabar
+    db.BarColor.Color = RGB(99, 142, 198)
+
+    ' カラースケール（3色）
+    Dim csRange As Range
+    Set csRange = ws.Range("C3:C" & lastRow)
+    csRange.FormatConditions.Delete
+    Dim cs As Object
+    Set cs = csRange.FormatConditions.AddColorScale(ColorScaleType:=3)
+    cs.ColorScaleCriteria(1).FormatColor.Color = RGB(248, 105, 107) ' 赤
+    cs.ColorScaleCriteria(2).FormatColor.Color = RGB(255, 235, 132) ' 黄
+    cs.ColorScaleCriteria(3).FormatColor.Color = RGB(99, 190, 123)  ' 緑
+
+    MsgBox "条件付き書式を設定しました", vbInformation
+End Sub`,
+      },
+    ],
+  },
+  // ===== VBA 関数・プロシージャ =====
+  {
+    id: "vba-functions",
+    title: "VBA 関数・プロシージャ",
+    category: "vba",
+    description:
+      "Sub, Function, 引数、戻り値、スコープ、ワークシート関数の呼び出し",
+    sections: [
+      {
+        title: "Sub プロシージャ",
+        content:
+          "Sub プロシージャは戻り値を持たない手続きで、マクロとして実行できます。引数は ByRef（参照渡し、既定）と ByVal（値渡し）で渡せます。Optional キーワードで省略可能な引数を定義でき、IsMissing 関数で省略されたか判定できます。",
+        code: `' 基本的な Sub プロシージャ
+Sub FormatReport()
+    Call SetHeaders
+    Call FormatDataArea(ActiveSheet)
+    MsgBox "レポートの書式設定が完了しました"
+End Sub
+
+' 引数付き Sub（ByVal: 値渡し、ByRef: 参照渡し）
+Sub CalculateBonus(ByVal sales As Double, ByRef bonus As Double)
+    ' ByVal: sales の値は呼び出し元に影響しない
+    ' ByRef: bonus の値は呼び出し元に反映される
+    If sales >= 1000000 Then
+        bonus = sales * 0.1
+    ElseIf sales >= 500000 Then
+        bonus = sales * 0.05
+    Else
+        bonus = 0
+    End If
+End Sub
+
+' Optional 引数
+Sub PrintMessage(ByVal msg As String, _
+                 Optional ByVal prefix As String = "INFO", _
+                 Optional ByVal showTime As Boolean = True)
+    Dim output As String
+    If showTime Then
+        output = Format(Now, "hh:mm:ss") & " "
+    End If
+    output = output & "[" & prefix & "] " & msg
+    Debug.Print output
+End Sub
+
+' 呼び出し例
+Sub TestProcedures()
+    Dim myBonus As Double
+    Call CalculateBonus(800000, myBonus)
+    Debug.Print "ボーナス: " & Format(myBonus, "#,##0") & "円"
+
+    Call PrintMessage("処理開始")
+    Call PrintMessage("エラー発生", "ERROR")
+    Call PrintMessage("完了", showTime:=False)
+End Sub`,
+      },
+      {
+        title: "Function プロシージャ",
+        content:
+          "Function プロシージャは戻り値を返す関数です。関数名に値を代入することで戻り値を設定します。ユーザー定義関数（UDF）として作成すると、ワークシートのセルから =関数名() で呼び出すこともできます。UDF はセルの値を変更する処理は実行できない制約があります。",
+        code: `' 基本的な Function
+Function CalcTax(ByVal price As Double, _
+                 Optional ByVal taxRate As Double = 0.1) As Double
+    CalcTax = price * taxRate
+End Function
+
+' 文字列処理の Function
+Function ExtractDomain(ByVal email As String) As String
+    Dim atPos As Long
+    atPos = InStr(email, "@")
+    If atPos > 0 Then
+        ExtractDomain = Mid(email, atPos + 1)
+    Else
+        ExtractDomain = ""
+    End If
+End Function
+
+' ユーザー定義関数（UDF）- シートのセルから呼び出し可能
+' セルに =JapaneseEra(A1) と入力して使用
+Function JapaneseEra(ByVal targetDate As Date) As String
+    Dim y As Long: y = Year(targetDate)
+    Select Case True
+        Case y >= 2019
+            JapaneseEra = "令和" & (y - 2018) & "年"
+        Case y >= 1989
+            JapaneseEra = "平成" & (y - 1988) & "年"
+        Case y >= 1926
+            JapaneseEra = "昭和" & (y - 1925) & "年"
+        Case Else
+            JapaneseEra = "対応外"
+    End Select
+End Function
+
+' Function の呼び出し例
+Sub TestFunctions()
+    Dim tax As Double
+    tax = CalcTax(10000)
+    Debug.Print "税額: " & tax  ' 1000
+
+    Debug.Print ExtractDomain("user@example.com")  ' example.com
+    Debug.Print JapaneseEra(Date)
+End Sub`,
+      },
+      {
+        title: "スコープと寿命",
+        content:
+          "変数やプロシージャのスコープ（有効範囲）は宣言場所とキーワードで決まります。Dim で宣言したローカル変数はプロシージャ内のみ有効です。モジュールの先頭で Private として宣言するとモジュール内で共有され、Public にすると全モジュールからアクセスできます。Static 変数はプロシージャ終了後も値を保持します。",
+        code: `' モジュールレベル変数
+Private mRecordCount As Long     ' このモジュール内でのみ有効
+Public gUserName As String       ' すべてのモジュールから参照可能
+
+' Private プロシージャ（このモジュール内でのみ呼び出し可能）
+Private Sub InternalProcess()
+    mRecordCount = mRecordCount + 1
+    Debug.Print "内部処理 #" & mRecordCount
+End Sub
+
+' Public プロシージャ（他のモジュールからも呼び出し可能）
+Public Sub MainProcess()
+    gUserName = Environ("USERNAME")
+    Debug.Print "ユーザー: " & gUserName
+
+    Call InternalProcess
+    Call InternalProcess
+
+    Debug.Print "処理回数: " & mRecordCount
+End Sub
+
+' Static 変数の例（プロシージャ終了後も値を保持）
+Sub CountCalls()
+    Static callCount As Long
+    callCount = callCount + 1
+    Debug.Print "この関数は " & callCount & " 回呼ばれました"
+End Sub
+
+' 定数のスコープ
+Private Const MODULE_VERSION As String = "1.0"  ' モジュール内
+Public Const APP_NAME As String = "売上管理"     ' グローバル
+
+Sub ShowScope()
+    ' ローカル変数（このプロシージャ内のみ）
+    Dim localVar As String
+    localVar = "ローカル"
+
+    Debug.Print APP_NAME & " v" & MODULE_VERSION
+    Debug.Print "ユーザー: " & gUserName
+    Debug.Print localVar
+End Sub`,
+      },
+      {
+        title: "ワークシート関数の呼び出し",
+        content:
+          "Application.WorksheetFunction を使うと、VBA から VLOOKUP, SUMIF, COUNTIF などのワークシート関数を呼び出せます。VBA にない関数でもシート関数として利用可能です。Evaluate メソッドを使うとシート上の数式文字列を直接評価することもできます。",
+        code: `Sub WorksheetFunctionExamples()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A2:E" & lastRow)
+
+    ' SUMIF: 条件に合うセルの合計
+    Dim totalTokyo As Double
+    totalTokyo = Application.WorksheetFunction.SumIf( _
+        ws.Range("B2:B" & lastRow), "東京", _
+        ws.Range("E2:E" & lastRow))
+    Debug.Print "東京の売上合計: " & Format(totalTokyo, "#,##0")
+
+    ' COUNTIF: 条件に合うセルの個数
+    Dim countTokyo As Long
+    countTokyo = Application.WorksheetFunction.CountIf( _
+        ws.Range("B2:B" & lastRow), "東京")
+    Debug.Print "東京のデータ件数: " & countTokyo
+
+    ' VLOOKUP（エラー対策付き）
+    On Error Resume Next
+    Dim result As Variant
+    result = Application.WorksheetFunction.VLookup( _
+        "商品A", ws.Range("A2:E" & lastRow), 5, False)
+    If Err.Number <> 0 Then
+        Debug.Print "商品Aは見つかりませんでした"
+        Err.Clear
+    Else
+        Debug.Print "商品Aの売上: " & result
+    End If
+    On Error GoTo 0
+
+    ' Evaluate メソッド（数式を直接評価）
+    Dim avgSales As Double
+    avgSales = ws.Evaluate("AVERAGE(E2:E" & lastRow & ")")
+    Debug.Print "平均売上: " & Format(avgSales, "#,##0")
+
+    ' MATCH + INDEX の組み合わせ
+    Dim matchRow As Long
+    matchRow = Application.WorksheetFunction.Match( _
+        "商品B", ws.Range("A2:A" & lastRow), 0)
+    Debug.Print "商品Bの行位置: " & matchRow
+End Sub`,
+      },
+      {
+        title: "コールバックとイベント",
+        content:
+          "ワークシートやブックのイベントプロシージャを使うと、セルの変更やブックの開閉時に自動的にマクロを実行できます。Worksheet_Change はセルの値変更時、Workbook_Open はブックを開いた時に発動します。Application.OnTime でマクロの定期実行スケジュールも設定できます。",
+        code: `' === ThisWorkbook モジュールに記述 ===
+' ブックを開いた時に実行
+Private Sub Workbook_Open()
+    MsgBox "売上管理システムへようこそ", vbInformation
+    ' 最終更新日時を記録
+    ThisWorkbook.Sheets("設定").Range("A1").Value = Now
+End Sub
+
+' ブックを閉じる前に実行
+Private Sub Workbook_BeforeClose(Cancel As Boolean)
+    Dim answer As VbMsgBoxResult
+    answer = MsgBox("保存して閉じますか？", vbYesNoCancel)
+    Select Case answer
+        Case vbYes: ThisWorkbook.Save
+        Case vbCancel: Cancel = True  ' 閉じるのをキャンセル
+    End Select
+End Sub
+
+' === Sheet1 モジュールに記述 ===
+' セルが変更された時に実行
+Private Sub Worksheet_Change(ByVal Target As Range)
+    ' B列（価格）またはC列（数量）が変更された場合
+    If Not Intersect(Target, Me.Range("B:C")) Is Nothing Then
+        Application.EnableEvents = False  ' 再帰防止
+        Dim cell As Range
+        For Each cell In Target
+            If cell.Row >= 2 Then
+                ' D列に小計を自動計算
+                Me.Cells(cell.Row, 4).Value = _
+                    Me.Cells(cell.Row, 2).Value * Me.Cells(cell.Row, 3).Value
+            End If
+        Next cell
+        Application.EnableEvents = True
+    End If
+End Sub
+
+' === 標準モジュールに記述 ===
+' 定期実行の設定
+Sub StartTimer()
+    Application.OnTime Now + TimeValue("00:05:00"), "AutoSaveProc"
+End Sub
+
+Sub AutoSaveProc()
+    ThisWorkbook.Save
+    Debug.Print "自動保存: " & Format(Now, "hh:mm:ss")
+    Call StartTimer  ' 次の実行をスケジュール
+End Sub`,
+      },
+    ],
+  },
+  // ===== VBA ユーザーフォーム =====
+  {
+    id: "vba-userform",
+    title: "VBA ユーザーフォーム",
+    category: "vba",
+    description:
+      "入力フォームの作成、コントロール配置、データの入出力",
+    sections: [
+      {
+        title: "ユーザーフォームの基本",
+        content:
+          "UserForm は VBE の「挿入」→「ユーザーフォーム」で作成します。Show メソッドでフォームを表示し、Hide で非表示、Unload でメモリから解放します。vbModal（既定）ではフォームを閉じるまで他の操作ができず、vbModeless では Excel の操作を続けながらフォームを使用できます。",
+        code: `' === 標準モジュール ===
+' フォームの表示（モーダル: 閉じるまで操作不可）
+Sub ShowInputForm()
+    Dim frm As New UserForm1
+    frm.Show vbModal
+    ' フォームが閉じられた後の処理
+    If frm.Tag = "OK" Then
+        MsgBox "データが入力されました"
+    End If
+    Unload frm
+    Set frm = Nothing
+End Sub
+
+' フォームの表示（モードレス: 操作しながら使用可能）
+Sub ShowToolForm()
+    UserForm2.Show vbModeless
+End Sub
+
+' === UserForm1 のコード ===
+' フォーム初期化
+Private Sub UserForm_Initialize()
+    Me.Caption = "データ入力フォーム"
+    Me.Width = 350
+    Me.Height = 250
+    Me.StartUpPosition = 0  ' 手動位置
+    Me.Left = Application.Left + 100
+    Me.Top = Application.Top + 100
+End Sub
+
+' OKボタンクリック
+Private Sub btnOK_Click()
+    Me.Tag = "OK"
+    Me.Hide
+End Sub
+
+' キャンセルボタンクリック
+Private Sub btnCancel_Click()
+    Me.Tag = "Cancel"
+    Me.Hide
+End Sub
+
+' ×ボタンで閉じた場合
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+    If CloseMode = vbFormControlMenu Then
+        Me.Tag = "Cancel"
+        Me.Hide
+        Cancel = True  ' Unload を防止
+    End If
+End Sub`,
+      },
+      {
+        title: "基本コントロール",
+        content:
+          "ユーザーフォームには TextBox（テキスト入力）、Label（ラベル）、CommandButton（ボタン）、ComboBox（ドロップダウン）、ListBox（リスト）、CheckBox（チェック）、OptionButton（ラジオ）などのコントロールを配置できます。各コントロールはプロパティウィンドウまたは VBA コードで設定します。",
+        code: `' フォーム初期化でコントロールを設定
+Private Sub UserForm_Initialize()
+    ' ラベルの設定
+    lblTitle.Caption = "社員情報入力"
+    lblTitle.Font.Size = 12
+    lblTitle.Font.Bold = True
+
+    ' テキストボックスの設定
+    txtName.Text = ""
+    txtName.MaxLength = 20  ' 最大文字数
+
+    ' コンボボックスの設定（部門選択）
+    With cmbDepartment
+        .AddItem "営業部"
+        .AddItem "開発部"
+        .AddItem "総務部"
+        .AddItem "経理部"
+        .AddItem "人事部"
+        .ListIndex = 0  ' 最初の項目を選択
+    End With
+
+    ' チェックボックスの設定
+    chkManager.Caption = "管理職"
+    chkManager.Value = False
+
+    ' オプションボタンの設定（性別）
+    optMale.Caption = "男性"
+    optFemale.Caption = "女性"
+    optMale.Value = True  ' 既定で男性を選択
+
+    ' リストボックスの設定（スキル選択）
+    With lstSkills
+        .MultiSelect = fmMultiSelectMulti  ' 複数選択可能
+        .AddItem "Excel"
+        .AddItem "Word"
+        .AddItem "PowerPoint"
+        .AddItem "Access"
+        .AddItem "VBA"
+    End With
+
+    ' ボタンの設定
+    btnRegister.Caption = "登録"
+    btnClear.Caption = "クリア"
+    btnClose.Caption = "閉じる"
+End Sub`,
+      },
+      {
+        title: "データ入力フォーム",
+        content:
+          "フォームからセルへデータを書き込む処理では、入力値のバリデーション（空欄チェック、数値チェック、範囲チェック）を必ず行います。最終行を取得して次の行に追記するパターンが一般的です。入力完了後はフォームをクリアして連続入力に対応させます。",
+        code: `' 登録ボタンのクリックイベント
+Private Sub btnRegister_Click()
+    ' 入力チェック（バリデーション）
+    If Trim(txtName.Text) = "" Then
+        MsgBox "名前を入力してください", vbExclamation
+        txtName.SetFocus
+        Exit Sub
+    End If
+
+    If Not IsNumeric(txtAge.Text) Then
+        MsgBox "年齢は数値で入力してください", vbExclamation
+        txtAge.SetFocus
+        Exit Sub
+    End If
+
+    If CLng(txtAge.Text) < 18 Or CLng(txtAge.Text) > 70 Then
+        MsgBox "年齢は18～70の範囲で入力してください", vbExclamation
+        txtAge.SetFocus
+        Exit Sub
+    End If
+
+    ' シートにデータを書き込み
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("社員名簿")
+    Dim nextRow As Long
+    nextRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 1
+
+    ws.Cells(nextRow, 1).Value = nextRow - 1           ' 連番
+    ws.Cells(nextRow, 2).Value = txtName.Text           ' 名前
+    ws.Cells(nextRow, 3).Value = CLng(txtAge.Text)      ' 年齢
+    ws.Cells(nextRow, 4).Value = cmbDepartment.Value    ' 部門
+    ws.Cells(nextRow, 5).Value = IIf(optMale.Value, "男", "女")
+    ws.Cells(nextRow, 6).Value = chkManager.Value       ' 管理職フラグ
+    ws.Cells(nextRow, 7).Value = Now                    ' 登録日時
+
+    ' フォームをクリアして連続入力可能に
+    Call ClearForm
+    MsgBox "登録しました（No." & (nextRow - 1) & "）", vbInformation
+    txtName.SetFocus
+End Sub
+
+' フォームクリア
+Private Sub ClearForm()
+    txtName.Text = ""
+    txtAge.Text = ""
+    cmbDepartment.ListIndex = 0
+    optMale.Value = True
+    chkManager.Value = False
+End Sub
+
+Private Sub btnClear_Click()
+    Call ClearForm
+End Sub`,
+      },
+      {
+        title: "コンボボックスとリスト",
+        content:
+          "ComboBox の RowSource プロパティでシート上のデータ範囲と連携できます。AddItem で動的にアイテムを追加し、RemoveItem で削除できます。ListBox では MultiSelect プロパティで複数選択を有効にし、Selected プロパティで各項目の選択状態を確認します。",
+        code: `' フォーム初期化: コンボボックスにデータ連携
+Private Sub UserForm_Initialize()
+    ' シートのデータをコンボボックスに設定
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("マスタ")
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' RowSource でシートと連携
+    cmbCustomer.RowSource = "マスタ!A2:A" & lastRow
+
+    ' 2列表示（コード + 名前）
+    With cmbProduct
+        .ColumnCount = 2
+        .ColumnWidths = "40;120"
+        .BoundColumn = 1  ' 値として返す列
+        Dim i As Long
+        For i = 2 To lastRow
+            .AddItem ws.Cells(i, 3).Value          ' 商品コード
+            .List(.ListCount - 1, 1) = ws.Cells(i, 4).Value  ' 商品名
+        Next i
+    End With
+
+    ' リストボックス（複数選択）
+    With lstCategories
+        .MultiSelect = fmMultiSelectMulti
+        .AddItem "食品"
+        .AddItem "飲料"
+        .AddItem "日用品"
+        .AddItem "文具"
+        .AddItem "電化製品"
+    End With
+End Sub
+
+' 選択された項目を取得
+Private Sub btnApply_Click()
+    ' コンボボックスの選択値
+    Debug.Print "顧客: " & cmbCustomer.Value
+    Debug.Print "商品コード: " & cmbProduct.Value
+    Debug.Print "商品名: " & cmbProduct.Column(1)  ' 2列目
+
+    ' リストボックスの複数選択を取得
+    Dim selected As String
+    Dim i As Long
+    For i = 0 To lstCategories.ListCount - 1
+        If lstCategories.Selected(i) Then
+            If selected <> "" Then selected = selected & ", "
+            selected = selected & lstCategories.List(i)
+        End If
+    Next i
+    Debug.Print "カテゴリ: " & selected
+End Sub`,
+      },
+      {
+        title: "フォームのイベント",
+        content:
+          "各コントロールには Click, Change, Enter, Exit などのイベントがあり、ユーザーの操作に応じた処理を記述できます。コントロール間を連動させることで、動的なフォームを実現できます。例えば部門の選択に応じて担当者リストを絞り込むカスケード選択が可能です。",
+        code: `' テキストボックスの変更イベント（リアルタイム計算）
+Private Sub txtQuantity_Change()
+    Call CalcSubtotal
+End Sub
+
+Private Sub txtPrice_Change()
+    Call CalcSubtotal
+End Sub
+
+' 小計の自動計算
+Private Sub CalcSubtotal()
+    If IsNumeric(txtPrice.Text) And IsNumeric(txtQuantity.Text) Then
+        Dim subtotal As Double
+        subtotal = CDbl(txtPrice.Text) * CDbl(txtQuantity.Text)
+        lblSubtotal.Caption = Format(subtotal, "#,##0") & " 円"
+    Else
+        lblSubtotal.Caption = "---"
+    End If
+End Sub
+
+' コンボボックス変更でリストを連動（カスケード選択）
+Private Sub cmbDepartment_Change()
+    cmbEmployee.Clear
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("社員マスタ")
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    Dim i As Long
+    For i = 2 To lastRow
+        If ws.Cells(i, 2).Value = cmbDepartment.Value Then
+            cmbEmployee.AddItem ws.Cells(i, 1).Value
+        End If
+    Next i
+
+    If cmbEmployee.ListCount > 0 Then
+        cmbEmployee.ListIndex = 0
+    End If
+End Sub
+
+' テキストボックスの Exit イベント（フォーカスが外れた時）
+Private Sub txtEmail_Exit(ByVal Cancel As MSForms.ReturnBoolean)
+    ' メールアドレスの簡易チェック
+    If txtEmail.Text <> "" Then
+        If InStr(txtEmail.Text, "@") = 0 Then
+            MsgBox "正しいメールアドレスを入力してください", vbExclamation
+            Cancel = True  ' フォーカスを移動させない
+        End If
+    End If
+End Sub`,
+      },
+    ],
+  },
+  // ===== 実務で使えるマクロ集 =====
+  {
+    id: "vba-practical-macros",
+    title: "実務で使えるマクロ集",
+    category: "vba",
+    description:
+      "データ整形、レポート自動作成、メール送信、PDF出力の自動化",
+    sections: [
+      {
+        title: "データクリーニング",
+        content:
+          "実務では外部から取り込んだデータの整形が頻繁に発生します。空白行の削除、前後の空白除去（Trim）、重複データの削除、全角/半角の統一などを自動化することで、手作業による時間のロスとミスを大幅に削減できます。",
+        code: `Sub DataCleaning()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim lastCol As Long
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+
+    Application.ScreenUpdating = False
+
+    ' 1. 前後の空白を除去（Trim）
+    Dim cell As Range
+    For Each cell In ws.Range(ws.Cells(1, 1), ws.Cells(lastRow, lastCol))
+        If Not IsEmpty(cell) And Not IsError(cell) Then
+            If VarType(cell.Value) = vbString Then
+                cell.Value = Trim(cell.Value)
+            End If
+        End If
+    Next cell
+
+    ' 2. 全角スペースを半角に変換
+    Dim r As Long, c As Long
+    For r = 1 To lastRow
+        For c = 1 To lastCol
+            If VarType(ws.Cells(r, c).Value) = vbString Then
+                ws.Cells(r, c).Value = Replace(ws.Cells(r, c).Value, _
+                    ChrW(&H3000), " ")
+            End If
+        Next c
+    Next r
+
+    ' 3. 空白行の削除（下から上に処理）
+    Dim delCount As Long: delCount = 0
+    For r = lastRow To 2 Step -1
+        If Application.WorksheetFunction.CountA(ws.Rows(r)) = 0 Then
+            ws.Rows(r).Delete
+            delCount = delCount + 1
+        End If
+    Next r
+
+    ' 4. 重複行の削除（A列基準）
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    ws.Range("A1:A" & lastRow).RemoveDuplicates Columns:=1, Header:=xlYes
+
+    Application.ScreenUpdating = True
+    MsgBox "クリーニング完了" & vbCrLf & _
+           "削除した空白行: " & delCount & "行", vbInformation
+End Sub`,
+      },
+      {
+        title: "レポート自動作成",
+        content:
+          "テンプレートシートをコピーしてレポートを自動生成するマクロは、月次・週次の定型レポート作成を効率化します。複数シートのデータを1つのシートに統合する処理も、手作業では時間がかかりますが VBA で自動化できます。",
+        code: `Sub CreateMonthlyReport()
+    Dim wb As Workbook: Set wb = ThisWorkbook
+    Dim dataWS As Worksheet: Set dataWS = wb.Sheets("売上データ")
+    Dim lastRow As Long
+    lastRow = dataWS.Cells(dataWS.Rows.Count, 1).End(xlUp).Row
+
+    ' テンプレートシートをコピー
+    Dim reportName As String
+    reportName = Format(Date, "yyyy年mm月") & "_月次レポート"
+
+    ' 既存シートがあれば削除
+    Application.DisplayAlerts = False
+    Dim ws As Worksheet
+    For Each ws In wb.Worksheets
+        If ws.Name = reportName Then ws.Delete
+    Next ws
+    Application.DisplayAlerts = True
+
+    wb.Sheets("テンプレート").Copy After:=wb.Sheets(wb.Sheets.Count)
+    Dim reportWS As Worksheet
+    Set reportWS = ActiveSheet
+    reportWS.Name = reportName
+
+    ' ヘッダー情報の設定
+    reportWS.Range("B2").Value = Format(Date, "yyyy年mm月度")
+    reportWS.Range("B3").Value = "作成日: " & Format(Now, "yyyy/mm/dd hh:mm")
+
+    ' 部門別集計
+    Dim depts As Variant
+    depts = Array("営業部", "開発部", "総務部", "経理部")
+    Dim i As Long
+    For i = 0 To UBound(depts)
+        Dim total As Double
+        total = Application.WorksheetFunction.SumIf( _
+            dataWS.Range("C2:C" & lastRow), depts(i), _
+            dataWS.Range("E2:E" & lastRow))
+        reportWS.Cells(6 + i, 2).Value = depts(i)
+        reportWS.Cells(6 + i, 3).Value = total
+    Next i
+
+    ' 合計行
+    reportWS.Cells(6 + UBound(depts) + 1, 2).Value = "合計"
+    reportWS.Cells(6 + UBound(depts) + 1, 3).Formula = _
+        "=SUM(C6:C" & (6 + UBound(depts)) & ")"
+
+    MsgBox reportName & " を作成しました", vbInformation
+End Sub`,
+      },
+      {
+        title: "請求書・見積書の自動作成",
+        content:
+          "データ一覧から請求書や見積書を自動生成するマクロは、経理・営業部門で非常に重宝されます。テンプレートに値を流し込み、連番を管理し、PDF で出力するまでの一連の流れを自動化できます。",
+        code: `Sub CreateInvoices()
+    Dim dataWS As Worksheet: Set dataWS = ThisWorkbook.Sheets("請求データ")
+    Dim tmplWS As Worksheet: Set tmplWS = ThisWorkbook.Sheets("請求書テンプレート")
+    Dim lastRow As Long
+    lastRow = dataWS.Cells(dataWS.Rows.Count, 1).End(xlUp).Row
+
+    Dim outputPath As String
+    outputPath = ThisWorkbook.Path & "\請求書出力\"
+
+    ' 出力フォルダの作成
+    If Dir(outputPath, vbDirectory) = "" Then MkDir outputPath
+
+    Application.ScreenUpdating = False
+    Dim i As Long
+    For i = 2 To lastRow
+        ' テンプレートにデータを流し込み
+        tmplWS.Range("D3").Value = dataWS.Cells(i, 1).Value  ' 請求番号
+        tmplWS.Range("B5").Value = dataWS.Cells(i, 2).Value & " 御中"  ' 顧客名
+        tmplWS.Range("D5").Value = Date  ' 請求日
+        tmplWS.Range("B10").Value = dataWS.Cells(i, 3).Value  ' 品目
+        tmplWS.Range("D10").Value = dataWS.Cells(i, 4).Value  ' 数量
+        tmplWS.Range("E10").Value = dataWS.Cells(i, 5).Value  ' 単価
+
+        ' 小計・税・合計の計算
+        Dim subtotal As Double
+        subtotal = dataWS.Cells(i, 4).Value * dataWS.Cells(i, 5).Value
+        tmplWS.Range("F10").Value = subtotal
+        tmplWS.Range("F20").Value = subtotal
+        tmplWS.Range("F21").Value = subtotal * 0.1
+        tmplWS.Range("F22").Value = subtotal * 1.1
+
+        ' PDF出力
+        Dim pdfName As String
+        pdfName = outputPath & "請求書_" & dataWS.Cells(i, 1).Value & ".pdf"
+        tmplWS.ExportAsFixedFormat Type:=xlTypePDF, _
+            Filename:=pdfName, Quality:=xlQualityStandard
+    Next i
+
+    Application.ScreenUpdating = True
+    MsgBox (lastRow - 1) & "件の請求書をPDF出力しました" & vbCrLf & _
+           "出力先: " & outputPath, vbInformation
+End Sub`,
+      },
+      {
+        title: "メール送信の自動化",
+        content:
+          "Outlook と連携してメールを自動送信するマクロは、請求書の送付や定期レポートの配信に活用できます。宛先、件名、本文をシートのデータから読み取り、添付ファイル付きのメールを一括作成できます。送信前に確認のため Display で表示することも可能です。",
+        code: `Sub SendEmailsViaOutlook()
+    ' Outlook アプリケーションの起動
+    Dim olApp As Object
+    Set olApp = CreateObject("Outlook.Application")
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("送信リスト")
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    Dim sendCount As Long: sendCount = 0
+    Dim i As Long
+    For i = 2 To lastRow
+        ' 送信済みフラグをチェック
+        If ws.Cells(i, 6).Value <> "送信済" Then
+            Dim mail As Object
+            Set mail = olApp.CreateItem(0)  ' olMailItem
+
+            With mail
+                .To = ws.Cells(i, 2).Value        ' 宛先
+                .CC = ws.Cells(i, 3).Value         ' CC
+                .Subject = ws.Cells(i, 4).Value    ' 件名
+
+                ' 本文の作成（テンプレート）
+                .Body = ws.Cells(i, 1).Value & " 様" & vbCrLf & vbCrLf & _
+                        "いつもお世話になっております。" & vbCrLf & _
+                        ws.Cells(i, 5).Value & vbCrLf & vbCrLf & _
+                        "何卒よろしくお願いいたします。" & vbCrLf & _
+                        "---" & vbCrLf & _
+                        "株式会社サンプル 営業部"
+
+                ' 添付ファイル（パスが指定されている場合）
+                If ws.Cells(i, 7).Value <> "" Then
+                    .Attachments.Add ws.Cells(i, 7).Value
+                End If
+
+                .Display  ' 確認用に表示（自動送信は .Send）
+            End With
+
+            ws.Cells(i, 6).Value = "送信済"
+            ws.Cells(i, 8).Value = Now  ' 送信日時
+            sendCount = sendCount + 1
+        End If
+    Next i
+
+    MsgBox sendCount & "件のメールを作成しました", vbInformation
+End Sub`,
+      },
+      {
+        title: "PDF出力と印刷",
+        content:
+          "ExportAsFixedFormat メソッドで Excel シートを PDF として出力できます。PrintOut メソッドで直接印刷も可能です。印刷範囲、余白、ヘッダー/フッター、改ページなどの設定を VBA で制御することで、常に統一されたフォーマットで出力できます。",
+        code: `Sub PDFExportAndPrint()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' ページ設定
+    With ws.PageSetup
+        .PrintArea = "A1:F" & ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        .Orientation = xlLandscape         ' 横向き
+        .PaperSize = xlPaperA4             ' A4用紙
+        .Zoom = False
+        .FitToPagesWide = 1                ' 横1ページに収める
+        .FitToPagesTall = False            ' 縦は自動
+        .TopMargin = Application.CentimetersToPoints(2)
+        .BottomMargin = Application.CentimetersToPoints(2)
+        .LeftMargin = Application.CentimetersToPoints(1.5)
+        .RightMargin = Application.CentimetersToPoints(1.5)
+        .CenterHeader = "&B" & ws.Name     ' ヘッダー中央（太字）
+        .RightFooter = "&P / &N ページ"    ' フッター右（ページ番号）
+        .PrintTitleRows = "$1:$2"           ' 行タイトル（各ページに印刷）
+    End With
+
+    ' PDF出力
+    Dim pdfPath As String
+    pdfPath = ThisWorkbook.Path & "\" & ws.Name & "_" & _
+              Format(Date, "yyyymmdd") & ".pdf"
+
+    ws.ExportAsFixedFormat _
+        Type:=xlTypePDF, _
+        Filename:=pdfPath, _
+        Quality:=xlQualityStandard, _
+        IncludeDocProperties:=True, _
+        IgnorePrintAreas:=False, _
+        OpenAfterPublish:=True  ' 出力後にPDFを開く
+
+    ' 複数シートを1つのPDFに出力
+    Dim sheets As Variant
+    sheets = Array("Sheet1", "Sheet2", "Sheet3")
+    ThisWorkbook.Sheets(sheets).Select
+    ActiveSheet.ExportAsFixedFormat Type:=xlTypePDF, _
+        Filename:=ThisWorkbook.Path & "\統合レポート.pdf"
+    ws.Select  ' 選択を戻す
+
+    MsgBox "PDF出力完了: " & pdfPath, vbInformation
+End Sub`,
+      },
+    ],
+  },
+  // ===== VBA 上級テクニック =====
+  {
+    id: "vba-advanced",
+    title: "VBA 上級テクニック",
+    category: "vba",
+    description:
+      "クラスモジュール、辞書、正規表現、外部データ連携、高速化",
+    sections: [
+      {
+        title: "クラスモジュール",
+        content:
+          "クラスモジュールを使うとオブジェクト指向的な設計が可能です。Property Get/Let/Set でプロパティを定義し、データと処理をカプセル化できます。Collection と組み合わせてオブジェクトのリストを管理するパターンは、複雑な業務ロジックの整理に役立ちます。",
+        code: `' === クラスモジュール: CEmployee ===
+Private mName As String
+Private mDepartment As String
+Private mSalary As Currency
+
+' プロパティ: 名前
+Public Property Get Name() As String
+    Name = mName
+End Property
+Public Property Let Name(ByVal value As String)
+    mName = value
+End Property
+
+' プロパティ: 部門
+Public Property Get Department() As String
+    Department = mDepartment
+End Property
+Public Property Let Department(ByVal value As String)
+    mDepartment = value
+End Property
+
+' プロパティ: 給与
+Public Property Get Salary() As Currency
+    Salary = mSalary
+End Property
+Public Property Let Salary(ByVal value As Currency)
+    If value < 0 Then Err.Raise 5, , "給与は0以上を指定してください"
+    mSalary = value
+End Property
+
+' メソッド: ボーナス計算
+Public Function CalcBonus() As Currency
+    CalcBonus = mSalary * 2.5  ' 給与の2.5ヶ月分
+End Function
+
+' === 標準モジュール ===
+Sub UseClass()
+    Dim employees As New Collection
+    Dim ws As Worksheet: Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' シートからオブジェクトを生成
+    Dim i As Long
+    For i = 2 To lastRow
+        Dim emp As New CEmployee
+        emp.Name = ws.Cells(i, 1).Value
+        emp.Department = ws.Cells(i, 2).Value
+        emp.Salary = ws.Cells(i, 3).Value
+        employees.Add emp, emp.Name  ' 名前をキーに
+    Next i
+
+    ' コレクションを使った処理
+    Dim e As CEmployee
+    For Each e In employees
+        Debug.Print e.Name & " (" & e.Department & "): " & _
+                    "ボーナス " & Format(e.CalcBonus(), "#,##0") & "円"
+    Next e
+End Sub`,
+      },
+      {
+        title: "Dictionary オブジェクト",
+        content:
+          "Scripting.Dictionary はキーと値のペアでデータを管理するオブジェクトです。キーの重複チェック、データのグルーピング、高速な検索に優れています。Exists メソッドでキーの存在確認、Keys/Items メソッドで全キー・全値の配列を取得できます。",
+        code: `Sub DictionaryExamples()
+    ' Dictionary の作成
+    Dim dict As Object
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    Dim ws As Worksheet: Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' 部門別の売上合計を集計
+    Dim i As Long
+    For i = 2 To lastRow
+        Dim dept As String
+        dept = ws.Cells(i, 2).Value  ' B列: 部門名
+        Dim sales As Double
+        sales = ws.Cells(i, 4).Value ' D列: 売上
+
+        If dict.Exists(dept) Then
+            dict(dept) = dict(dept) + sales  ' 既存キーに加算
+        Else
+            dict.Add dept, sales             ' 新規キーを追加
+        End If
+    Next i
+
+    ' 結果を出力
+    Dim resultWS As Worksheet
+    Set resultWS = ThisWorkbook.Sheets.Add
+    resultWS.Name = "部門別集計"
+    resultWS.Range("A1").Value = "部門"
+    resultWS.Range("B1").Value = "売上合計"
+
+    Dim keys As Variant: keys = dict.keys
+    Dim items As Variant: items = dict.items
+    For i = 0 To dict.Count - 1
+        resultWS.Cells(i + 2, 1).Value = keys(i)
+        resultWS.Cells(i + 2, 2).Value = items(i)
+    Next i
+
+    ' 重複チェックへの活用
+    Dim dupeDict As Object
+    Set dupeDict = CreateObject("Scripting.Dictionary")
+    For i = 2 To lastRow
+        Dim key As String
+        key = ws.Cells(i, 1).Value
+        If dupeDict.Exists(key) Then
+            ws.Cells(i, 5).Value = "重複"
+            ws.Cells(i, 5).Font.Color = RGB(255, 0, 0)
+        Else
+            dupeDict.Add key, i
+        End If
+    Next i
+
+    Debug.Print "部門数: " & dict.Count
+    Debug.Print "ユニーク件数: " & dupeDict.Count
+End Sub`,
+      },
+      {
+        title: "正規表現",
+        content:
+          "VBScript.RegExp オブジェクトを使うと、VBA で正規表現によるパターンマッチ、文字列の抽出・置換ができます。電話番号、メールアドレス、郵便番号などの書式チェックや、複雑なパターンの文字列抽出に威力を発揮します。Global プロパティを True にすると全一致を検索します。",
+        code: `Sub RegExpExamples()
+    ' 正規表現オブジェクトの作成
+    Dim re As Object
+    Set re = CreateObject("VBScript.RegExp")
+
+    ' 電話番号の抽出
+    re.Pattern = "\d{2,4}-\d{2,4}-\d{4}"
+    re.Global = True
+
+    Dim testStr As String
+    testStr = "連絡先: 03-1234-5678 または 090-9876-5432"
+    Dim matches As Object
+    Set matches = re.Execute(testStr)
+    Dim m As Object
+    For Each m In matches
+        Debug.Print "電話番号: " & m.Value
+    Next m
+
+    ' メールアドレスのバリデーション
+    re.Pattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    re.Global = False
+    Debug.Print "test@example.com: " & re.Test("test@example.com")  ' True
+    Debug.Print "invalid-email: " & re.Test("invalid-email")        ' False
+
+    ' シート上のデータを正規表現で処理
+    Dim ws As Worksheet: Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' 郵便番号の形式チェック（A列）
+    re.Pattern = "^\d{3}-?\d{4}$"
+    Dim i As Long
+    For i = 2 To lastRow
+        Dim cellVal As String
+        cellVal = CStr(ws.Cells(i, 1).Value)
+        If re.Test(cellVal) Then
+            ws.Cells(i, 2).Value = "OK"
+        Else
+            ws.Cells(i, 2).Value = "形式エラー"
+            ws.Cells(i, 2).Font.Color = RGB(255, 0, 0)
+        End If
+    Next i
+
+    ' 文字列の置換（カッコ内を削除）
+    re.Pattern = "\(.*?\)"
+    re.Global = True
+    Dim cleaned As String
+    cleaned = re.Replace("東京都渋谷区(本社)神南1-2-3(5F)", "")
+    Debug.Print cleaned  ' 東京都渋谷区神南1-2-3
+End Sub`,
+      },
+      {
+        title: "外部データ連携",
+        content:
+          "ADO（ActiveX Data Objects）を使うと VBA から Access や SQL Server などのデータベースに接続し、SQL を実行できます。接続文字列でデータソースを指定し、Recordset でクエリ結果を取得してシートに展開します。大量データの読み書きに適した方法です。",
+        code: `Sub DatabaseConnection()
+    ' ADO オブジェクトの作成
+    Dim conn As Object
+    Set conn = CreateObject("ADODB.Connection")
+    Dim rs As Object
+    Set rs = CreateObject("ADODB.Recordset")
+
+    On Error GoTo ErrorHandler
+
+    ' Access データベースに接続
+    Dim connStr As String
+    connStr = "Provider=Microsoft.ACE.OLEDB.12.0;" & _
+              "Data Source=C:\Data\業務DB.accdb;"
+    conn.Open connStr
+
+    ' SQL を実行してデータを取得
+    Dim sql As String
+    sql = "SELECT 顧客名, 部門, 売上金額, 受注日 " & _
+          "FROM T_売上 " & _
+          "WHERE 受注日 >= #2024-01-01# " & _
+          "ORDER BY 売上金額 DESC"
+    rs.Open sql, conn, 1, 1  ' adOpenKeyset, adLockReadOnly
+
+    ' シートにデータを展開
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets.Add
+    ws.Name = "DB取得データ"
+
+    ' ヘッダーの出力
+    Dim col As Long
+    For col = 0 To rs.Fields.Count - 1
+        ws.Cells(1, col + 1).Value = rs.Fields(col).Name
+    Next col
+    ws.Range("A1").Resize(1, rs.Fields.Count).Font.Bold = True
+
+    ' データの出力（CopyFromRecordset で高速展開）
+    ws.Range("A2").CopyFromRecordset rs
+
+    Dim rowCount As Long
+    rowCount = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row - 1
+    ws.Columns.AutoFit
+
+    MsgBox rowCount & "件のデータを取得しました", vbInformation
+
+CleanUp:
+    If Not rs Is Nothing Then
+        If rs.State = 1 Then rs.Close
+    End If
+    If Not conn Is Nothing Then
+        If conn.State = 1 Then conn.Close
+    End If
+    Set rs = Nothing
+    Set conn = Nothing
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "DB接続エラー: " & Err.Description, vbCritical
+    Resume CleanUp
+End Sub`,
+      },
+      {
+        title: "高速化テクニック",
+        content:
+          "大量データを処理するマクロでは、ScreenUpdating や Calculation の制御、配列を使った一括読み書きが高速化の鍵です。セルへの1つずつのアクセスは非常に遅いため、データを配列に読み込んで処理し、結果を一括で書き戻す方法が推奨されます。処理時間が数十分から数秒に短縮されることもあります。",
+        code: `Sub PerformanceOptimization()
+    Dim startTime As Double
+    startTime = Timer
+
+    ' === 高速化設定 ===
+    Application.ScreenUpdating = False     ' 画面更新を停止
+    Application.Calculation = xlCalculationManual  ' 自動計算を停止
+    Application.EnableEvents = False       ' イベントを停止
+
+    Dim ws As Worksheet: Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim lastCol As Long
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+
+    ' === 配列を使った高速処理 ===
+    ' シートのデータを配列に一括読み込み
+    Dim data As Variant
+    data = ws.Range(ws.Cells(2, 1), ws.Cells(lastRow, lastCol)).Value
+
+    ' 配列上で処理（セルアクセスなし = 超高速）
+    Dim result() As Variant
+    ReDim result(1 To UBound(data, 1), 1 To 1)
+
+    Dim i As Long
+    For i = 1 To UBound(data, 1)
+        ' 例: D列(4) × E列(5) の計算結果をresultに格納
+        If IsNumeric(data(i, 4)) And IsNumeric(data(i, 5)) Then
+            result(i, 1) = data(i, 4) * data(i, 5)
+        Else
+            result(i, 1) = 0
+        End If
+    Next i
+
+    ' 結果を一括書き込み
+    ws.Range("F2").Resize(UBound(result, 1), 1).Value = result
+
+    ' === 高速化設定の復帰 ===
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+
+    Dim elapsed As Double
+    elapsed = Timer - startTime
+    MsgBox "処理完了: " & lastRow - 1 & "行" & vbCrLf & _
+           "処理時間: " & Format(elapsed, "0.00") & "秒", vbInformation
+End Sub`,
+      },
+    ],
+  },
+  // ===== VBA デバッグとエラー対処 =====
+  {
+    id: "vba-debugging",
+    title: "VBA デバッグとエラー対処",
+    category: "vba",
+    description:
+      "デバッグ技法、ブレークポイント、ウォッチ式、よくあるエラーと対処法",
+    sections: [
+      {
+        title: "VBE（Visual Basic Editor）",
+        content:
+          "VBE は Alt+F11 で起動する VBA の統合開発環境です。プロジェクトエクスプローラーでモジュールを管理し、プロパティウィンドウでオブジェクトの設定を変更します。イミディエイトウィンドウ（Ctrl+G）は Debug.Print の出力先であり、式の即時評価やプロシージャの直接実行にも使えます。",
+        code: `' Debug.Print でイミディエイトウィンドウに出力
+Sub DebugPrintExamples()
+    ' 変数の値を確認
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Debug.Print "最終行: " & lastRow
+
+    ' 処理の経過を記録
+    Dim i As Long
+    For i = 2 To lastRow
+        Dim val As Variant
+        val = ws.Cells(i, 1).Value
+
+        ' 条件付きで出力（大量出力を避ける）
+        If i <= 5 Or i = lastRow Then
+            Debug.Print "行" & i & ": " & val & _
+                        " (型: " & TypeName(val) & ")"
+        End If
+    Next i
+
+    ' オブジェクトの情報を出力
+    Debug.Print "シート名: " & ws.Name
+    Debug.Print "使用範囲: " & ws.UsedRange.Address
+    Debug.Print "セル数: " & ws.UsedRange.Cells.Count
+
+    ' 処理時間の計測
+    Dim startTime As Double
+    startTime = Timer
+    ' ... 処理 ...
+    Debug.Print "処理時間: " & Format(Timer - startTime, "0.000") & "秒"
+
+    ' タイムスタンプ付きログ
+    Debug.Print Format(Now, "hh:mm:ss.000") & " [INFO] 処理完了"
+End Sub`,
+      },
+      {
+        title: "デバッグ技法",
+        content:
+          "ブレークポイント（F9）を設定するとその行で実行が一時停止します。F8 でステップ実行（1行ずつ）、Shift+F8 でステップオーバー（プロシージャを飛ばす）ができます。ウォッチ式を追加すると変数の値をリアルタイムで監視でき、ローカルウィンドウでは現在のプロシージャの全変数を確認できます。",
+        code: `' デバッグしやすいコードの書き方
+Sub DebuggableMacro()
+    ' 処理の各段階にログを入れる
+    Debug.Print "===== 処理開始 ====="
+
+    ' Step 1: データの読み込み
+    Debug.Print "Step 1: データ読み込み..."
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Debug.Print "  対象行数: " & (lastRow - 1)
+
+    ' Step 2: データの検証
+    Debug.Print "Step 2: データ検証..."
+    Dim errorCount As Long: errorCount = 0
+    Dim i As Long
+    For i = 2 To lastRow
+        ' ここにブレークポイント（F9）を設定して変数を確認
+        Dim cellValue As Variant
+        cellValue = ws.Cells(i, 1).Value
+
+        If IsEmpty(cellValue) Then
+            errorCount = errorCount + 1
+            Debug.Print "  警告: 行" & i & " - 空セル検出"
+        End If
+    Next i
+    Debug.Print "  エラー件数: " & errorCount
+
+    ' Step 3: 処理の実行
+    Debug.Print "Step 3: メイン処理..."
+    ' Stop  ' ← コメントを外すとここで一時停止（デバッグ用）
+
+    ' 中間結果の確認
+    Debug.Print "  処理済み行数: " & (lastRow - 1 - errorCount)
+
+    Debug.Print "===== 処理完了 ====="
+End Sub`,
+      },
+      {
+        title: "イミディエイトウィンドウ",
+        content:
+          "イミディエイトウィンドウ（Ctrl+G）は VBA 開発で最も活用されるデバッグツールです。Debug.Print で出力された値の確認はもちろん、? に続けて式を入力すると即座に結果を表示します。変数への値の代入やプロシージャの直接実行も可能で、動作確認やテストに非常に便利です。",
+        code: `' イミディエイトウィンドウでの操作例
+' （以下は Ctrl+G で開いたウィンドウに直接入力する内容）
+
+' ? で式を即時評価
+' ?Range("A1").Value          → セルA1の値を表示
+' ?ActiveSheet.Name           → アクティブシート名
+' ?ThisWorkbook.Path          → ブックのパス
+' ?Now                        → 現在の日時
+' ?TypeName(Selection)        → 選択中のオブジェクト型
+
+' 変数の値を確認（ブレークポイントで停止中）
+' ?lastRow                    → 変数の値
+' ?UBound(myArray)            → 配列の上限
+
+' 式の計算
+' ?10 * 1.1                   → 11
+' ?Format(12345, "#,##0")     → 12,345
+
+' プロシージャの直接実行
+' Call MySub
+' MySub                       → Call は省略可能
+
+Sub ImmediateWindowDemo()
+    ' このプロシージャをイミディエイトウィンドウからテスト
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' ブレークポイントをここに設定して以下を確認
+    Dim testValue As Variant
+    testValue = ws.Range("A1").Value
+    Debug.Print "A1の値: " & testValue
+    Debug.Print "型: " & TypeName(testValue)
+
+    ' イミディエイトウィンドウで以下を試す:
+    ' ?testValue
+    ' testValue = "新しい値"   ← 変数の値を変更可能
+    ' ?testValue
+
+    ' セルの値も直接変更可能
+    ' Range("A1").Value = "テスト"
+    ' Range("A1").Font.Bold = True
+End Sub`,
+      },
+      {
+        title: "よくあるエラーと対処",
+        content:
+          "VBA 開発でよく遭遇するエラーには、実行時エラー1004（Range 指定ミス）、エラー13（型不一致）、エラー91（オブジェクト未設定）、エラー9（添字が範囲外）があります。各エラーの典型的な原因を理解し、発生条件を事前にチェックするコードを書くことで、安定したマクロを作成できます。",
+        code: `Sub CommonErrors()
+    On Error GoTo ErrorHandler
+
+    Dim ws As Worksheet
+
+    ' エラー91: オブジェクト変数が設定されていません
+    ' 原因: Set を忘れた、またはシートが存在しない
+    Set ws = Nothing
+    ' ws.Range("A1").Value = "test"  ' ← ここでエラー91
+
+    ' 対策: Nothing チェック
+    If ws Is Nothing Then
+        Set ws = ActiveSheet
+    End If
+
+    ' エラー1004: アプリケーション定義またはオブジェクト定義のエラー
+    ' 原因: 存在しないシート名、不正なRange指定
+    ' Set ws = Sheets("存在しないシート")  ' ← エラー1004
+
+    ' 対策: シートの存在確認
+    Dim sheetExists As Boolean: sheetExists = False
+    Dim s As Worksheet
+    For Each s In ThisWorkbook.Worksheets
+        If s.Name = "データ" Then sheetExists = True
+    Next s
+
+    ' エラー13: 型が一致しません
+    ' 原因: 文字列を数値変数に代入
+    Dim num As Long
+    Dim cellVal As Variant
+    cellVal = ws.Range("A1").Value
+    ' num = cellVal  ' ← セルが文字列ならエラー13
+
+    ' 対策: 型チェック
+    If IsNumeric(cellVal) Then
+        num = CLng(cellVal)
+    End If
+
+    ' エラー9: インデックスが有効範囲にありません
+    ' 原因: 存在しない配列インデックス、シートインデックス
+    Dim arr(1 To 5) As Long
+    ' arr(6) = 100  ' ← エラー9
+
+    Exit Sub
+
+ErrorHandler:
+    Debug.Print "エラー" & Err.Number & ": " & Err.Description
+    Debug.Print "発生箇所: " & Erl  ' 行番号（設定時のみ）
+    Resume Next  ' デバッグ用: 次の行に進む
+End Sub`,
+      },
+      {
+        title: "堅牢なコードの書き方",
+        content:
+          "本番運用するマクロには、Option Explicit の宣言、統一されたエラーハンドラ、入力値の事前チェック、ログ出力が不可欠です。処理の開始時に ScreenUpdating 等を OFF にした場合、エラー発生時にも必ず復帰するよう CleanUp セクションを設けます。このテンプレートを基にマクロを作成することで、安定した運用が可能です。",
+        code: `Option Explicit
+
+' 本番用マクロのテンプレート
+Sub ProductionMacroTemplate()
+    ' === 初期設定 ===
+    Dim startTime As Double: startTime = Timer
+    Call LogMessage("処理開始")
+
+    On Error GoTo ErrorHandler
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
+
+    ' === 事前チェック ===
+    Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("データ")
+    On Error GoTo ErrorHandler
+
+    If ws Is Nothing Then
+        MsgBox "「データ」シートが見つかりません", vbCritical
+        GoTo CleanUp
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    If lastRow < 2 Then
+        MsgBox "処理対象のデータがありません", vbExclamation
+        GoTo CleanUp
+    End If
+
+    ' === メイン処理 ===
+    Call LogMessage("対象: " & (lastRow - 1) & "行")
+    Dim processedCount As Long: processedCount = 0
+    Dim errorRows As String: errorRows = ""
+
+    Dim i As Long
+    For i = 2 To lastRow
+        ' 個別行のエラーは記録して続行
+        On Error Resume Next
+        ' ... 処理 ...
+        processedCount = processedCount + 1
+        If Err.Number <> 0 Then
+            errorRows = errorRows & i & ", "
+            Err.Clear
+        End If
+        On Error GoTo ErrorHandler
+    Next i
+
+    Call LogMessage("処理完了: " & processedCount & "件")
+    If errorRows <> "" Then
+        Call LogMessage("エラー行: " & errorRows)
+    End If
+
+CleanUp:
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+    Call LogMessage("終了（" & Format(Timer - startTime, "0.00") & "秒）")
+    Exit Sub
+
+ErrorHandler:
+    Call LogMessage("致命的エラー: " & Err.Number & " - " & Err.Description)
+    MsgBox "エラーが発生しました" & vbCrLf & Err.Description, vbCritical
+    Resume CleanUp
+End Sub
+
+' ログ出力ユーティリティ
+Private Sub LogMessage(ByVal msg As String)
+    Debug.Print Format(Now, "yyyy/mm/dd hh:mm:ss") & " " & msg
+End Sub`,
+      },
+    ],
+  },
   // ===== MOS Excel 365（一般レベル）対策 =====
   {
     id: "mos",
