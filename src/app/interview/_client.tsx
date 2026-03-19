@@ -56,7 +56,7 @@ export default function InterviewClientPage() {
         <div className="inline-flex items-center gap-2 mb-4">
           <MessageCircleQuestion className="h-8 w-8 text-[var(--color-dads-blue)]" />
           <h1 className="text-3xl md:text-4xl font-bold">
-            Java 面接 <span className="text-[var(--color-dads-blue)]">質問100選</span>
+            Java 面接 <span className="text-[var(--color-dads-blue)]">質問200選</span>
           </h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">

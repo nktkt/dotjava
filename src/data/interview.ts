@@ -27,6 +27,11 @@ export const interviewCategories = [
   { id: "db", name: "データベース" },
   { id: "testing", name: "テスト" },
   { id: "modern", name: "モダンJava" },
+  { id: "io", name: "入出力・ファイル" },
+  { id: "network", name: "ネットワーク・API" },
+  { id: "security", name: "セキュリティ" },
+  { id: "build", name: "ビルド・ツール" },
+  { id: "performance", name: "パフォーマンス" },
 ] as const;
 
 export const interviewQuestions: InterviewQuestion[] = [
@@ -1138,6 +1143,2483 @@ if (obj instanceof Point(int x, int y)) {
     question: "Java の将来（Project Loom、Panama、Valhalla）について説明してください",
     answer: "Project Loom: Virtual Threads（Java 21 で正式導入済み）と Structured Concurrency で並行プログラミングを簡素化。Project Panama: JNI を置き換える Foreign Function & Memory API でネイティブコードとの連携を改善（Java 22 で正式導入）。Project Valhalla: Value Types（プリミティブクラス）の導入でメモリ効率とパフォーマンスを向上させる（開発中）。",
     category: "modern",
+    level: "advanced",
+  },
+
+  // ===== 追加: 例外処理 (101-106) =====
+  {
+    id: 101,
+    question: "try-with-resources の仕組みと AutoCloseable の関係を説明してください",
+    answer: "try-with-resources は Java 7 で導入された構文で、AutoCloseable インターフェースを実装したリソースを自動的に close() する。try ブロック終了時（正常終了・例外発生とも）に close() が呼ばれる。複数リソースは宣言の逆順に close される。close() で発生した例外は suppressed exception として元の例外に付与される。",
+    category: "exceptions",
+    level: "basic",
+    code: `// try-with-resources
+try (var br = new BufferedReader(new FileReader("data.txt"));
+     var bw = new BufferedWriter(new FileWriter("out.txt"))) {
+    String line;
+    while ((line = br.readLine()) != null) {
+        bw.write(line);
+        bw.newLine();
+    }
+} // bw.close() → br.close() の順に自動実行
+
+// AutoCloseable の実装
+public class MyResource implements AutoCloseable {
+    @Override
+    public void close() {
+        System.out.println("リソース解放");
+    }
+}`,
+  },
+  {
+    id: 102,
+    question: "checked 例外と unchecked 例外の設計指針を説明してください",
+    answer: "checked 例外（Exception のサブクラス）は呼び出し元に回復処理を強制したい場合に使う（例: IOException、SQLException）。unchecked 例外（RuntimeException のサブクラス）はプログラミングエラーを示す場合に使う（例: NullPointerException、IllegalArgumentException）。現代の設計では、ビジネスロジックの例外は unchecked にし、フレームワーク境界では checked にする傾向がある。Spring は checked 例外を unchecked にラップする設計思想を採用している。",
+    category: "exceptions",
+    level: "intermediate",
+  },
+  {
+    id: 103,
+    question: "例外チェーン（Exception Chaining）とは何ですか？",
+    answer: "例外チェーンは、ある例外を別の例外の原因（cause）として保持する仕組み。低レベルの例外をキャッチして、より意味のある高レベルの例外に変換する際に使う。getCause() で元の例外を取得できる。これにより例外の発生原因を辿ることができ、デバッグが容易になる。",
+    category: "exceptions",
+    level: "intermediate",
+    code: `try {
+    // DB操作
+    connection.executeQuery(sql);
+} catch (SQLException e) {
+    // 低レベル例外を業務例外にラップ
+    throw new UserNotFoundException("ユーザーが見つかりません", e);
+}
+
+// カスタム例外クラス
+public class UserNotFoundException extends RuntimeException {
+    public UserNotFoundException(String message, Throwable cause) {
+        super(message, cause);  // causeを保持
+    }
+}`,
+  },
+  {
+    id: 104,
+    question: "マルチキャッチと例外の再スローについて説明してください",
+    answer: "Java 7 のマルチキャッチでは | で複数の例外型を1つの catch で処理できる。この場合変数は暗黙的に final になる。再スロー（rethrow）では、Java 7 以降 コンパイラが try ブロックで実際にスローされる例外型を追跡し、より精密な型チェックを行う。",
+    category: "exceptions",
+    level: "intermediate",
+    code: `// マルチキャッチ
+try {
+    // 処理
+} catch (IOException | SQLException e) {
+    logger.error("入出力またはDB例外", e);
+    throw e;  // そのまま再スロー
+}
+
+// 精密な再スロー (Java 7+)
+public void process() throws IOException, SQLException {
+    try {
+        riskyOperation();
+    } catch (Exception e) {
+        logger.error("エラー", e);
+        throw e;  // コンパイラはIOException|SQLExceptionと認識
+    }
+}`,
+  },
+  {
+    id: 105,
+    question: "Suppressed Exception とは何ですか？",
+    answer: "try-with-resources で、try ブロック内で例外が発生し、さらに close() でも例外が発生した場合、close() の例外は suppressed exception として元の例外に付与される。getSuppressed() で取得可能。これにより両方の例外情報を保持でき、デバッグ時にリソース解放の問題も特定できる。手動で addSuppressed() を呼ぶこともできる。",
+    category: "exceptions",
+    level: "advanced",
+    code: `try (var resource = new MyResource()) {
+    throw new RuntimeException("メイン例外");
+}
+// MyResource.close() が IllegalStateException をスローした場合:
+// RuntimeException がスローされ、
+// IllegalStateException は suppressed に格納
+
+// suppressed exception の取得
+catch (RuntimeException e) {
+    System.out.println("メイン: " + e.getMessage());
+    for (Throwable suppressed : e.getSuppressed()) {
+        System.out.println("Suppressed: " + suppressed.getMessage());
+    }
+}`,
+  },
+  {
+    id: 106,
+    question: "例外処理のアンチパターンを3つ挙げてください",
+    answer: "① 例外の握りつぶし: catch ブロックで何もしない。障害の原因究明が不可能になる。② catch (Exception e) の乱用: 全例外を一括キャッチすると、プログラミングエラー（NPE等）まで隠蔽される。③ 例外のフロー制御利用: 例外を通常の制御フロー（ループ脱出等）に使うのはパフォーマンスが悪く可読性も低下する。その他、ログ出力して再スローする二重ログや、不要なラッピングもアンチパターン。",
+    category: "exceptions",
+    level: "intermediate",
+    code: `// ❌ アンチパターン1: 例外の握りつぶし
+try {
+    riskyOperation();
+} catch (Exception e) {
+    // 何もしない → 障害が闇に葬られる
+}
+
+// ❌ アンチパターン2: 例外によるフロー制御
+try {
+    int i = 0;
+    while (true) {
+        array[i++].process();  // ArrayIndexOutOfBoundsで終了
+    }
+} catch (ArrayIndexOutOfBoundsException e) { }
+
+// ✅ 正しいパターン
+for (int i = 0; i < array.length; i++) {
+    array[i].process();
+}`,
+  },
+
+  // ===== 追加: 文字列 (107-113) =====
+  {
+    id: 107,
+    question: "String の不変性（Immutability）が重要な理由を説明してください",
+    answer: "① スレッドセーフ: 不変なので同期なしにスレッド間で共有可能。② 文字列プール: 同一内容のリテラルが同じインスタンスを共有でき、メモリ効率が良い。③ セキュリティ: DB接続文字列やパスワードが外部から変更されない。④ ハッシュキャッシュ: hashCode() の計算結果をキャッシュでき、HashMap のキーとして高速。⑤ クラスローディング: クラス名が不変であることで安全にクラスをロードできる。",
+    category: "strings",
+    level: "basic",
+  },
+  {
+    id: 108,
+    question: "String、StringBuilder、StringBuffer の使い分けを説明してください",
+    answer: "String は不変で、連結のたびに新しいオブジェクトが生成される。StringBuilder は可変で非同期（スレッドセーフでない）、単一スレッドでの文字列操作に最適。StringBuffer は可変で同期化（スレッドセーフ）だが StringBuilder より遅い。ループ内での文字列連結には StringBuilder を使う。Java のコンパイラは + 演算子を StringBuilder に最適化するが、ループ内では毎回新しい StringBuilder が作られるため明示的に使うべき。",
+    category: "strings",
+    level: "basic",
+    code: `// ❌ 遅い: ループ内で + 演算子
+String result = "";
+for (int i = 0; i < 10000; i++) {
+    result += i;  // 毎回新しい String オブジェクト生成
+}
+
+// ✅ 速い: StringBuilder
+StringBuilder sb = new StringBuilder();
+for (int i = 0; i < 10000; i++) {
+    sb.append(i);
+}
+String result = sb.toString();
+
+// StringBuffer はマルチスレッド環境で使用
+StringBuffer sbuf = new StringBuffer();  // synchronized`,
+  },
+  {
+    id: 109,
+    question: "String.intern() の動作とメモリへの影響を説明してください",
+    answer: "intern() は文字列プール（String Pool）にその文字列が存在すればその参照を返し、なければプールに追加して返す。Java 7 以降、文字列プールはヒープ上にある（以前は PermGen）。大量の intern() はメモリ圧迫やGC負荷の原因になりうる。定数的に使われる文字列のメモリ最適化に有効だが、乱用は禁物。リテラル文字列は自動的に intern される。",
+    category: "strings",
+    level: "advanced",
+    code: `String s1 = new String("hello");  // ヒープに新規作成
+String s2 = s1.intern();           // プールの "hello" を返す
+String s3 = "hello";               // プールの "hello" を参照
+
+System.out.println(s1 == s2);  // false
+System.out.println(s2 == s3);  // true（同じプール内参照）
+System.out.println(s1 == s3);  // false`,
+  },
+  {
+    id: 110,
+    question: "Java 11以降で追加された便利な String メソッドを挙げてください",
+    answer: "Java 11: isBlank()（空白のみか判定）、strip()（Unicode対応trim）、stripLeading()、stripTrailing()、lines()（行ごとのStream）、repeat(n)。Java 12: indent(n)（インデント調整）、transform()（関数適用）。Java 13: Text Block（\"\"\"...\"\"\"）。Java 15: formatted()（String.format相当）、stripIndent()。これらにより文字列操作がより簡潔になった。",
+    category: "strings",
+    level: "basic",
+    code: `// Java 11
+"  hello  ".strip();        // "hello"
+"  ".isBlank();             // true
+"abc".repeat(3);            // "abcabcabc"
+"a\\nb\\nc".lines().count(); // 3
+
+// Java 13: テキストブロック
+String json = """
+    {
+        "name": "Java",
+        "version": 21
+    }
+    """;
+
+// Java 12
+"hello".indent(4);          // "    hello\\n"
+"hello".transform(s -> s.toUpperCase()); // "HELLO"`,
+  },
+  {
+    id: 111,
+    question: "正規表現のパフォーマンス最適化について説明してください",
+    answer: "Pattern.compile() は正規表現のコンパイルにコストがかかるため、繰り返し使用する場合は static final でプリコンパイルする。バックトラッキングの多い正規表現（ネストした量指定子）はReDoS脆弱性の原因になる。Possessive quantifier（++, *+）やAtomic group（(?>...)）でバックトラッキングを抑制できる。単純な文字列検索には contains()、startsWith() を使い、正規表現を避ける。",
+    category: "strings",
+    level: "advanced",
+    code: `// ❌ 毎回コンパイル
+for (String line : lines) {
+    if (line.matches("\\\\d{3}-\\\\d{4}")) { ... }
+}
+
+// ✅ プリコンパイル
+private static final Pattern ZIP = Pattern.compile("\\\\d{3}-\\\\d{4}");
+for (String line : lines) {
+    if (ZIP.matcher(line).matches()) { ... }
+}
+
+// Possessive quantifier でバックトラック抑制
+Pattern safe = Pattern.compile("a{1,10}+b");`,
+  },
+  {
+    id: 112,
+    question: "文字エンコーディングと Charset の扱いについて説明してください",
+    answer: "Java の char は UTF-16 で、サロゲートペアで BMP 外の文字を表す。String.getBytes() はデフォルトエンコーディング（プラットフォーム依存）を使うため、常に Charset を明示すべき。StandardCharsets.UTF_8 を推奨。Java 18 からデフォルトが UTF-8 に統一された。codePointAt() でサロゲートペアを考慮したコードポイント処理が可能。",
+    category: "strings",
+    level: "intermediate",
+    code: `// ❌ プラットフォーム依存
+byte[] bytes = str.getBytes();
+
+// ✅ エンコーディング明示
+byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
+String s = new String(bytes, StandardCharsets.UTF_8);
+
+// サロゲートペアの扱い
+String emoji = "😀";
+emoji.length();           // 2（char数、サロゲートペア）
+emoji.codePointCount(0, emoji.length()); // 1（実際の文字数）
+emoji.codePoints().count(); // 1`,
+  },
+  {
+    id: 113,
+    question: "StringJoiner と String.join() の使い方を説明してください",
+    answer: "StringJoiner（Java 8）は区切り文字、プレフィックス、サフィックスを指定して文字列を結合する。空の場合のデフォルト値も設定可能。String.join() は StringJoiner の簡易版で、区切り文字と要素を指定する。Collectors.joining() は Stream の終端操作として使う。これらにより、ループ内で区切り文字の判定をする必要がなくなった。",
+    category: "strings",
+    level: "basic",
+    code: `// String.join()
+String csv = String.join(", ", "Java", "Python", "Go");
+// "Java, Python, Go"
+
+// StringJoiner
+StringJoiner sj = new StringJoiner(", ", "[", "]");
+sj.add("A").add("B").add("C");
+sj.toString();  // "[A, B, C]"
+
+// 空の場合のデフォルト値
+StringJoiner empty = new StringJoiner(", ", "[", "]");
+empty.setEmptyValue("なし");
+empty.toString();  // "なし"
+
+// Collectors.joining()
+List.of("a", "b", "c").stream()
+    .collect(Collectors.joining(", ", "(", ")"));
+// "(a, b, c)"`,
+  },
+
+  // ===== 追加: DB (114-120) =====
+  {
+    id: 114,
+    question: "JDBC の基本的な処理フローを説明してください",
+    answer: "① DriverManager.getConnection() で接続取得。② Connection から Statement/PreparedStatement を作成。③ executeQuery()（SELECT）または executeUpdate()（INSERT/UPDATE/DELETE）を実行。④ ResultSet から結果を取得。⑤ リソースを close()。現代では try-with-resources で自動 close し、コネクションプール（HikariCP 等）を使う。直接 JDBC を使うより JPA/MyBatis 等の ORM が一般的。",
+    category: "db",
+    level: "basic",
+    code: `// JDBC基本処理
+try (Connection conn = dataSource.getConnection();
+     PreparedStatement ps = conn.prepareStatement(
+         "SELECT name, age FROM users WHERE id = ?")) {
+    ps.setLong(1, userId);
+    try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+            String name = rs.getString("name");
+            int age = rs.getInt("age");
+        }
+    }
+}`,
+  },
+  {
+    id: 115,
+    question: "PreparedStatement を使うべき理由は何ですか？",
+    answer: "① SQLインジェクション防止: パラメータがエスケープされ、悪意のある入力を無害化。② パフォーマンス: SQL文がプリコンパイルされ、同じ構造のクエリを繰り返し実行する際に高速。③ 型安全性: setInt()、setString() 等で型を明示でき、型変換エラーを防止。④ 可読性: SQL文とパラメータが分離され、コードが読みやすい。Statement は動的 SQL 生成にのみ使い、ユーザー入力を含むクエリには必ず PreparedStatement を使う。",
+    category: "db",
+    level: "basic",
+    code: `// ❌ SQLインジェクション脆弱性
+String sql = "SELECT * FROM users WHERE name = '" + userInput + "'";
+// userInput = "'; DROP TABLE users; --" → テーブル削除
+
+// ✅ PreparedStatement（安全）
+PreparedStatement ps = conn.prepareStatement(
+    "SELECT * FROM users WHERE name = ?");
+ps.setString(1, userInput);  // 自動エスケープ`,
+  },
+  {
+    id: 116,
+    question: "JPA と Hibernate の関係を説明してください",
+    answer: "JPA（Java Persistence API）は Java EE/Jakarta EE の ORM 標準仕様（インターフェース）。Hibernate は JPA の最も有名な実装（プロバイダ）。JPA はアノテーション（@Entity, @Table, @Id 等）と EntityManager API を定義し、Hibernate がその実装を提供する。EclipseLink も別のJPA実装。Spring Data JPA は JPA をさらに抽象化し、リポジトリパターンでCRUD操作を簡素化する。",
+    category: "db",
+    level: "intermediate",
+    code: `// JPA エンティティ
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Order> orders;
+}
+
+// Spring Data JPA リポジトリ
+public interface UserRepository extends JpaRepository<User, Long> {
+    List<User> findByNameContaining(String name);
+    @Query("SELECT u FROM User u WHERE u.age > :age")
+    List<User> findOlderThan(@Param("age") int age);
+}`,
+  },
+  {
+    id: 117,
+    question: "N+1 問題とその解決策を説明してください",
+    answer: "N+1問題は、親エンティティN件を取得した後、各親に対して子エンティティを1件ずつ取得し、計N+1回のクエリが発生する問題。解決策: ① JOIN FETCH: JPQL で関連を一括取得。② @EntityGraph: JPA 2.1のアノテーションで関連のフェッチ方法を指定。③ @BatchSize: Hibernate が IN句でバッチ取得。④ サブセレクト: 関連をサブクエリで一括取得。パフォーマンスに大きく影響するため、必ず対策が必要。",
+    category: "db",
+    level: "advanced",
+    code: `// ❌ N+1問題
+List<User> users = em.createQuery("SELECT u FROM User u").getResultList();
+for (User u : users) {
+    u.getOrders().size();  // 各ユーザーごとに SELECT 発行
+}
+
+// ✅ JOIN FETCH で1回のクエリに
+List<User> users = em.createQuery(
+    "SELECT DISTINCT u FROM User u JOIN FETCH u.orders"
+).getResultList();
+
+// ✅ @EntityGraph
+@EntityGraph(attributePaths = {"orders"})
+List<User> findAll();`,
+  },
+  {
+    id: 118,
+    question: "トランザクション分離レベルを説明してください",
+    answer: "① READ_UNCOMMITTED: ダーティリード可能。最も低い分離レベル。② READ_COMMITTED: コミット済みデータのみ読取。Oracle、PostgreSQL のデフォルト。③ REPEATABLE_READ: トランザクション中に読んだデータは変わらない。MySQL のデフォルト。④ SERIALIZABLE: 最も厳格。トランザクションが完全に直列化される。分離レベルが高いほどデータ整合性は高まるが、並行性能は低下する。",
+    category: "db",
+    level: "advanced",
+    code: `// Spring での分離レベル指定
+@Transactional(isolation = Isolation.READ_COMMITTED)
+public void transferMoney(Long from, Long to, BigDecimal amount) {
+    Account src = accountRepo.findById(from).orElseThrow();
+    Account dst = accountRepo.findById(to).orElseThrow();
+    src.debit(amount);
+    dst.credit(amount);
+}
+
+// 異常現象
+// ダーティリード:     未コミットデータの読取
+// ノンリピータブルリード: 同一行の再読取で値が変わる
+// ファントムリード:   同一条件の再検索で行数が変わる`,
+  },
+  {
+    id: 119,
+    question: "コネクションプールの仕組みと HikariCP について説明してください",
+    answer: "コネクションプールは事前にDB接続を作成してプールし、再利用する仕組み。接続の作成・破棄コスト（TCP接続、認証等）を削減する。HikariCP は最速のJavaコネクションプールで、Spring Boot のデフォルト。主要設定: maximumPoolSize（最大接続数）、minimumIdle（最小アイドル数）、connectionTimeout（取得タイムアウト）、maxLifetime（接続の最大生存時間）。プールサイズは CPU コア数 × 2 + ディスク数が目安。",
+    category: "db",
+    level: "intermediate",
+    code: `# application.yml (Spring Boot)
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydb
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000   # 30秒
+      max-lifetime: 1800000       # 30分
+      idle-timeout: 600000        # 10分
+      leak-detection-threshold: 60000  # リーク検出`,
+  },
+  {
+    id: 120,
+    question: "楽観的ロックと悲観的ロックの違いを説明してください",
+    answer: "楽観的ロック: 競合は稀だと仮定し、更新時にバージョン番号やタイムスタンプで競合を検出する。JPA の @Version アノテーションで実現。競合時は OptimisticLockException。悲観的ロック: 競合が多い場合に使い、SELECT FOR UPDATE でDBレベルで行をロックする。デッドロックのリスクがある。一般的にはWebアプリでは楽観的ロック、バッチ処理では悲観的ロックが適している。",
+    category: "db",
+    level: "advanced",
+    code: `// 楽観的ロック（JPA @Version）
+@Entity
+public class Product {
+    @Id private Long id;
+    @Version private Long version;  // 更新のたびにインクリメント
+    private int stock;
+}
+
+// 悲観的ロック
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("SELECT p FROM Product p WHERE p.id = :id")
+Product findByIdForUpdate(@Param("id") Long id);
+
+// 楽観的ロック競合のハンドリング
+try {
+    productService.updateStock(productId, quantity);
+} catch (OptimisticLockException e) {
+    // リトライまたはユーザーに通知
+}`,
+  },
+
+  // ===== 追加: テスト (121-128) =====
+  {
+    id: 121,
+    question: "JUnit 5 のアーキテクチャと主要アノテーションを説明してください",
+    answer: "JUnit 5 = JUnit Platform（テスト実行基盤）+ JUnit Jupiter（JUnit 5のAPI）+ JUnit Vintage（JUnit 3/4 互換）。主要アノテーション: @Test、@BeforeEach/@AfterEach（各テスト前後）、@BeforeAll/@AfterAll（クラス前後、static）、@DisplayName（表示名）、@Nested（ネストクラス）、@ParameterizedTest（パラメータ化テスト）、@Tag（タグ付け）、@Disabled（無効化）。",
+    category: "testing",
+    level: "basic",
+    code: `@DisplayName("ユーザーサービスのテスト")
+class UserServiceTest {
+
+    @BeforeEach
+    void setUp() { /* 各テスト前 */ }
+
+    @Test
+    @DisplayName("名前でユーザーを検索できる")
+    void findByName() {
+        User user = service.findByName("Alice");
+        assertNotNull(user);
+        assertEquals("Alice", user.getName());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "  "})
+    @DisplayName("空白名は例外")
+    void blankNameThrows(String name) {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.findByName(name));
+    }
+
+    @Nested
+    @DisplayName("管理者の場合")
+    class AdminTests {
+        @Test void canDeleteUser() { /* ... */ }
+    }
+}`,
+  },
+  {
+    id: 122,
+    question: "Mockito の基本的な使い方を説明してください",
+    answer: "Mockito はモックオブジェクトを作成するフレームワーク。@Mock でモック作成、@InjectMocks でテスト対象にモックを注入。when().thenReturn() でスタブ（戻り値設定）、verify() で呼び出し検証。doThrow() で例外をスロー、ArgumentCaptor で引数キャプチャ。spy() は実オブジェクトの部分モック。モックは外部依存（DB、API等）を分離してユニットテストを可能にする。",
+    category: "testing",
+    level: "intermediate",
+    code: `@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+
+    @Mock UserRepository userRepo;
+    @Mock EmailService emailService;
+    @InjectMocks OrderService orderService;
+
+    @Test
+    void placeOrder_sendsEmail() {
+        // スタブ設定
+        when(userRepo.findById(1L))
+            .thenReturn(Optional.of(new User("Alice")));
+
+        orderService.placeOrder(1L, "item-001");
+
+        // 呼び出し検証
+        verify(emailService).sendConfirmation(
+            eq("Alice"), anyString());
+        verify(userRepo, times(1)).findById(1L);
+    }
+}`,
+  },
+  {
+    id: 123,
+    question: "テストダブル（Test Double）の種類を説明してください",
+    answer: "① Dummy: 引数を満たすためだけの空オブジェクト。② Stub: 決まった値を返す。テスト対象の間接入力を制御。③ Spy: 実オブジェクトの呼び出しを記録。④ Mock: 呼び出しを検証するオブジェクト。期待する呼び出しを設定し、テスト終了時に検証。⑤ Fake: 簡易的な実装（例: インメモリDB）。Martin Fowler の定義に基づく分類で、Mockito は主に Mock と Spy を提供する。",
+    category: "testing",
+    level: "intermediate",
+  },
+  {
+    id: 124,
+    question: "Spring Boot でのテスト手法を説明してください",
+    answer: "@SpringBootTest はアプリケーション全体をロードする統合テスト。@WebMvcTest はControllerレイヤーのみテスト（Service等はモック）。@DataJpaTest はJPAリポジトリのテスト（組み込みDB使用）。@MockBean でSpringコンテキスト内のBeanをモック置換。テストスライスを適切に使い分けることで、テスト速度と網羅性のバランスを取る。",
+    category: "testing",
+    level: "intermediate",
+    code: `// コントローラーテスト
+@WebMvcTest(UserController.class)
+class UserControllerTest {
+    @Autowired MockMvc mockMvc;
+    @MockBean UserService userService;
+
+    @Test
+    void getUser_returns200() throws Exception {
+        when(userService.findById(1L))
+            .thenReturn(new UserDto("Alice"));
+
+        mockMvc.perform(get("/api/users/1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Alice"));
+    }
+}
+
+// リポジトリテスト
+@DataJpaTest
+class UserRepositoryTest {
+    @Autowired UserRepository repo;
+
+    @Test void findByEmail_returnsUser() {
+        repo.save(new User("test@example.com"));
+        assertNotNull(repo.findByEmail("test@example.com"));
+    }
+}`,
+  },
+  {
+    id: 125,
+    question: "Testcontainers とは何ですか？",
+    answer: "Testcontainers は Docker コンテナを使って統合テスト用の外部サービス（DB、Redis、Kafka 等）を自動起動・停止するライブラリ。@Container でコンテナを宣言し、@Testcontainers で管理。テストごとにクリーンな環境を提供し、H2等の組み込みDBでは再現できないDB固有の動作（PostgreSQLのJSONB等）をテスト可能。CI/CD環境でもDockerがあれば動作する。",
+    category: "testing",
+    level: "advanced",
+    code: `@Testcontainers
+@SpringBootTest
+class UserIntegrationTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres =
+        new PostgreSQLContainer<>("postgres:16-alpine");
+
+    @DynamicPropertySource
+    static void configureDB(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
+
+    @Test
+    void createUser_persistsToPostgres() {
+        // 本物のPostgreSQLに対してテスト
+    }
+}`,
+  },
+  {
+    id: 126,
+    question: "テストカバレッジとミューテーションテストについて説明してください",
+    answer: "テストカバレッジは行カバレッジ（C0）、分岐カバレッジ（C1）、条件カバレッジ（C2）がある。JaCoCo が Java の標準的なカバレッジ計測ツール。しかし、カバレッジ100%でもバグを検出できないことがある。ミューテーションテストは、コードに意図的な変異（条件反転、定数変更等）を加え、テストがそれを検出できるか検証する。PIT が Java のミューテーションテストツール。",
+    category: "testing",
+    level: "advanced",
+    code: `// build.gradle (JaCoCo + PIT)
+plugins {
+    id 'jacoco'
+    id 'info.solidsoft.pitest' version '1.15.0'
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+pitest {
+    targetClasses = ['com.example.service.*']
+    mutators = ['DEFAULTS']
+    outputFormats = ['HTML']
+}
+
+// 実行
+// ./gradlew jacocoTestReport   # カバレッジ
+// ./gradlew pitest             # ミューテーション`,
+  },
+  {
+    id: 127,
+    question: "テスト駆動開発（TDD）のサイクルを説明してください",
+    answer: "TDD は Red → Green → Refactor の3ステップサイクル。① Red: 失敗するテストを書く。② Green: テストが通る最小限のコードを書く。③ Refactor: テストが通ったまま、コードを改善する。メリット: 設計がテスト可能になる、リグレッション防止、ドキュメント代わり。注意点: 過度なモックは脆いテストになる。BDD（振る舞い駆動）は TDD の発展形で、Given-When-Then で仕様を記述する。",
+    category: "testing",
+    level: "intermediate",
+  },
+  {
+    id: 128,
+    question: "アサーションライブラリ AssertJ の利点を説明してください",
+    answer: "AssertJ は流暢な（fluent）アサーション API を提供するライブラリ。JUnit の assertEquals より可読性が高い。メソッドチェーンで複数のアサーションを連続記述でき、コレクション、例外、Optional 等に特化したアサーションが豊富。エラーメッセージも詳細でデバッグしやすい。Spring Boot Test のデフォルト依存に含まれている。",
+    category: "testing",
+    level: "basic",
+    code: `// JUnit
+assertEquals("Alice", user.getName());
+assertTrue(users.size() >= 3);
+
+// AssertJ（流暢で可読性が高い）
+assertThat(user.getName()).isEqualTo("Alice");
+assertThat(users)
+    .hasSize(5)
+    .extracting(User::getName)
+    .contains("Alice", "Bob")
+    .doesNotContain("Unknown");
+
+// 例外のアサーション
+assertThatThrownBy(() -> service.findById(-1L))
+    .isInstanceOf(IllegalArgumentException.class)
+    .hasMessageContaining("ID");
+
+// Optional
+assertThat(optional).isPresent().hasValue("hello");`,
+  },
+
+  // ===== 追加: Stream・ラムダ (129-136) =====
+  {
+    id: 129,
+    question: "Stream の中間操作と終端操作の違いを説明してください",
+    answer: "中間操作（intermediate）は遅延評価で、Streamを返す。filter()、map()、flatMap()、sorted()、distinct()、peek()、limit()、skip() 等。終端操作（terminal）は即座に実行され、結果を返すとStreamは消費される。collect()、forEach()、reduce()、count()、findFirst()、anyMatch()、toList() 等。中間操作はパイプラインを構築するだけで、終端操作が呼ばれるまで実行されない。",
+    category: "streams",
+    level: "basic",
+    code: `List<String> result = names.stream()
+    .filter(name -> name.length() > 3)    // 中間操作
+    .map(String::toUpperCase)              // 中間操作
+    .sorted()                              // 中間操作
+    .distinct()                            // 中間操作
+    .collect(Collectors.toList());         // 終端操作（ここで実行）
+
+// 終端操作の種類
+long count = stream.count();
+Optional<T> first = stream.findFirst();
+boolean any = stream.anyMatch(predicate);
+T reduced = stream.reduce(identity, accumulator);
+stream.forEach(System.out::println);`,
+  },
+  {
+    id: 130,
+    question: "Collectors の主要なメソッドを説明してください",
+    answer: "toList(), toSet(), toMap(): コレクションに変換。groupingBy(): キーでグルーピング。partitioningBy(): boolean で2分割。joining(): 文字列結合。counting(), summingInt(), averagingDouble(): 集計。toUnmodifiableList(): 不変リスト。collectingAndThen(): コレクタの結果を変換。downstream collector で多段集計も可能。",
+    category: "streams",
+    level: "intermediate",
+    code: `// グルーピング
+Map<String, List<Employee>> byDept = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment));
+
+// 多段集計（部署ごとの平均給与）
+Map<String, Double> avgSalary = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        Collectors.averagingDouble(Employee::getSalary)
+    ));
+
+// パーティション
+Map<Boolean, List<Integer>> evenOdd = numbers.stream()
+    .collect(Collectors.partitioningBy(n -> n % 2 == 0));
+
+// toMap（キー重複時のマージ関数）
+Map<String, Integer> nameToAge = people.stream()
+    .collect(Collectors.toMap(
+        Person::getName,
+        Person::getAge,
+        (existing, replacement) -> existing  // 重複時は先を優先
+    ));`,
+  },
+  {
+    id: 131,
+    question: "flatMap() の用途と使い方を説明してください",
+    answer: "flatMap() は各要素を Stream に変換し、それらを1つの Stream に平坦化する。入れ子のコレクション（List<List<T>>）をフラットにする場合や、Optional のネストを解消する場合に使う。map() は 1:1 変換だが、flatMap() は 1:N 変換して結果を連結する。",
+    category: "streams",
+    level: "intermediate",
+    code: `// List<List<T>> をフラット化
+List<List<String>> nested = List.of(
+    List.of("a", "b"),
+    List.of("c", "d"),
+    List.of("e")
+);
+List<String> flat = nested.stream()
+    .flatMap(Collection::stream)
+    .toList();  // [a, b, c, d, e]
+
+// 1行を単語に分割してフラット化
+List<String> words = lines.stream()
+    .flatMap(line -> Arrays.stream(line.split("\\\\s+")))
+    .toList();
+
+// Optional の flatMap
+Optional<String> city = user
+    .flatMap(User::getAddress)
+    .flatMap(Address::getCity);`,
+  },
+  {
+    id: 132,
+    question: "parallel Stream の注意点を説明してください",
+    answer: "parallelStream() は ForkJoinPool.commonPool() で並列処理する。注意点: ① 副作用のある操作（共有変数の変更）は禁止。② 順序依存の処理には不向き（forEachOrdered で順序保証可）。③ 少量データではオーバーヘッドで逆に遅くなる。④ I/O バウンド処理には不向き（共有プールを占有）。⑤ カスタム ForkJoinPool で分離可能。ベンチマークなしに安易に使わない。",
+    category: "streams",
+    level: "advanced",
+    code: `// ❌ 副作用あり（スレッドセーフでない）
+List<String> results = new ArrayList<>();
+stream.parallel().forEach(results::add);  // 危険
+
+// ✅ Collectors で安全に収集
+List<String> results = stream.parallel()
+    .collect(Collectors.toList());
+
+// カスタム ForkJoinPool で分離
+ForkJoinPool customPool = new ForkJoinPool(4);
+List<Result> results = customPool.submit(() ->
+    data.parallelStream()
+        .map(this::heavyComputation)
+        .toList()
+).get();`,
+  },
+  {
+    id: 133,
+    question: "関数型インターフェースの種類を説明してください",
+    answer: "java.util.function パッケージの主要な関数型インターフェース: Function<T,R>（変換、T→R）、Predicate<T>（判定、T→boolean）、Consumer<T>（消費、T→void）、Supplier<T>（生成、()→T）、BiFunction<T,U,R>（2引数変換）、BiPredicate<T,U>（2引数判定）、UnaryOperator<T>（T→T）、BinaryOperator<T>（(T,T)→T）。プリミティブ特殊化版（IntFunction、ToIntFunction 等）もある。",
+    category: "streams",
+    level: "basic",
+    code: `// Function: 変換
+Function<String, Integer> length = String::length;
+length.apply("hello");  // 5
+
+// Predicate: 判定
+Predicate<String> isLong = s -> s.length() > 5;
+isLong.test("hello");  // false
+isLong.and(s -> s.startsWith("H"));  // 合成
+
+// Consumer: 消費
+Consumer<String> printer = System.out::println;
+
+// Supplier: 生成
+Supplier<List<String>> listFactory = ArrayList::new;
+
+// 合成
+Function<String, String> upper = String::toUpperCase;
+Function<String, String> trim = String::trim;
+Function<String, String> trimAndUpper = trim.andThen(upper);`,
+  },
+  {
+    id: 134,
+    question: "メソッド参照の4つの形式を説明してください",
+    answer: "① 静的メソッド参照: ClassName::staticMethod（例: Integer::parseInt）。② インスタンスメソッド参照（特定オブジェクト）: instance::method（例: System.out::println）。③ インスタンスメソッド参照（任意オブジェクト）: ClassName::method（例: String::length）。④ コンストラクタ参照: ClassName::new（例: ArrayList::new）。ラムダ式の簡潔な代替で、可読性が向上する。",
+    category: "streams",
+    level: "basic",
+    code: `// ① 静的メソッド参照
+Function<String, Integer> parse = Integer::parseInt;
+
+// ② 特定インスタンスのメソッド参照
+PrintStream out = System.out;
+Consumer<String> print = out::println;
+
+// ③ 任意インスタンスのメソッド参照
+Function<String, String> upper = String::toUpperCase;
+// ラムダ等価: s -> s.toUpperCase()
+
+// ④ コンストラクタ参照
+Supplier<List<String>> newList = ArrayList::new;
+Function<String, User> createUser = User::new;
+
+// 実践例
+List<String> names = users.stream()
+    .map(User::getName)        // ③
+    .map(String::toUpperCase)  // ③
+    .toList();`,
+  },
+  {
+    id: 135,
+    question: "Optional の正しい使い方とアンチパターンを説明してください",
+    answer: "Optional は値の存在/不在を明示する型で、null を返す代わりにメソッドの戻り値として使う。推奨: orElse()、orElseGet()、orElseThrow()、map()、flatMap()、ifPresent() で処理。アンチパターン: ① フィールドに Optional を使う（シリアライゼーション不可）。② メソッド引数に Optional を使う。③ Optional.get() を isPresent() チェックなしに呼ぶ。④ Optional をコレクション要素に使う。",
+    category: "streams",
+    level: "intermediate",
+    code: `// ✅ 正しい使い方
+Optional<User> user = repository.findById(id);
+
+// map でチェーン
+String city = user
+    .map(User::getAddress)
+    .map(Address::getCity)
+    .orElse("不明");
+
+// orElseThrow
+User u = user.orElseThrow(
+    () -> new NotFoundException("User not found"));
+
+// ifPresentOrElse (Java 9+)
+user.ifPresentOrElse(
+    u -> process(u),
+    () -> handleNotFound()
+);
+
+// ❌ アンチパターン
+if (optional.isPresent()) {
+    return optional.get();  // map/orElse を使うべき
+}`,
+  },
+  {
+    id: 136,
+    question: "Stream.reduce() の使い方を説明してください",
+    answer: "reduce() は Stream の要素を1つの値に集約する終端操作。3つの形式: ① reduce(BinaryOperator): Optional を返す。② reduce(identity, BinaryOperator): 初期値あり。③ reduce(identity, BiFunction, BinaryOperator): 並列処理用の combiner 付き。sum、max、min、文字列結合などの集約処理に使う。複雑な集約は Collectors を使った方が読みやすい。",
+    category: "streams",
+    level: "intermediate",
+    code: `// 合計
+int sum = numbers.stream()
+    .reduce(0, Integer::sum);
+
+// 最大値
+Optional<Integer> max = numbers.stream()
+    .reduce(Integer::max);
+
+// 文字列結合
+String concat = words.stream()
+    .reduce("", (a, b) -> a + " " + b);
+
+// 並列処理用（combiner付き）
+int total = numbers.parallelStream()
+    .reduce(0,
+        (subtotal, element) -> subtotal + element,
+        Integer::sum  // 部分結果の結合
+    );`,
+  },
+
+  // ===== 追加: 入出力・ファイル (137-140) =====
+  {
+    id: 137,
+    question: "Java NIO と旧 IO の違いを説明してください",
+    answer: "旧IO（java.io）はストリーム指向でブロッキング。NIO（java.nio、Java 1.4）はバッファ指向でノンブロッキングI/O対応。NIO2（Java 7）は Path、Files クラスで簡便なファイル操作、WatchService でファイル監視を追加。主な違い: IO はストリーム（Stream）、NIO はチャネル（Channel）とバッファ（Buffer）。IO はバイト/文字単位、NIO はバッファ単位。NIO は Selector で複数チャネルを1スレッドで管理可能。",
+    category: "io",
+    level: "intermediate",
+    code: `// 旧IO
+try (BufferedReader br = new BufferedReader(
+        new FileReader("data.txt"))) {
+    String line;
+    while ((line = br.readLine()) != null) {
+        process(line);
+    }
+}
+
+// NIO2 (推奨)
+Path path = Path.of("data.txt");
+List<String> lines = Files.readAllLines(path);
+String content = Files.readString(path);
+Stream<String> stream = Files.lines(path);  // 遅延読み込み
+
+// ファイル書き込み
+Files.writeString(Path.of("out.txt"), "Hello");
+Files.write(Path.of("out.txt"), lines);`,
+  },
+  {
+    id: 138,
+    question: "シリアライゼーション（直列化）の仕組みと注意点を説明してください",
+    answer: "シリアライゼーションはオブジェクトをバイトストリームに変換すること。Serializable インターフェースを実装し、ObjectOutputStream/ObjectInputStream で入出力。serialVersionUID でバージョン管理。注意点: ① セキュリティリスク（デシリアライゼーション攻撃）。② transient フィールドは除外。③ 継承時の挙動が複雑。現代では JSON（Jackson、Gson）による直列化が主流で、Java のシリアライゼーションは避けるべきとされる。",
+    category: "io",
+    level: "intermediate",
+    code: `// Serializable の実装
+public class User implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+    private String name;
+    private transient String password;  // 直列化から除外
+}
+
+// 直列化
+try (var oos = new ObjectOutputStream(
+        new FileOutputStream("user.ser"))) {
+    oos.writeObject(user);
+}
+
+// 復元
+try (var ois = new ObjectInputStream(
+        new FileInputStream("user.ser"))) {
+    User user = (User) ois.readObject();
+}
+
+// ✅ 現代的な方法: JSON (Jackson)
+ObjectMapper mapper = new ObjectMapper();
+String json = mapper.writeValueAsString(user);
+User user = mapper.readValue(json, User.class);`,
+  },
+  {
+    id: 139,
+    question: "Files クラスの便利なメソッドを挙げてください",
+    answer: "Java 7+: readAllBytes()、readAllLines()、write()、copy()、move()、delete()、createDirectories()、newBufferedReader()、walk()（ディレクトリ再帰走査）、find()。Java 11+: readString()、writeString()。Java 12+: mismatch()（ファイル比較）。これらは旧IO のストリーム構築を不要にし、1行でファイル操作を完結できる。大きなファイルには lines() で遅延読み込みを使う。",
+    category: "io",
+    level: "basic",
+    code: `// ファイル読み込み
+String content = Files.readString(Path.of("file.txt"));
+List<String> lines = Files.readAllLines(Path.of("file.txt"));
+byte[] bytes = Files.readAllBytes(Path.of("image.png"));
+
+// ファイル書き込み
+Files.writeString(Path.of("out.txt"), "Hello World");
+Files.write(Path.of("data.csv"), lines);
+
+// コピー・移動・削除
+Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+Files.deleteIfExists(Path.of("temp.txt"));
+
+// ディレクトリ走査
+try (Stream<Path> paths = Files.walk(Path.of("src"))) {
+    paths.filter(p -> p.toString().endsWith(".java"))
+         .forEach(System.out::println);
+}`,
+  },
+  {
+    id: 140,
+    question: "バイトストリームと文字ストリームの違いは？",
+    answer: "バイトストリーム（InputStream/OutputStream）は生のバイトデータ（画像、音声等）を扱う。文字ストリーム（Reader/Writer）はテキストデータを文字エンコーディングを考慮して扱う。InputStreamReader/OutputStreamWriter がバイトと文字の橋渡し。BufferedInputStream/BufferedReader でバッファリングにより性能向上。文字データには必ず文字ストリームを使い、エンコーディングを明示する。",
+    category: "io",
+    level: "basic",
+    code: `// バイトストリーム（画像等）
+try (InputStream is = new FileInputStream("image.png");
+     OutputStream os = new FileOutputStream("copy.png")) {
+    is.transferTo(os);  // Java 9+
+}
+
+// 文字ストリーム（テキスト）
+try (Reader r = new BufferedReader(
+        new InputStreamReader(
+            new FileInputStream("data.txt"),
+            StandardCharsets.UTF_8));
+     Writer w = new BufferedWriter(
+        new OutputStreamWriter(
+            new FileOutputStream("out.txt"),
+            StandardCharsets.UTF_8))) {
+    // 読み書き
+}`,
+  },
+  // ===== ネットワーク・API (141-148) =====
+  {
+    id: 141,
+    question: "JavaでHTTP通信を行う方法を比較してください（HttpClient, RestTemplate, WebClient）",
+    answer: "Java 11 標準の HttpClient は非同期対応でモダンな API を提供する。Spring の RestTemplate は同期的で直感的だが、Spring 5 以降は非推奨となりメンテナンスモードに移行した。WebClient はリアクティブ対応の非ブロッキングクライアントで、Mono/Flux を返す。新規プロジェクトでは WebClient または HttpClient の使用が推奨される。",
+    category: "network",
+    level: "intermediate",
+    code: `// Java 11 HttpClient
+HttpClient client = HttpClient.newHttpClient();
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://api.example.com/users"))
+    .header("Content-Type", "application/json")
+    .GET()
+    .build();
+HttpResponse<String> response = client.send(request,
+    HttpResponse.BodyHandlers.ofString());
+
+// Spring RestTemplate
+RestTemplate rest = new RestTemplate();
+User user = rest.getForObject("/api/users/1", User.class);
+
+// Spring WebClient
+WebClient webClient = WebClient.create("https://api.example.com");
+Mono<User> userMono = webClient.get()
+    .uri("/users/{id}", 1)
+    .retrieve()
+    .bodyToMono(User.class);`,
+  },
+  {
+    id: 142,
+    question: "REST API設計のベストプラクティスを説明してください",
+    answer: "REST API ではリソース指向の URI 設計（名詞を使い、複数形にする）、適切な HTTP メソッドの使い分け（GET=取得、POST=作成、PUT=更新、DELETE=削除）が基本となる。バージョニング、ページネーション、HATEOAS、一貫性のあるエラーレスポンス形式も重要である。また、べき等性の保証やステータスコードの正しい使用、リクエスト/レスポンスの JSON フォーマット統一も求められる。",
+    category: "network",
+    level: "intermediate",
+  },
+  {
+    id: 143,
+    question: "JavaでWebSocketを使う方法を説明してください",
+    answer: "WebSocket は HTTP とは異なり、サーバーとクライアント間で双方向のリアルタイム通信を実現するプロトコルである。Spring では @EnableWebSocket アノテーションと WebSocketHandler の実装で簡単にサーバー側を構築できる。STOMP プロトコルと SockJS を組み合わせることで、メッセージブローカーを介したより高レベルなメッセージングも可能になる。",
+    category: "network",
+    level: "advanced",
+    code: `// Spring WebSocket 設定
+@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        config.enableSimpleBroker("/topic");
+        config.setApplicationDestinationPrefixes("/app");
+    }
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws").withSockJS();
+    }
+}
+
+// メッセージ送信コントローラー
+@Controller
+public class ChatController {
+    @MessageMapping("/chat")
+    @SendTo("/topic/messages")
+    public ChatMessage send(ChatMessage message) {
+        return message;
+    }
+}`,
+  },
+  {
+    id: 144,
+    question: "Javaのソケットプログラミングの基礎を説明してください",
+    answer: "Java ではjava.net.Socket（クライアント側）と java.net.ServerSocket（サーバー側）を使って TCP ソケット通信を行う。ServerSocket は指定ポートで接続を待ち受け、accept() でクライアント接続を受け付ける。InputStream/OutputStream を使ってデータの読み書きを行い、通信後は必ずソケットを閉じる必要がある。",
+    category: "network",
+    level: "basic",
+    code: `// サーバー側
+try (ServerSocket server = new ServerSocket(8080)) {
+    System.out.println("サーバー起動: ポート 8080");
+    Socket client = server.accept();
+    BufferedReader in = new BufferedReader(
+        new InputStreamReader(client.getInputStream()));
+    PrintWriter out = new PrintWriter(
+        client.getOutputStream(), true);
+    String message = in.readLine();
+    out.println("受信: " + message);
+}
+
+// クライアント側
+try (Socket socket = new Socket("localhost", 8080)) {
+    PrintWriter out = new PrintWriter(
+        socket.getOutputStream(), true);
+    BufferedReader in = new BufferedReader(
+        new InputStreamReader(socket.getInputStream()));
+    out.println("Hello Server!");
+    System.out.println(in.readLine());
+}`,
+  },
+  {
+    id: 145,
+    question: "gRPCとProtocol Buffersについて説明してください",
+    answer: "gRPC は Google が開発した高性能な RPC フレームワークで、Protocol Buffers（protobuf）をインターフェース定義言語として使用する。HTTP/2 ベースで双方向ストリーミングをサポートし、REST に比べてバイナリ形式のため高速である。マイクロサービス間通信に適しており、Java では protobuf プラグインでスタブコードを自動生成できる。",
+    category: "network",
+    level: "advanced",
+    code: `// user.proto（Protocol Buffers 定義）
+syntax = "proto3";
+service UserService {
+    rpc GetUser (UserRequest) returns (UserResponse);
+    rpc ListUsers (Empty) returns (stream UserResponse);
+}
+message UserRequest {
+    int64 id = 1;
+}
+message UserResponse {
+    int64 id = 1;
+    string name = 2;
+    string email = 3;
+}
+
+// Java サーバー実装
+public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
+    @Override
+    public void getUser(UserRequest req,
+            StreamObserver<UserResponse> responseObserver) {
+        UserResponse response = UserResponse.newBuilder()
+            .setId(req.getId())
+            .setName("Taro")
+            .setEmail("taro@example.com")
+            .build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
+}`,
+  },
+  {
+    id: 146,
+    question: "HTTPステータスコードの使い分けを説明してください",
+    answer: "1xx は情報レスポンス、2xx は成功（200 OK、201 Created、204 No Content）、3xx はリダイレクト（301 永久移動、304 未変更）を示す。4xx はクライアントエラー（400 Bad Request、401 Unauthorized、403 Forbidden、404 Not Found、409 Conflict、422 Unprocessable Entity）、5xx はサーバーエラー（500 Internal Server Error、502 Bad Gateway、503 Service Unavailable）を示す。適切なステータスコードを返すことで、クライアントが正しくエラーハンドリングできる。",
+    category: "network",
+    level: "basic",
+  },
+  {
+    id: 147,
+    question: "APIバージョニング戦略を説明してください",
+    answer: "API バージョニングには主に4つの方式がある。① URI パス方式（/api/v1/users）: 最も一般的で分かりやすい。② クエリパラメータ方式（/api/users?version=1）: URL が見やすいが見落とされやすい。③ ヘッダー方式（Accept: application/vnd.api.v1+json）: URL がクリーンだが実装が複雑。④ コンテンツネゴシエーション方式: Media Type で指定する。一般的には URI パス方式が推奨され、後方互換性を保ちながら段階的に移行するのがベストプラクティスである。",
+    category: "network",
+    level: "intermediate",
+  },
+  {
+    id: 148,
+    question: "レート制限の実装方法を説明してください",
+    answer: "レート制限はAPI の過負荷を防ぐ仕組みで、トークンバケットアルゴリズムやスライディングウィンドウアルゴリズムで実装される。Spring では Filter やインターセプターで実装でき、Redis を使った分散レート制限も一般的である。レスポンスヘッダー（X-RateLimit-Limit、X-RateLimit-Remaining、Retry-After）で残りリクエスト数をクライアントに通知する。",
+    category: "network",
+    level: "advanced",
+    code: `// Bucket4j を使ったレート制限の例
+@Component
+public class RateLimitFilter extends OncePerRequestFilter {
+    private final Map<String, Bucket> buckets =
+        new ConcurrentHashMap<>();
+
+    private Bucket createBucket() {
+        return Bucket.builder()
+            .addLimit(Bandwidth.classic(
+                10, Refill.greedy(10, Duration.ofMinutes(1))))
+            .build();
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain) throws ServletException, IOException {
+        String ip = request.getRemoteAddr();
+        Bucket bucket = buckets.computeIfAbsent(ip,
+            k -> createBucket());
+        if (bucket.tryConsume(1)) {
+            chain.doFilter(request, response);
+        } else {
+            response.setStatus(429);
+            response.getWriter().write("Too Many Requests");
+        }
+    }
+}`,
+  },
+  // ===== セキュリティ (149-155) =====
+  {
+    id: 149,
+    question: "Javaのセキュリティマネージャの役割を説明してください",
+    answer: "SecurityManager は Java アプリケーションのサンドボックスを制御し、ファイルアクセス・ネットワーク接続・クラスロードなどの操作に対してポリシーベースのアクセス制御を行っていた。java.policy ファイルで権限を定義し、checkPermission() で操作の許可・拒否を判定していた。ただし Java 17 で非推奨となり、Java 24 で削除された。現在はコンテナやOSレベルのセキュリティ機構を代替として使用することが推奨される。",
+    category: "security",
+    level: "intermediate",
+  },
+  {
+    id: 150,
+    question: "Javaでの暗号化（対称・非対称）の実装方法を説明してください",
+    answer: "対称鍵暗号（AES）は同一の鍵で暗号化・復号を行い、高速だが鍵の共有が課題となる。非対称鍵暗号（RSA）は公開鍵で暗号化し秘密鍵で復号する方式で、鍵交換が安全だが低速である。Java では javax.crypto パッケージの Cipher クラスで両方の暗号方式を実装でき、実際のシステムでは両者を組み合わせた ハイブリッド暗号方式が一般的である。",
+    category: "security",
+    level: "advanced",
+    code: `// AES 対称鍵暗号
+KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+keyGen.init(256);
+SecretKey secretKey = keyGen.generateKey();
+
+Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+GCMParameterSpec spec = new GCMParameterSpec(128, iv);
+cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec);
+byte[] encrypted = cipher.doFinal(plainText.getBytes());
+
+// RSA 非対称鍵暗号
+KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+kpg.initialize(2048);
+KeyPair keyPair = kpg.generateKeyPair();
+
+Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+rsaCipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic());
+byte[] rsaEncrypted = rsaCipher.doFinal(data);`,
+  },
+  {
+    id: 151,
+    question: "ハッシュ化とソルトの仕組みを説明してください",
+    answer: "ハッシュ化は元データから固定長のダイジェストを生成する一方向関数で、パスワード保存に使われる。ソルトはハッシュ化前にパスワードに付加するランダムな値で、レインボーテーブル攻撃を防ぐ。Java では MessageDigest（SHA-256 等）や bcrypt/scrypt/Argon2 などの専用アルゴリズムが利用でき、パスワード保存には BCrypt のようなストレッチング付きアルゴリズムが推奨される。",
+    category: "security",
+    level: "intermediate",
+    code: `// MessageDigest でのハッシュ化（ソルト付き）
+SecureRandom random = new SecureRandom();
+byte[] salt = new byte[16];
+random.nextBytes(salt);
+
+MessageDigest md = MessageDigest.getInstance("SHA-256");
+md.update(salt);
+byte[] hashed = md.digest(password.getBytes(StandardCharsets.UTF_8));
+String encoded = Base64.getEncoder().encodeToString(hashed);
+
+// BCrypt を使ったパスワードハッシュ化（推奨）
+// Spring Security の BCryptPasswordEncoder
+BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+String hashedPassword = encoder.encode("myPassword");
+boolean matches = encoder.matches("myPassword", hashedPassword);`,
+  },
+  {
+    id: 152,
+    question: "SQLインジェクション対策を説明してください",
+    answer: "SQL インジェクションは、ユーザー入力を直接 SQL 文に埋め込むことで不正な SQL を実行させる攻撃である。対策として PreparedStatement のパラメータバインド（プレースホルダ）が最も基本的で効果的であり、JPA/Hibernate などの ORM フレームワークも内部でパラメータバインドを使用している。入力値のバリデーションや最小権限のデータベースユーザー使用も併せて実施すべきである。",
+    category: "security",
+    level: "basic",
+    code: `// NG: SQLインジェクションの脆弱性あり
+String query = "SELECT * FROM users WHERE name = '" + input + "'";
+Statement stmt = conn.createStatement();
+ResultSet rs = stmt.executeQuery(query);
+// input が「' OR '1'='1」なら全レコードが取得される
+
+// OK: PreparedStatement でパラメータバインド
+String query = "SELECT * FROM users WHERE name = ? AND age > ?";
+PreparedStatement pstmt = conn.prepareStatement(query);
+pstmt.setString(1, input);  // 安全にエスケープされる
+pstmt.setInt(2, 18);
+ResultSet rs = pstmt.executeQuery();
+
+// OK: Spring Data JPA（内部でパラメータバインド）
+@Query("SELECT u FROM User u WHERE u.name = :name")
+List<User> findByName(@Param("name") String name);`,
+  },
+  {
+    id: 153,
+    question: "XSS対策とCSRF対策について説明してください",
+    answer: "XSS（クロスサイトスクリプティング）は悪意のあるスクリプトをWebページに挿入する攻撃で、出力時の HTML エスケープ、Content-Security-Policy ヘッダーの設定、入力値のサニタイズで対策する。CSRF（クロスサイトリクエストフォージェリ）は正規ユーザーのセッションを利用して不正なリクエストを送信する攻撃で、CSRF トークンの検証、SameSite Cookie 属性の設定で防御する。Spring Security はデフォルトで CSRF 保護を有効にしている。",
+    category: "security",
+    level: "intermediate",
+  },
+  {
+    id: 154,
+    question: "Spring Securityの認証・認可の仕組みを説明してください",
+    answer: "Spring Security は FilterChain ベースのセキュリティフレームワークで、認証（Authentication）はユーザーの身元確認、認可（Authorization）はリソースへのアクセス権の制御を行う。SecurityFilterChain で HTTP セキュリティ設定を行い、UserDetailsService でユーザー情報をロードする。@PreAuthorize や hasRole() などのアノテーション・メソッドでメソッドレベルの認可制御も可能である。",
+    category: "security",
+    level: "intermediate",
+    code: `@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http)
+            throws Exception {
+        return http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated())
+            .formLogin(form -> form
+                .loginPage("/login").permitAll())
+            .oauth2Login(Customizer.withDefaults())
+            .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+// メソッドレベル認可
+@PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
+public User getUser(Long userId) { ... }`,
+  },
+  {
+    id: 155,
+    question: "JWTの仕組みと実装方法を説明してください",
+    answer: "JWT（JSON Web Token）はヘッダー、ペイロード、署名の3パートで構成されるトークン形式で、ステートレスな認証に使われる。ヘッダーにアルゴリズム、ペイロードにクレーム（ユーザー情報、有効期限等）、署名に改ざん検知用のハッシュが含まれる。サーバー側でセッションを持たないため水平スケーリングしやすいが、トークンの失効管理やサイズ、セキュアな保存が課題となる。",
+    category: "security",
+    level: "advanced",
+    code: `// jjwt ライブラリを使った JWT の生成と検証
+// トークン生成
+String token = Jwts.builder()
+    .setSubject(user.getUsername())
+    .claim("roles", user.getRoles())
+    .setIssuedAt(new Date())
+    .setExpiration(new Date(System.currentTimeMillis()
+        + 86400000)) // 24時間
+    .signWith(secretKey, SignatureAlgorithm.HS256)
+    .compact();
+
+// トークン検証
+Claims claims = Jwts.parserBuilder()
+    .setSigningKey(secretKey)
+    .build()
+    .parseClaimsJws(token)
+    .getBody();
+String username = claims.getSubject();
+Date expiration = claims.getExpiration();
+
+// Spring Security フィルターでの利用
+@Component
+public class JwtAuthFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+            HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+            // トークン検証 → SecurityContext に設定
+        }
+        chain.doFilter(request, response);
+    }
+}`,
+  },
+  // ===== ビルド・ツール (156-161) =====
+  {
+    id: 156,
+    question: "MavenとGradleの違いを説明してください",
+    answer: "Maven は XML ベース（pom.xml）で設定より規約（Convention over Configuration）のアプローチを取り、ライフサイクルが固定的で学習しやすい。Gradle は Groovy/Kotlin DSL ベース（build.gradle）で柔軟なビルドスクリプトが書け、インクリメンタルビルドやビルドキャッシュにより大規模プロジェクトで高速に動作する。新規プロジェクトでは Gradle が選ばれることが多いが、Maven も依然として広く使われている。",
+    category: "build",
+    level: "basic",
+  },
+  {
+    id: 157,
+    question: "Gradleのビルドスクリプト構成を説明してください",
+    answer: "Gradle のビルドスクリプトは build.gradle（Groovy）または build.gradle.kts（Kotlin DSL）で記述する。plugins ブロックでプラグイン適用、dependencies ブロックで依存関係を定義し、implementation/api/testImplementation などのスコープで依存の可視性を制御する。settings.gradle でマルチプロジェクト構成を定義し、gradle.properties でプロジェクトプロパティを管理する。",
+    category: "build",
+    level: "intermediate",
+    code: `// build.gradle.kts (Kotlin DSL)
+plugins {
+    java
+    id("org.springframework.boot") version "3.2.0"
+    id("io.spring.dependency-management") version "1.1.4"
+}
+
+group = "com.example"
+version = "1.0.0"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    runtimeOnly("org.postgresql:postgresql")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}`,
+  },
+  {
+    id: 158,
+    question: "依存関係管理とバージョン競合の解決方法を説明してください",
+    answer: "依存関係の推移的解決により、異なるバージョンの同一ライブラリが競合することがある（Jar Hell）。Maven では dependencyManagement で統一バージョンを指定し、exclusion で不要な推移的依存を除外する。Gradle では resolutionStrategy で強制バージョンを指定でき、strictly で厳密なバージョン制約を設定できる。dependency:tree や dependencies タスクで依存関係ツリーを確認することが問題解決の第一歩である。",
+    category: "build",
+    level: "intermediate",
+  },
+  {
+    id: 159,
+    question: "マルチモジュールプロジェクトの構成方法を説明してください",
+    answer: "マルチモジュールプロジェクトは、関連する複数のサブプロジェクトを1つのルートプロジェクトで管理する構成で、コードの再利用や関心の分離を実現する。Gradle では settings.gradle に include でサブプロジェクトを列挙し、各モジュールに独立した build.gradle を配置する。共通設定は allprojects/subprojects ブロックやプラグインで共有し、モジュール間の依存は project(\":module-name\") で参照する。",
+    category: "build",
+    level: "advanced",
+    code: `// settings.gradle.kts
+rootProject.name = "my-app"
+include("domain", "api", "infrastructure", "common")
+
+// ルートの build.gradle.kts
+subprojects {
+    apply(plugin = "java")
+    repositories { mavenCentral() }
+    java { sourceCompatibility = JavaVersion.VERSION_21 }
+}
+
+// api/build.gradle.kts
+plugins {
+    id("org.springframework.boot")
+}
+dependencies {
+    implementation(project(":domain"))
+    implementation(project(":infrastructure"))
+    implementation("org.springframework.boot:spring-boot-starter-web")
+}
+
+// domain/build.gradle.kts（純粋なJava）
+dependencies {
+    // フレームワーク依存なし
+}`,
+  },
+  {
+    id: 160,
+    question: "GitHub ActionsでJavaプロジェクトのCIパイプラインを構築する方法を説明してください",
+    answer: "GitHub Actions は .github/workflows ディレクトリに YAML ファイルを配置してワークフローを定義する。Java プロジェクトでは setup-java アクションで JDK を設定し、Gradle/Maven でビルド・テストを実行する。テスト結果やカバレッジレポートのアップロード、Docker イメージのビルドとプッシュ、デプロイまでを自動化できる。キャッシュの活用により CI の実行時間を短縮することも重要である。",
+    category: "build",
+    level: "intermediate",
+    code: `# .github/workflows/ci.yml
+name: Java CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v3
+      - run: ./gradlew build
+      - run: ./gradlew test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report
+          path: build/reports/tests/`,
+  },
+  {
+    id: 161,
+    question: "Dockerでのマルチステージビルドについて説明してください",
+    answer: "マルチステージビルドは1つの Dockerfile に複数の FROM ステージを定義し、ビルド環境と実行環境を分離する手法である。ビルドステージで JDK とビルドツール（Gradle/Maven）を使ってアプリをコンパイルし、実行ステージでは JRE のみの軽量イメージに成果物だけをコピーする。これによりイメージサイズの削減、攻撃対象の最小化、ビルドの再現性が向上する。",
+    category: "build",
+    level: "intermediate",
+    code: `# Dockerfile（マルチステージビルド）
+# ステージ1: ビルド
+FROM eclipse-temurin:21-jdk-alpine AS build
+WORKDIR /app
+COPY gradle/ gradle/
+COPY gradlew build.gradle.kts settings.gradle.kts ./
+RUN ./gradlew dependencies --no-daemon
+COPY src/ src/
+RUN ./gradlew bootJar --no-daemon
+
+# ステージ2: 実行
+FROM eclipse-temurin:21-jre-alpine
+RUN addgroup -S app && adduser -S app -G app
+WORKDIR /app
+COPY --from=build /app/build/libs/*.jar app.jar
+USER app
+EXPOSE 8080
+HEALTHCHECK --interval=30s CMD wget -q --spider \\
+  http://localhost:8080/actuator/health || exit 1
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]`,
+  },
+  // ===== パフォーマンス (162-168) =====
+  {
+    id: 162,
+    question: "JVMのチューニングパラメータについて説明してください",
+    answer: "JVM チューニングではヒープサイズ（-Xms/-Xmx）、GC アルゴリズムの選択、メタスペースサイズなどを調整する。コンテナ環境では -XX:MaxRAMPercentage で相対指定し、GC ログ（-Xlog:gc*）でパフォーマンスを分析する。チューニングは計測→ボトルネック特定→調整→再計測のサイクルで行い、まずアプリケーションコードの最適化を優先すべきである。",
+    category: "performance",
+    level: "advanced",
+    code: `# 本番環境向け JVM オプション例
+java \\
+  -Xms2g -Xmx2g \\               # ヒープサイズ固定
+  -XX:+UseG1GC \\                 # G1 GC を使用
+  -XX:MaxGCPauseMillis=200 \\     # GC 停止時間の目標
+  -XX:+UseStringDeduplication \\  # 文字列重複排除
+  -XX:MetaspaceSize=256m \\       # メタスペース初期値
+  -Xlog:gc*:file=gc.log:time \\  # GC ログ出力
+  -XX:+HeapDumpOnOutOfMemoryError \\
+  -XX:HeapDumpPath=/tmp/heapdump.hprof \\
+  -jar app.jar
+
+# コンテナ環境向け
+java \\
+  -XX:MaxRAMPercentage=75.0 \\   # コンテナメモリの75%
+  -XX:+UseZGC \\                  # 低レイテンシ GC
+  -jar app.jar`,
+  },
+  {
+    id: 163,
+    question: "Javaのプロファイリングツールの使い方を説明してください",
+    answer: "Java のプロファイリングツールには、JDK 付属の JFR（Java Flight Recorder）と JMC（Java Mission Control）、VisualVM、async-profiler などがある。JFR は低オーバーヘッドで本番環境でも使用でき、CPU 使用率、メモリ割当て、ロック競合、I/O 待ちなどを記録する。プロファイリングの手順は、まず CPU プロファイルでホットスポットを特定し、次にメモリプロファイルでアロケーション量の多い箇所を調べ、最後にスレッドダンプでロック競合を分析する。",
+    category: "performance",
+    level: "intermediate",
+  },
+  {
+    id: 164,
+    question: "メモリリークの検出と対処方法を説明してください",
+    answer: "Java のメモリリークは、不要なオブジェクトへの参照が残り続けることで GC が回収できなくなる状態である。典型的な原因は、static コレクションへの無限追加、リスナーの未解除、クローズされないリソース、ClassLoader リークなどがある。ヒープダンプ（jmap -dump）を MAT や VisualVM で分析し、支配ツリーや参照チェーンからリーク箇所を特定する。",
+    category: "performance",
+    level: "advanced",
+    code: `// メモリリークの典型例と対策
+
+// NG: static なコレクションにオブジェクトを追加し続ける
+public class CacheManager {
+    private static final Map<String, Object> cache =
+        new HashMap<>(); // 際限なく増加
+    public static void put(String key, Object value) {
+        cache.put(key, value); // 削除されない
+    }
+}
+
+// OK: サイズ制限付きキャッシュを使用
+public class CacheManager {
+    private static final Map<String, Object> cache =
+        new LinkedHashMap<>(100, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(
+                    Map.Entry<String, Object> eldest) {
+                return size() > 1000; // 最大1000件
+            }
+        };
+}
+
+// ヒープダンプの取得
+// jmap -dump:live,format=b,file=heap.hprof <PID>
+// jcmd <PID> GC.heap_dump heap.hprof`,
+  },
+  {
+    id: 165,
+    question: "データベースクエリの最適化方法を説明してください",
+    answer: "クエリ最適化では、まず EXPLAIN/EXPLAIN ANALYZE で実行計画を確認し、フルテーブルスキャンが発生していないか確認する。適切なインデックスの作成、N+1 問題の解決（JOIN FETCH やバッチサイズ設定）、不要なカラムの取得回避（SELECT * を避ける）が基本である。JPA では @EntityGraph やプロジェクション、ネイティブクエリの活用も検討し、クエリキャッシュやコネクションプーリング（HikariCP）の設定も重要である。",
+    category: "performance",
+    level: "intermediate",
+  },
+  {
+    id: 166,
+    question: "キャッシュ戦略（Redis、Caffeine）を説明してください",
+    answer: "キャッシュはデータアクセスの高速化に有効で、ローカルキャッシュ（Caffeine）と分散キャッシュ（Redis）を使い分ける。Caffeine は JVM 内で動作し超高速だがプロセス間共有ができず、Redis はネットワーク越しだが複数サーバーで共有可能である。Spring Cache の @Cacheable アノテーションで透過的にキャッシュを適用でき、TTL や最大サイズの設定、キャッシュ無効化戦略（Write-Through、Cache-Aside 等）を適切に選択する必要がある。",
+    category: "performance",
+    level: "intermediate",
+    code: `// Spring Cache + Caffeine
+@Configuration
+@EnableCaching
+public class CacheConfig {
+    @Bean
+    public CacheManager cacheManager() {
+        CaffeineCacheManager manager = new CaffeineCacheManager();
+        manager.setCaffeine(Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterWrite(Duration.ofMinutes(10))
+            .recordStats());
+        return manager;
+    }
+}
+
+// キャッシュの利用
+@Service
+public class UserService {
+    @Cacheable(value = "users", key = "#id")
+    public User findById(Long id) {
+        return userRepository.findById(id).orElseThrow();
+    }
+
+    @CacheEvict(value = "users", key = "#user.id")
+    public User update(User user) {
+        return userRepository.save(user);
+    }
+
+    @CacheEvict(value = "users", allEntries = true)
+    public void clearCache() {}
+}`,
+  },
+  {
+    id: 167,
+    question: "非同期処理とリアクティブプログラミングの違いを説明してください",
+    answer: "非同期処理（CompletableFuture、@Async）はタスクを別スレッドで実行し、結果を後で受け取る仕組みで、スレッドプールで管理される。リアクティブプログラミング（Project Reactor、RxJava）はデータストリームを宣言的に処理し、バックプレッシャーで流量制御を行う。リアクティブは少数のスレッドで大量の並行処理を効率的にさばけるが、デバッグが難しくスタックトレースが追いにくいため、要件に応じた使い分けが重要である。",
+    category: "performance",
+    level: "advanced",
+    code: `// CompletableFuture による非同期処理
+CompletableFuture<User> userFuture =
+    CompletableFuture.supplyAsync(() -> userService.findById(1L));
+CompletableFuture<List<Order>> ordersFuture =
+    CompletableFuture.supplyAsync(() -> orderService.findByUserId(1L));
+
+// 両方の結果を合成
+CompletableFuture<UserProfile> profile = userFuture
+    .thenCombine(ordersFuture, (user, orders) ->
+        new UserProfile(user, orders));
+
+// Project Reactor によるリアクティブ処理
+Mono<User> userMono = userRepository.findById(1L);
+Flux<Order> ordersFlux = orderRepository.findByUserId(1L);
+
+Mono<UserProfile> profileMono = userMono
+    .zipWith(ordersFlux.collectList())
+    .map(tuple -> new UserProfile(tuple.getT1(), tuple.getT2()))
+    .onErrorResume(e -> Mono.just(UserProfile.empty()))
+    .timeout(Duration.ofSeconds(5));`,
+  },
+  {
+    id: 168,
+    question: "JMHによるマイクロベンチマークの方法を説明してください",
+    answer: "JMH（Java Microbenchmark Harness）は OpenJDK が提供するベンチマークフレームワークで、JIT コンパイル、ウォームアップ、デッドコード除去などの JVM の最適化を考慮した正確な計測ができる。@Benchmark アノテーションでベンチマークメソッドを定義し、@State でベンチマーク状態を管理する。@Warmup と @Measurement でウォームアップ回数と計測回数を設定し、@BenchmarkMode で計測モード（スループット、平均時間等）を指定する。",
+    category: "performance",
+    level: "advanced",
+    code: `@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Warmup(iterations = 3, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(1)
+@State(Scope.Benchmark)
+public class StringBenchmark {
+
+    @Param({"10", "100", "1000"})
+    private int size;
+
+    @Benchmark
+    public String concatWithPlus() {
+        String result = "";
+        for (int i = 0; i < size; i++) {
+            result += "a";
+        }
+        return result;
+    }
+
+    @Benchmark
+    public String concatWithBuilder() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            sb.append("a");
+        }
+        return sb.toString();
+    }
+
+    public static void main(String[] args) throws Exception {
+        Options opt = new OptionsBuilder()
+            .include(StringBenchmark.class.getSimpleName())
+            .build();
+        new Runner(opt).run();
+    }
+}`,
+  },
+  // ===== 追加のコレクション (169-176) =====
+  {
+    id: 169,
+    question: "ConcurrentHashMapの内部実装を説明してください",
+    answer: "ConcurrentHashMap は Java 8 以降、CAS（Compare-And-Swap）操作とバケット単位の synchronized ロックで高い並行性を実現している。従来の Hashtable のようなマップ全体のロックではなく、各バケットの先頭ノードのみをロックするため、異なるバケットへの同時アクセスが可能である。バケットの要素数が閾値を超えると赤黒木に変換され、最悪ケースの検索時間が O(n) から O(log n) に改善される。",
+    category: "collections",
+    level: "advanced",
+    code: `ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+
+// アトミックな操作
+map.putIfAbsent("key", 0);
+map.compute("key", (k, v) -> v == null ? 1 : v + 1);
+map.merge("key", 1, Integer::sum);
+
+// 並列バルク操作（parallelismThreshold）
+map.forEach(2, (key, value) ->
+    System.out.println(key + ": " + value));
+
+long sum = map.reduceValues(2, Long::sum);
+
+// 注意: size() は概算値
+// 正確なサイズが必要なら mappingCount() を使用
+long count = map.mappingCount();
+
+// NG: check-then-act はスレッドセーフではない
+if (!map.containsKey("key")) { // 別スレッドが割り込む可能性
+    map.put("key", value);
+}
+// OK: putIfAbsent を使う
+map.putIfAbsent("key", value);`,
+  },
+  {
+    id: 170,
+    question: "TreeMapとLinkedHashMapの使い分けを説明してください",
+    answer: "TreeMap は赤黒木ベースで要素をキーの自然順序（または Comparator）でソートして格納し、範囲検索や最小・最大の取得が O(log n) で可能である。LinkedHashMap は挿入順序（またはアクセス順序）を保持するハッシュマップで、イテレーション順が予測可能で LRU キャッシュの実装にも使われる。HashMap は順序を保証しないが最も高速（O(1)）で、用途に応じて使い分けることが重要である。",
+    category: "collections",
+    level: "intermediate",
+    code: `// TreeMap: ソート済み
+TreeMap<String, Integer> treeMap = new TreeMap<>();
+treeMap.put("banana", 2);
+treeMap.put("apple", 1);
+treeMap.put("cherry", 3);
+System.out.println(treeMap.firstKey()); // "apple"
+System.out.println(treeMap.lastKey());  // "cherry"
+// 範囲検索
+SortedMap<String, Integer> sub =
+    treeMap.subMap("apple", "cherry"); // apple, banana
+
+// LinkedHashMap: 挿入順序を保持
+LinkedHashMap<String, Integer> linkedMap = new LinkedHashMap<>();
+linkedMap.put("banana", 2);
+linkedMap.put("apple", 1);
+linkedMap.forEach((k, v) ->
+    System.out.println(k)); // banana, apple
+
+// LRU キャッシュとして利用
+LinkedHashMap<String, Object> lru =
+    new LinkedHashMap<>(16, 0.75f, true) { // accessOrder=true
+        @Override
+        protected boolean removeEldestEntry(
+                Map.Entry<String, Object> e) {
+            return size() > 100;
+        }
+    };`,
+  },
+  {
+    id: 171,
+    question: "DequeとQueueの使い分けを説明してください",
+    answer: "Queue は FIFO（先入先出）のデータ構造で、要素の追加は末尾、取得は先頭から行う。Deque（Double-Ended Queue）は両端キューで、先頭と末尾の両方から要素の追加・取得が可能であり、スタック（LIFO）としても使える。実装クラスとして ArrayDeque（配列ベース、高速）、LinkedList（リンクリストベース）、PriorityQueue（優先度付きキュー）がある。",
+    category: "collections",
+    level: "basic",
+    code: `// Queue（FIFO）
+Queue<String> queue = new LinkedList<>();
+queue.offer("A");   // 末尾に追加
+queue.offer("B");
+queue.offer("C");
+queue.poll();        // "A"（先頭から取得・削除）
+queue.peek();        // "B"（先頭を参照のみ）
+
+// Deque（両端キュー）
+Deque<String> deque = new ArrayDeque<>();
+deque.offerFirst("B"); // 先頭に追加
+deque.offerFirst("A"); // 先頭に追加
+deque.offerLast("C");  // 末尾に追加
+deque.pollFirst();     // "A"
+deque.pollLast();      // "C"
+
+// Deque をスタック（LIFO）として使用
+Deque<String> stack = new ArrayDeque<>();
+stack.push("A"); // 先頭に追加
+stack.push("B");
+stack.pop();     // "B"（先頭から取得・削除）
+
+// PriorityQueue（優先度付き）
+PriorityQueue<Integer> pq = new PriorityQueue<>();
+pq.offer(3); pq.offer(1); pq.offer(2);
+pq.poll(); // 1（最小値から取得）`,
+  },
+  {
+    id: 172,
+    question: "イミュータブルコレクション（List.of, Map.of等）について説明してください",
+    answer: "Java 9 で導入された List.of()、Set.of()、Map.of() ファクトリメソッドは、変更不可能（イミュータブル）なコレクションを簡潔に生成する。null 要素は許可されず、追加・削除・変更を試みると UnsupportedOperationException がスローされる。Collections.unmodifiableList() との違いは、後者は元のリストのビューであり元が変更されると影響を受けるが、List.of() は完全な独立したコピーである点にある。",
+    category: "collections",
+    level: "basic",
+    code: `// Java 9+ ファクトリメソッド
+List<String> list = List.of("A", "B", "C");
+Set<String> set = Set.of("X", "Y", "Z");
+Map<String, Integer> map = Map.of("a", 1, "b", 2);
+
+// 変更しようとすると例外
+// list.add("D"); // UnsupportedOperationException
+
+// 11個以上のエントリには Map.ofEntries を使用
+Map<String, Integer> largeMap = Map.ofEntries(
+    Map.entry("key1", 1),
+    Map.entry("key2", 2),
+    Map.entry("key3", 3)
+);
+
+// Java 10: コレクションのコピー
+List<String> copy = List.copyOf(mutableList);
+
+// Stream からイミュータブルコレクションへ
+List<String> immutable = stream
+    .collect(Collectors.toUnmodifiableList());
+
+// Collections.unmodifiableList との違い
+List<String> original = new ArrayList<>(List.of("A"));
+List<String> view = Collections.unmodifiableList(original);
+original.add("B");
+System.out.println(view.size()); // 2（元の変更が反映される）`,
+  },
+  {
+    id: 173,
+    question: "WeakHashMapとソフト参照について説明してください",
+    answer: "WeakHashMap はキーが弱参照（WeakReference）で保持されるため、キーへの強参照がなくなると GC によりエントリが自動的に削除される。メモリセンシティブなキャッシュやメタデータの関連付けに使われる。ソフト参照（SoftReference）は弱参照より強く、メモリが不足した場合にのみ GC が回収するため、メモリに余裕がある限りキャッシュを保持したい場合に適している。",
+    category: "collections",
+    level: "advanced",
+  },
+  {
+    id: 174,
+    question: "NavigableSetとNavigableMapの使い方を説明してください",
+    answer: "NavigableSet/NavigableMap は SortedSet/SortedMap を拡張し、要素のナビゲーション（最近接要素の検索、範囲ビュー、降順ビュー）を提供するインターフェースである。TreeSet と TreeMap が主な実装クラスで、floor/ceiling（以下・以上の最近接要素）、lower/higher（未満・超過の最近接要素）、subSet/subMap（範囲ビュー）などのメソッドが利用できる。スコア範囲の検索やスケジュール管理などのユースケースに適している。",
+    category: "collections",
+    level: "intermediate",
+    code: `NavigableSet<Integer> scores = new TreeSet<>(
+    List.of(50, 60, 70, 80, 90, 100));
+
+// 最近接要素の検索
+scores.floor(75);    // 70（75以下で最大）
+scores.ceiling(75);  // 80（75以上で最小）
+scores.lower(80);    // 70（80未満で最大）
+scores.higher(80);   // 90（80超で最小）
+
+// 範囲ビュー
+scores.subSet(60, true, 90, true); // [60, 70, 80, 90]
+scores.headSet(70, true);          // [50, 60, 70]
+scores.tailSet(80, false);         // [90, 100]
+
+// 降順ビュー
+NavigableSet<Integer> desc = scores.descendingSet();
+// [100, 90, 80, 70, 60, 50]
+
+// NavigableMap
+NavigableMap<LocalDate, String> events = new TreeMap<>();
+events.put(LocalDate.of(2024, 3, 1), "会議");
+events.put(LocalDate.of(2024, 3, 15), "発表");
+// 指定日以降の最初のイベント
+Map.Entry<LocalDate, String> next =
+    events.ceilingEntry(LocalDate.of(2024, 3, 10));`,
+  },
+  {
+    id: 175,
+    question: "EnumSetとEnumMapの特徴と使い方を説明してください",
+    answer: "EnumSet は enum 型専用の Set 実装で、内部的にビットベクターを使用するため HashSet より遥かに高速かつ省メモリである。EnumMap は enum 型をキーとする Map 実装で、内部は配列ベースのため HashMap より高速に動作する。enum を Set や Map のキーとして使う場合は、パフォーマンスとメモリ効率の観点から EnumSet/EnumMap を選択すべきである。",
+    category: "collections",
+    level: "intermediate",
+    code: `enum Permission { READ, WRITE, EXECUTE, DELETE }
+
+// EnumSet の生成方法
+EnumSet<Permission> readOnly = EnumSet.of(Permission.READ);
+EnumSet<Permission> all = EnumSet.allOf(Permission.class);
+EnumSet<Permission> none = EnumSet.noneOf(Permission.class);
+EnumSet<Permission> readWrite =
+    EnumSet.range(Permission.READ, Permission.WRITE);
+
+// 集合演算
+EnumSet<Permission> userPerms =
+    EnumSet.of(Permission.READ, Permission.WRITE);
+EnumSet<Permission> adminPerms = EnumSet.allOf(Permission.class);
+userPerms.containsAll(EnumSet.of(Permission.DELETE)); // false
+
+// EnumMap
+EnumMap<Permission, String> descriptions =
+    new EnumMap<>(Permission.class);
+descriptions.put(Permission.READ, "読み取り権限");
+descriptions.put(Permission.WRITE, "書き込み権限");
+descriptions.put(Permission.EXECUTE, "実行権限");
+descriptions.put(Permission.DELETE, "削除権限");
+
+// forEach はenum定義順でイテレーション
+descriptions.forEach((perm, desc) ->
+    System.out.println(perm + ": " + desc));`,
+  },
+  {
+    id: 176,
+    question: "Collectionsユーティリティメソッドについて説明してください",
+    answer: "java.util.Collections クラスはコレクション操作のための静的ユーティリティメソッドを提供する。ソート（sort）、シャッフル（shuffle）、検索（binarySearch）、最大・最小（max/min）、頻度（frequency）などの操作や、同期化ラッパー（synchronizedList 等）、型安全ラッパー（checkedList 等）も提供する。Java 8 以降は Stream API でも同等の操作が可能だが、破壊的操作（sort、shuffle、reverse 等）は Collections クラスが依然有用である。",
+    category: "collections",
+    level: "basic",
+    code: `List<Integer> list = new ArrayList<>(List.of(3, 1, 4, 1, 5));
+
+// ソート・シャッフル・反転
+Collections.sort(list);              // [1, 1, 3, 4, 5]
+Collections.reverse(list);           // [5, 4, 3, 1, 1]
+Collections.shuffle(list);           // ランダム順
+Collections.sort(list, Comparator.reverseOrder()); // 降順
+
+// 検索・統計
+int idx = Collections.binarySearch(list, 3); // ソート済みの場合
+int freq = Collections.frequency(list, 1);   // 1 の出現回数
+int max = Collections.max(list);
+int min = Collections.min(list);
+
+// 不変・同期化ラッパー
+List<String> immutable =
+    Collections.unmodifiableList(mutableList);
+List<String> syncList =
+    Collections.synchronizedList(new ArrayList<>());
+
+// 単一要素・空コレクション
+List<String> single = Collections.singletonList("only");
+List<String> empty = Collections.emptyList();
+
+// 埋め・コピー・入れ替え
+Collections.fill(list, 0);           // 全要素を 0 に
+Collections.swap(list, 0, 1);        // 要素の入れ替え`,
+  },
+  // ===== 追加のOOP (177-184) =====
+  {
+    id: 177,
+    question: "SOLIDの原則を具体例で説明してください",
+    answer: "SOLID は5つの設計原則の頭文字である。S（単一責任）: クラスは1つの責務のみ持つ。O（開放閉鎖）: 拡張に開かれ修正に閉じる。L（リスコフ置換）: サブクラスは親クラスと置換可能であるべき。I（インターフェース分離）: クライアントに不要なメソッドを強制しない。D（依存性逆転）: 具体クラスではなく抽象に依存する。これらを守ることで、保守性・拡張性・テスト容易性の高いコードが実現できる。",
+    category: "oop",
+    level: "intermediate",
+  },
+  {
+    id: 178,
+    question: "委譲（Delegation）と継承の使い分けを説明してください",
+    answer: "継承は「is-a」の関係（犬は動物である）を表現し、親クラスの機能を再利用する。委譲は「has-a」の関係（車はエンジンを持つ）で、別オブジェクトに処理を委ねる構成（Composition）である。継承は結合度が高く、親の変更が子に影響するため、「継承より委譲を優先する（Favor Composition over Inheritance）」が推奨される。Java ではインターフェースと委譲を組み合わせることで柔軟な設計が可能になる。",
+    category: "oop",
+    level: "intermediate",
+    code: `// NG: 継承の乱用
+class Stack<E> extends ArrayList<E> {
+    public void push(E item) { add(item); }
+    public E pop() { return remove(size() - 1); }
+    // add(), get() 等の不要なメソッドが公開されてしまう
+}
+
+// OK: 委譲（Composition）
+class Stack<E> {
+    private final List<E> list = new ArrayList<>();
+
+    public void push(E item) { list.add(item); }
+    public E pop() { return list.remove(list.size() - 1); }
+    public E peek() { return list.get(list.size() - 1); }
+    public boolean isEmpty() { return list.isEmpty(); }
+    public int size() { return list.size(); }
+    // 必要なメソッドだけを公開
+}`,
+  },
+  {
+    id: 179,
+    question: "イミュータブルオブジェクトの作り方を説明してください",
+    answer: "イミュータブル（不変）オブジェクトは生成後に状態を変更できないオブジェクトで、スレッドセーフで副作用がなく安全に共有できる。作成ルールは ① クラスを final にする ② フィールドを private final にする ③ setter を提供しない ④ 可変オブジェクトのフィールドは防御的コピーを行う。Java 16 以降では record クラスで簡潔にイミュータブルオブジェクトを作成できる。",
+    category: "oop",
+    level: "intermediate",
+    code: `// 伝統的なイミュータブルクラス
+public final class Money {
+    private final BigDecimal amount;
+    private final Currency currency;
+    private final List<String> tags;
+
+    public Money(BigDecimal amount, Currency currency,
+            List<String> tags) {
+        this.amount = amount;
+        this.currency = currency;
+        this.tags = List.copyOf(tags); // 防御的コピー
+    }
+
+    public BigDecimal getAmount() { return amount; }
+    public Currency getCurrency() { return currency; }
+    public List<String> getTags() {
+        return tags; // List.copyOf は既に不変
+    }
+
+    // 変更が必要な場合は新しいインスタンスを返す
+    public Money add(Money other) {
+        if (!this.currency.equals(other.currency))
+            throw new IllegalArgumentException("通貨が異なります");
+        return new Money(
+            this.amount.add(other.amount),
+            this.currency, this.tags);
+    }
+}
+
+// record を使った簡潔な定義（Java 16+）
+public record Point(double x, double y) {
+    public double distanceTo(Point other) {
+        return Math.hypot(x - other.x, y - other.y);
+    }
+}`,
+  },
+  {
+    id: 180,
+    question: "sealed classの用途を説明してください",
+    answer: "sealed class（Java 17 正式導入）は、そのクラスを継承できるサブクラスを permits で限定することで、型の階層構造を制限する。これにより switch 式でパターンマッチングを行う際にコンパイラが全パターンの網羅性を検証でき、default 句が不要になる。代数的データ型（ADT）の表現に適しており、ドメインモデリングや状態管理で有効に活用できる。",
+    category: "oop",
+    level: "intermediate",
+    code: `// sealed interface で許可するサブクラスを制限
+public sealed interface Shape
+    permits Circle, Rectangle, Triangle {
+    double area();
+}
+
+public record Circle(double radius) implements Shape {
+    public double area() {
+        return Math.PI * radius * radius;
+    }
+}
+
+public record Rectangle(double w, double h) implements Shape {
+    public double area() { return w * h; }
+}
+
+public record Triangle(double b, double h) implements Shape {
+    public double area() { return 0.5 * b * h; }
+}
+
+// パターンマッチングで網羅性が保証される
+public String describe(Shape shape) {
+    return switch (shape) {
+        case Circle c    -> "半径 %.1f の円".formatted(c.radius());
+        case Rectangle r -> "%s x %s の四角形".formatted(r.w(), r.h());
+        case Triangle t  -> "底辺 %.1f の三角形".formatted(t.b());
+        // default 不要（全サブクラスを網羅）
+    };
+}`,
+  },
+  {
+    id: 181,
+    question: "recordクラスの使い方を説明してください",
+    answer: "record（Java 16 正式導入）はイミュータブルなデータキャリアクラスを簡潔に定義する機能で、コンストラクタ、getter、equals()、hashCode()、toString() が自動生成される。DTO やバリューオブジェクトの定義に最適で、従来のボイラープレートコードを大幅に削減できる。カスタムコンストラクタ（コンパクトコンストラクタ）でバリデーションを追加することも可能である。",
+    category: "oop",
+    level: "basic",
+    code: `// 基本的な record
+public record User(String name, String email, int age) {}
+
+// 使用例
+User user = new User("太郎", "taro@example.com", 25);
+String name = user.name();  // getter（get プレフィックスなし）
+System.out.println(user);   // User[name=太郎, email=taro@example.com, age=25]
+
+// コンパクトコンストラクタでバリデーション
+public record Email(String value) {
+    public Email {
+        if (!value.contains("@")) {
+            throw new IllegalArgumentException(
+                "無効なメール: " + value);
+        }
+        value = value.toLowerCase(); // 正規化
+    }
+}
+
+// カスタムメソッドの追加
+public record Range(int min, int max) {
+    public Range {
+        if (min > max) throw new IllegalArgumentException();
+    }
+    public boolean contains(int value) {
+        return value >= min && value <= max;
+    }
+    public int size() { return max - min + 1; }
+}`,
+  },
+  {
+    id: 182,
+    question: "enumの高度な使い方を説明してください",
+    answer: "Java の enum はクラスの一種であり、フィールド、コンストラクタ、メソッド、抽象メソッドを持つことができる。各定数ごとに異なる振る舞いを定義する戦略パターンの実装、インターフェースの実装、シングルトンパターンの安全な実装にも使われる。EnumSet や EnumMap と組み合わせることで高性能なコレクション操作が可能になり、switch 式との相性も良い。",
+    category: "oop",
+    level: "intermediate",
+    code: `// 戦略パターンとしての enum
+public enum Operation {
+    ADD("+") {
+        @Override public double apply(double a, double b) {
+            return a + b;
+        }
+    },
+    SUBTRACT("-") {
+        @Override public double apply(double a, double b) {
+            return a - b;
+        }
+    },
+    MULTIPLY("*") {
+        @Override public double apply(double a, double b) {
+            return a * b;
+        }
+    };
+
+    private final String symbol;
+    Operation(String symbol) { this.symbol = symbol; }
+    public abstract double apply(double a, double b);
+
+    @Override
+    public String toString() { return symbol; }
+}
+
+// 使用例
+double result = Operation.ADD.apply(3, 4); // 7.0
+
+// インターフェース実装
+public enum HttpStatus implements StatusCode {
+    OK(200, "OK"),
+    NOT_FOUND(404, "Not Found"),
+    SERVER_ERROR(500, "Internal Server Error");
+
+    private final int code;
+    private final String message;
+    HttpStatus(int code, String message) {
+        this.code = code; this.message = message;
+    }
+    @Override public int getCode() { return code; }
+    public String getMessage() { return message; }
+}`,
+  },
+  {
+    id: 183,
+    question: "インナークラスの種類と用途を説明してください",
+    answer: "Java のインナークラスは4種類ある。① 非 static インナークラス: 外部クラスのインスタンスに紐付き、外部の全メンバーにアクセス可能。② static ネストクラス: 外部クラスのインスタンス不要で、static メンバーのみアクセス可能。③ ローカルクラス: メソッド内で定義され、スコープが限定される。④ 匿名クラス: 名前を持たず、インターフェースや抽象クラスのその場限りの実装に使われる。Java 8 以降はラムダ式が匿名クラスの多くを代替している。",
+    category: "oop",
+    level: "intermediate",
+    code: `public class Outer {
+    private String outerField = "外部";
+
+    // ① 非staticインナークラス
+    class Inner {
+        void show() {
+            System.out.println(outerField); // 外部にアクセス可
+        }
+    }
+
+    // ② staticネストクラス
+    static class Nested {
+        void show() {
+            // outerField にはアクセス不可
+            System.out.println("staticネスト");
+        }
+    }
+
+    void method() {
+        // ③ ローカルクラス
+        class Local {
+            void show() { System.out.println("ローカル"); }
+        }
+        new Local().show();
+
+        // ④ 匿名クラス
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("匿名クラス");
+            }
+        };
+
+        // ラムダ式で置き換え可能
+        Runnable lambda = () -> System.out.println("ラムダ");
+    }
+}
+
+// 使い分け
+Outer.Inner inner = new Outer().new Inner();
+Outer.Nested nested = new Outer.Nested(); // Outer不要`,
+  },
+  {
+    id: 184,
+    question: "アノテーションの自作方法を説明してください",
+    answer: "カスタムアノテーションは @interface で定義し、@Target で適用対象、@Retention で保持期間を指定する。リフレクション（Runtime 保持）でアノテーション情報を取得して動的な処理を実行したり、アノテーションプロセッサ（Source/Class 保持）でコンパイル時にコード生成やバリデーションを行える。Spring やJakarta EE のフレームワークはアノテーションを多用しており、自作することで同様の宣言的プログラミングが可能になる。",
+    category: "oop",
+    level: "advanced",
+    code: `// カスタムアノテーションの定義
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Retry {
+    int maxAttempts() default 3;
+    long delay() default 1000;
+    Class<? extends Exception>[] retryOn()
+        default { RuntimeException.class };
+}
+
+// アノテーションの使用
+public class ApiClient {
+    @Retry(maxAttempts = 5, delay = 2000)
+    public String callExternalApi() {
+        return httpClient.get("/api/data");
+    }
+}
+
+// リフレクションでアノテーション処理
+public class RetryHandler {
+    public static Object execute(Object target, String methodName)
+            throws Exception {
+        Method method = target.getClass()
+            .getMethod(methodName);
+        Retry retry = method.getAnnotation(Retry.class);
+        if (retry == null) return method.invoke(target);
+
+        for (int i = 0; i < retry.maxAttempts(); i++) {
+            try {
+                return method.invoke(target);
+            } catch (Exception e) {
+                if (i == retry.maxAttempts() - 1) throw e;
+                Thread.sleep(retry.delay());
+            }
+        }
+        return null;
+    }
+}`,
+  },
+  // ===== 追加のSpring (185-192) =====
+  {
+    id: 185,
+    question: "DIとIoCコンテナの仕組みを説明してください",
+    answer: "DI（依存性注入）はオブジェクトの依存関係を外部から注入する設計パターンで、IoC（制御の反転）コンテナがオブジェクトの生成・管理・注入を担う。Spring の IoC コンテナ（ApplicationContext）は Bean の定義を読み込み、依存グラフを解決して適切な順序でインスタンス化する。DI により疎結合が実現され、テスト時にモックへの差し替えが容易になる。注入方法にはコンストラクタ注入（推奨）、セッター注入、フィールド注入がある。",
+    category: "spring",
+    level: "basic",
+  },
+  {
+    id: 186,
+    question: "Spring Boot Auto-configurationの仕組みを説明してください",
+    answer: "Auto-configuration はクラスパス上の依存ライブラリを検出し、適切な Bean を自動的に設定する仕組みである。META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports に登録されたクラスが候補となり、@Conditional 系アノテーション（@ConditionalOnClass、@ConditionalOnMissingBean 等）で条件に合致した場合のみ適用される。ユーザーが明示的に Bean を定義した場合はそちらが優先され、自動設定を上書きできる。",
+    category: "spring",
+    level: "advanced",
+  },
+  {
+    id: 187,
+    question: "Spring AOPの仕組みと使い方を説明してください",
+    answer: "AOP（アスペクト指向プログラミング）は横断的関心事（ロギング、トランザクション、セキュリティ等）をビジネスロジックから分離する技術である。Spring AOP はプロキシベース（JDK 動的プロキシまたは CGLIB）で実装され、@Aspect クラスに @Before、@After、@Around 等のアドバイスを定義する。ポイントカット式で適用対象メソッドを指定し、実行時にプロキシが介入してアドバイスを実行する。",
+    category: "spring",
+    level: "advanced",
+    code: `@Aspect
+@Component
+public class LoggingAspect {
+
+    // ポイントカット: service パッケージの全メソッド
+    @Pointcut("execution(* com.example.service..*(..))")
+    public void serviceLayer() {}
+
+    // 実行前アドバイス
+    @Before("serviceLayer()")
+    public void logBefore(JoinPoint jp) {
+        log.info("実行開始: {}", jp.getSignature().getName());
+    }
+
+    // 実行時間計測（Around アドバイス）
+    @Around("serviceLayer()")
+    public Object measureTime(ProceedingJoinPoint pjp)
+            throws Throwable {
+        long start = System.currentTimeMillis();
+        try {
+            return pjp.proceed();
+        } finally {
+            long elapsed = System.currentTimeMillis() - start;
+            log.info("{}の実行時間: {}ms",
+                pjp.getSignature().getName(), elapsed);
+        }
+    }
+
+    // 例外発生時アドバイス
+    @AfterThrowing(pointcut = "serviceLayer()",
+        throwing = "ex")
+    public void logException(JoinPoint jp, Exception ex) {
+        log.error("例外発生 {}: {}",
+            jp.getSignature().getName(), ex.getMessage());
+    }
+}`,
+  },
+  {
+    id: 188,
+    question: "@Transactionalの動作原理と注意点を説明してください",
+    answer: "@Transactional は Spring AOP のプロキシを通じてトランザクション管理を行う。メソッド呼び出し時にプロキシがトランザクションを開始し、正常終了でコミット、RuntimeException 発生時にロールバックする。注意点として、同一クラス内のメソッド呼び出し（self-invocation）ではプロキシを経由しないためトランザクションが適用されない、checked exception ではデフォルトでロールバックされない、private メソッドには適用できないなどがある。",
+    category: "spring",
+    level: "intermediate",
+    code: `@Service
+public class OrderService {
+
+    @Transactional
+    public Order createOrder(OrderRequest request) {
+        Order order = orderRepository.save(
+            new Order(request));
+        paymentService.charge(order);
+        inventoryService.decrease(order.getItems());
+        return order; // 全て成功でコミット
+    }
+
+    // rollbackFor で checked exception もロールバック対象に
+    @Transactional(rollbackFor = Exception.class)
+    public void processPayment(Payment payment)
+            throws PaymentException {
+        // ...
+    }
+
+    // 読み取り専用トランザクション（最適化）
+    @Transactional(readOnly = true)
+    public List<Order> findAll() {
+        return orderRepository.findAll();
+    }
+
+    // NG: self-invocation（プロキシを経由しない）
+    public void process() {
+        createOrder(request); // @Transactional が効かない！
+    }
+
+    // 伝搬属性の指定
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void auditLog(String message) {
+        // 親トランザクションと独立
+    }
+}`,
+  },
+  {
+    id: 189,
+    question: "Spring Batchの基本構成を説明してください",
+    answer: "Spring Batch は大量データの一括処理（バッチ処理）フレームワークで、Job → Step → （Reader → Processor → Writer）の階層構造で構成される。ItemReader がデータを読み込み、ItemProcessor で加工し、ItemWriter で書き出す Chunk 指向処理が基本パターンである。ジョブのリスタート、スキップ、リトライ機能を備え、JobRepository でジョブ実行状態を永続化してフォールトトレランスを実現する。",
+    category: "spring",
+    level: "advanced",
+  },
+  {
+    id: 190,
+    question: "Spring WebFluxとリアクティブプログラミングについて説明してください",
+    answer: "Spring WebFlux は Netty ベースの非ブロッキング Web フレームワークで、少数のスレッドで大量の同時接続を効率的に処理する。Project Reactor の Mono（0-1 件）と Flux（0-N 件）を使って非同期データストリームを宣言的に処理し、バックプレッシャーで流量制御を行う。I/O バウンドな高並行処理に適しているが、CPU バウンドな処理やブロッキング I/O が多い場合は従来の Spring MVC が適している。",
+    category: "spring",
+    level: "advanced",
+    code: `// WebFlux コントローラー（アノテーション方式）
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    private final UserRepository repository;
+
+    @GetMapping
+    public Flux<User> findAll() {
+        return repository.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public Mono<User> findById(@PathVariable Long id) {
+        return repository.findById(id)
+            .switchIfEmpty(Mono.error(
+                new NotFoundException("ユーザー未発見")));
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<User> create(@RequestBody Mono<User> user) {
+        return user.flatMap(repository::save);
+    }
+}
+
+// 関数型ルーティング方式
+@Bean
+public RouterFunction<ServerResponse> routes(UserHandler handler) {
+    return RouterFunctions.route()
+        .GET("/api/users", handler::findAll)
+        .GET("/api/users/{id}", handler::findById)
+        .POST("/api/users", handler::create)
+        .build();
+}`,
+  },
+  {
+    id: 191,
+    question: "Spring Profilesの使い方を説明してください",
+    answer: "Spring Profiles は環境（開発・テスト・本番）に応じて設定を切り替える仕組みで、application-{profile}.yml にプロファイル固有の設定を記述する。@Profile アノテーションで特定のプロファイルでのみ有効になる Bean を定義でき、spring.profiles.active プロパティまたは環境変数で有効なプロファイルを指定する。デフォルトプロファイルの設定が基本となり、アクティブプロファイルの設定で上書きされる。",
+    category: "spring",
+    level: "basic",
+    code: `# application.yml（共通設定）
+spring:
+  application:
+    name: my-app
+
+# application-dev.yml（開発環境）
+spring:
+  datasource:
+    url: jdbc:h2:mem:devdb
+  jpa:
+    show-sql: true
+
+# application-prod.yml（本番環境）
+spring:
+  datasource:
+    url: jdbc:postgresql://db-server:5432/proddb
+  jpa:
+    show-sql: false
+
+---
+// プロファイル固有の Bean
+@Configuration
+public class DataSourceConfig {
+    @Bean
+    @Profile("dev")
+    public DataSource devDataSource() {
+        return new EmbeddedDatabaseBuilder()
+            .setType(EmbeddedDatabaseType.H2).build();
+    }
+
+    @Bean
+    @Profile("prod")
+    public DataSource prodDataSource() {
+        HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl("jdbc:postgresql://...");
+        return ds;
+    }
+}
+
+// 起動時の指定
+// java -jar app.jar --spring.profiles.active=prod
+// SPRING_PROFILES_ACTIVE=prod java -jar app.jar`,
+  },
+  {
+    id: 192,
+    question: "Beanスコープの種類を説明してください",
+    answer: "Spring Bean のスコープは主に5種類ある。① singleton（デフォルト）: コンテナに1つだけインスタンスが存在し、全ての注入先で同じオブジェクトを共有する。② prototype: 注入のたびに新しいインスタンスが生成される。③ request: HTTP リクエストごとに1インスタンス。④ session: HTTP セッションごとに1インスタンス。⑤ application: ServletContext ごとに1インスタンス。singleton Bean に prototype Bean を注入する場合は Provider やプロキシを使って遅延取得する必要がある。",
+    category: "spring",
+    level: "intermediate",
+  },
+  // ===== 追加のモダンJava・設計 (193-200) =====
+  {
+    id: 193,
+    question: "マイクロサービスの利点と課題を説明してください",
+    answer: "マイクロサービスの利点は、独立したデプロイ・スケーリング、技術スタックの自由な選択、チームの自律性、障害の局所化である。課題は、分散システム特有の複雑さ（ネットワーク遅延、部分障害、データ一貫性）、サービス間通信のオーバーヘッド、分散トレーシングやログ集約の必要性、運用コストの増大である。小規模チームではモノリスから始め、境界が明確になった部分から段階的に分割する「モノリスファースト」アプローチが推奨される。",
+    category: "design",
+    level: "advanced",
+  },
+  {
+    id: 194,
+    question: "イベント駆動アーキテクチャについて説明してください",
+    answer: "イベント駆動アーキテクチャ（EDA）はサービス間をイベント（状態変化の通知）で非同期に連携させるアーキテクチャパターンである。イベントプロデューサーがイベントを発行し、メッセージブローカー（Kafka、RabbitMQ 等）を介してイベントコンシューマーが受信・処理する。サービス間の疎結合を実現し、スケーラビリティとレジリエンスが向上するが、イベント順序の保証、べき等性の確保、イベントスキーマの進化管理が設計上の課題となる。",
+    category: "design",
+    level: "advanced",
+  },
+  {
+    id: 195,
+    question: "CQRSパターンを説明してください",
+    answer: "CQRS（Command Query Responsibility Segregation）はデータの書き込み（Command）と読み取り（Query）を別々のモデル・データストアに分離するパターンである。書き込み側はドメインロジックに最適化されたモデル、読み取り側はクエリに最適化された非正規化されたビューを持つ。イベントソーシングと組み合わせることが多く、読み書きを独立してスケーリングできる利点があるが、結果整合性やシステム複雑度の増大が課題となる。",
+    category: "design",
+    level: "advanced",
+  },
+  {
+    id: 196,
+    question: "サーキットブレーカーパターンを説明してください",
+    answer: "サーキットブレーカーは外部サービス呼び出しの連続失敗を検知して一時的にリクエストを遮断し、障害の連鎖（カスケード障害）を防ぐパターンである。状態は Closed（正常通過）→ Open（リクエスト遮断）→ Half-Open（試行的に通過させ復旧を確認）の3つで遷移する。Java では Resilience4j ライブラリが広く使われ、リトライ、レート制限、バルクヘッドなどの他のレジリエンスパターンと組み合わせて使用する。",
+    category: "design",
+    level: "advanced",
+    code: `// Resilience4j を使ったサーキットブレーカー
+CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+    .failureRateThreshold(50)         // 失敗率50%でOpen
+    .waitDurationInOpenState(
+        Duration.ofSeconds(30))       // Open→HalfOpen待機
+    .slidingWindowSize(10)            // 直近10回で判定
+    .permittedNumberOfCallsInHalfOpenState(3)
+    .build();
+
+CircuitBreaker cb = CircuitBreaker.of("userService", config);
+
+// 関数のラップ
+Supplier<User> decorated = CircuitBreaker
+    .decorateSupplier(cb, () -> userService.findById(1L));
+
+// Try で結果をハンドリング
+Try<User> result = Try.ofSupplier(decorated)
+    .recover(CallNotPermittedException.class,
+        e -> User.fallback());
+
+// Spring Boot + アノテーション方式
+@CircuitBreaker(name = "userService",
+    fallbackMethod = "fallback")
+public User getUser(Long id) {
+    return restTemplate.getForObject(
+        "http://user-service/api/users/" + id, User.class);
+}
+
+public User fallback(Long id, Exception e) {
+    return new User(id, "N/A", "サービス利用不可");
+}`,
+  },
+  {
+    id: 197,
+    question: "Java 21のVirtual Threads（仮想スレッド）の使い方を説明してください",
+    answer: "Virtual Threads（Project Loom）は Java 21 で正式導入された軽量スレッドで、OS スレッド（プラットフォームスレッド）に比べて極めて低コストで大量に生成できる。I/O ブロッキング時にキャリアスレッドを解放するため、スレッドプールのチューニングが不要になり、従来の1リクエスト1スレッドモデルで高い並行性を実現できる。既存のブロッキングコードをそのまま活用でき、リアクティブプログラミングの複雑さを回避できる。",
+    category: "modern",
+    level: "intermediate",
+    code: `// Virtual Thread の生成方法
+Thread vt = Thread.ofVirtual()
+    .name("my-vthread")
+    .start(() -> System.out.println("仮想スレッド実行中"));
+
+// ExecutorService による利用（推奨）
+try (var executor =
+        Executors.newVirtualThreadPerTaskExecutor()) {
+    // 10万タスクを同時に実行可能
+    List<Future<String>> futures = IntStream.range(0, 100_000)
+        .mapToObj(i -> executor.submit(() -> {
+            Thread.sleep(Duration.ofSeconds(1));
+            return "結果: " + i;
+        }))
+        .toList();
+
+    for (Future<String> f : futures) {
+        System.out.println(f.get());
+    }
+}
+
+// Spring Boot 3.2+ での有効化
+# application.yml
+spring:
+  threads:
+    virtual:
+      enabled: true  # Tomcat が仮想スレッドを使用`,
+  },
+  {
+    id: 198,
+    question: "Java 22-23の新機能を説明してください",
+    answer: "Java 22 では Foreign Function & Memory API（JNI の代替）が正式導入され、ネイティブコードとの安全な連携が可能になった。unnamed variables（_）で未使用変数を明示でき、Gatherers API で Stream の中間操作をカスタム定義できるようになった。Java 23 ではプリミティブ型のパターンマッチング（プレビュー）、Markdown ドキュメントコメント、Structured Concurrency（プレビュー）などが追加されている。",
+    category: "modern",
+    level: "intermediate",
+    code: `// Java 22: unnamed variables（_）
+try {
+    int result = Integer.parseInt(str);
+} catch (NumberFormatException _) {
+    // 例外変数を使わない場合に _ を使用
+    System.out.println("数値変換に失敗");
+}
+
+// パターンマッチングでの使用
+if (obj instanceof Point(int x, int _)) {
+    // y 座標は不要
+    System.out.println("x = " + x);
+}
+
+// Java 22: Gatherers（Stream の中間操作カスタマイズ）
+List<List<Integer>> windows = Stream.of(1, 2, 3, 4, 5)
+    .gather(Gatherers.windowSliding(3))
+    .toList();
+// [[1,2,3], [2,3,4], [3,4,5]]
+
+// Java 23: Structured Concurrency（プレビュー）
+try (var scope =
+        new StructuredTaskScope.ShutdownOnFailure()) {
+    Subtask<User> userTask =
+        scope.fork(() -> findUser(id));
+    Subtask<List<Order>> ordersTask =
+        scope.fork(() -> findOrders(id));
+    scope.join().throwIfFailed();
+    return new UserProfile(
+        userTask.get(), ordersTask.get());
+}`,
+  },
+  {
+    id: 199,
+    question: "Garbage Collectorの種類と選び方を説明してください",
+    answer: "Java には複数の GC アルゴリズムがある。Serial GC はシングルスレッドで小規模アプリ向け、Parallel GC はスループット重視、G1 GC（デフォルト）はバランスの良い汎用 GC で大きなヒープにも対応する。ZGC は超低レイテンシ（停止時間 1ms 以下）で大規模メモリ向け、Shenandoah GC も低レイテンシ GC である。選択基準は、レイテンシ要件が厳しい場合は ZGC、スループット重視なら Parallel GC、一般的な用途では G1 GC が推奨される。",
+    category: "modern",
+    level: "advanced",
+    code: `# GC の指定方法
+java -XX:+UseSerialGC -jar app.jar     # Serial GC
+java -XX:+UseParallelGC -jar app.jar   # Parallel GC
+java -XX:+UseG1GC -jar app.jar         # G1 GC（デフォルト）
+java -XX:+UseZGC -jar app.jar          # ZGC
+java -XX:+UseShenandoahGC -jar app.jar # Shenandoah
+
+# G1 GC のチューニング例
+java -XX:+UseG1GC \\
+     -XX:MaxGCPauseMillis=200 \\      # 最大停止時間目標
+     -XX:G1HeapRegionSize=16m \\      # リージョンサイズ
+     -XX:InitiatingHeapOccupancyPercent=45 \\
+     -Xlog:gc*:file=gc.log:time \\
+     -jar app.jar
+
+# ZGC のチューニング例（Java 21+）
+java -XX:+UseZGC \\
+     -XX:+ZGenerational \\            # 世代別ZGC
+     -Xmx16g \\
+     -Xlog:gc*:file=gc.log:time \\
+     -jar app.jar`,
+  },
+  {
+    id: 200,
+    question: "12-Factor Appの原則をJavaで実践する方法を説明してください",
+    answer: "12-Factor App はクラウドネイティブアプリケーション構築の方法論である。Java/Spring Boot では ① コードベース: Git で一元管理 ② 依存関係: Gradle/Maven で明示宣言 ③ 設定: 環境変数や Spring Profiles で外部化 ④ バッキングサービス: DataSource を付け替え可能に ⑤ ビルド・リリース・実行: CI/CD パイプラインで分離 ⑥ プロセス: ステートレスに保ちセッションは外部ストアへ ⑦ ポートバインディング: 組み込みTomcat ⑧ 並行性: プロセスモデルでスケールアウト ⑨ 廃棄容易性: graceful shutdown ⑩ 開発/本番一致: Docker で環境統一 ⑪ ログ: stdout に出力 ⑫ 管理プロセス: 1回限りのタスクも同一コードベースで実行する。",
+    category: "design",
     level: "advanced",
   },
 ];
