@@ -20,6 +20,18 @@ import { javaCertChapters } from "@/data/java-cert";
 import { oracleCertChapters } from "@/data/oracle-cert";
 import { clangChapters } from "@/data/c-lang";
 import { cppLangChapters } from "@/data/cpp-lang";
+import { githubChapters } from "@/data/github";
+import { testingChapters } from "@/data/testing";
+import { springBootChapters } from "@/data/spring-boot";
+import { buildToolsChapters } from "@/data/build-tools";
+import { concurrencyChapters } from "@/data/concurrency";
+import { jpaChapters } from "@/data/jpa";
+import { loggingChapters } from "@/data/logging";
+import { dockerJavaChapters } from "@/data/docker-java";
+import { cleanCodeChapters } from "@/data/clean-code";
+import { performanceChapters } from "@/data/performance";
+import { microservicesChapters } from "@/data/microservices";
+import { restApiChapters } from "@/data/rest-api";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -45,6 +57,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/oracle-cert`, priority: 0.8 },
     { url: `${baseUrl}/c-lang`, priority: 0.8 },
     { url: `${baseUrl}/cpp-lang`, priority: 0.8 },
+    { url: `${baseUrl}/github`, priority: 0.8 },
+    { url: `${baseUrl}/github-pr`, priority: 0.8 },
+    { url: `${baseUrl}/testing`, priority: 0.8 },
+    { url: `${baseUrl}/spring-boot`, priority: 0.8 },
+    { url: `${baseUrl}/build-tools`, priority: 0.8 },
+    { url: `${baseUrl}/concurrency`, priority: 0.8 },
+    { url: `${baseUrl}/jpa`, priority: 0.8 },
+    { url: `${baseUrl}/logging`, priority: 0.8 },
+    { url: `${baseUrl}/docker-java`, priority: 0.8 },
+    { url: `${baseUrl}/clean-code`, priority: 0.8 },
+    { url: `${baseUrl}/performance`, priority: 0.8 },
+    { url: `${baseUrl}/microservices`, priority: 0.8 },
+    { url: `${baseUrl}/rest-api`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
     { url: `${baseUrl}/patterns`, priority: 0.8 },
     { url: `${baseUrl}/errors`, priority: 0.7 },
@@ -157,6 +182,66 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const githubPages: MetadataRoute.Sitemap = githubChapters.map((c) => ({
+    url: `${baseUrl}/github/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const testingPages: MetadataRoute.Sitemap = testingChapters.map((c) => ({
+    url: `${baseUrl}/testing/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const springBootPages: MetadataRoute.Sitemap = springBootChapters.map((c) => ({
+    url: `${baseUrl}/spring-boot/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const buildToolsPages: MetadataRoute.Sitemap = buildToolsChapters.map((c) => ({
+    url: `${baseUrl}/build-tools/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const concurrencyPages: MetadataRoute.Sitemap = concurrencyChapters.map((c) => ({
+    url: `${baseUrl}/concurrency/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const jpaPages: MetadataRoute.Sitemap = jpaChapters.map((c) => ({
+    url: `${baseUrl}/jpa/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const loggingPages: MetadataRoute.Sitemap = loggingChapters.map((c) => ({
+    url: `${baseUrl}/logging/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const dockerJavaPages: MetadataRoute.Sitemap = dockerJavaChapters.map((c) => ({
+    url: `${baseUrl}/docker-java/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const cleanCodePages: MetadataRoute.Sitemap = cleanCodeChapters.map((c) => ({
+    url: `${baseUrl}/clean-code/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const performancePages: MetadataRoute.Sitemap = performanceChapters.map((c) => ({
+    url: `${baseUrl}/performance/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const microservicesPages: MetadataRoute.Sitemap = microservicesChapters.map((c) => ({
+    url: `${baseUrl}/microservices/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const restApiPages: MetadataRoute.Sitemap = restApiChapters.map((c) => ({
+    url: `${baseUrl}/rest-api/${c.id}`,
+    priority: 0.6,
+  }));
+
   return [
     ...staticPages,
     ...versionPages,
@@ -180,5 +265,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...clangPages,
     ...cppLangPages,
     ...patternPages,
+    ...githubPages,
+    ...testingPages,
+    ...springBootPages,
+    ...buildToolsPages,
+    ...concurrencyPages,
+    ...jpaPages,
+    ...loggingPages,
+    ...dockerJavaPages,
+    ...cleanCodePages,
+    ...performancePages,
+    ...microservicesPages,
+    ...restApiPages,
   ];
 }

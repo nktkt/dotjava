@@ -25,23 +25,39 @@ function XIcon({ className }: { className?: string }) {
 
 const navGroups = [
   {
-    label: "Java学習",
+    label: "Java基礎",
     items: [
       { href: "/#versions", label: "バージョン別" },
       { href: "/#topics", label: "トピック別" },
+      { href: "/io", label: "入出力" },
+      { href: "/algorithm", label: "アルゴリズム" },
+      { href: "/concurrency", label: "並行処理" },
+      { href: "/clean-code", label: "クリーンコード" },
+      { href: "/performance", label: "パフォーマンス" },
     ],
   },
   {
     label: "Java実践",
     items: [
-      { href: "/io", label: "入出力" },
       { href: "/web", label: "Web開発" },
+      { href: "/spring-boot", label: "Spring Boot" },
+      { href: "/rest-api", label: "REST API" },
+      { href: "/jpa", label: "JPA/Hibernate" },
+      { href: "/testing", label: "テスト" },
+      { href: "/build-tools", label: "Maven/Gradle" },
+      { href: "/logging", label: "ロギング" },
+      { href: "/security", label: "セキュリティ" },
       { href: "/excel", label: "Excel" },
       { href: "/oracle", label: "Oracle" },
-      { href: "/security", label: "セキュリティ" },
+    ],
+  },
+  {
+    label: "設計・運用",
+    items: [
+      { href: "/patterns", label: "デザインパターン" },
+      { href: "/microservices", label: "マイクロサービス" },
+      { href: "/docker-java", label: "Docker" },
       { href: "/eclipse-ide", label: "Eclipse" },
-      { href: "/algorithm", label: "アルゴリズム" },
-      { href: "/testing", label: "テスト" },
     ],
   },
   {
@@ -72,7 +88,6 @@ const navGroups = [
       { href: "/oracle-cert", label: "Oracle資格" },
       { href: "/docs", label: "APIリファレンス" },
       { href: "/glossary", label: "用語集" },
-      { href: "/patterns", label: "デザインパターン" },
       { href: "/errors", label: "エラー集" },
       { href: "/interview", label: "面接対策" },
       { href: "/quiz", label: "クイズ" },
