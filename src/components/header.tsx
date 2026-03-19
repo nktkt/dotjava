@@ -50,6 +50,7 @@ const navGroups = [
       { href: "/aws", label: "AWS" },
       { href: "/java-cert", label: "Java資格" },
       { href: "/oracle-cert", label: "Oracle資格" },
+      { href: "/github-pr", label: "GitHub PR" },
       { href: "/c-lang", label: "C言語" },
       { href: "/cpp-lang", label: "C++" },
     ],
