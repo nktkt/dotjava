@@ -32,7 +32,7 @@ const navGroups = [
     ],
   },
   {
-    label: "実践ガイド",
+    label: "Java実践",
     items: [
       { href: "/io", label: "入出力" },
       { href: "/web", label: "Web開発" },
@@ -41,24 +41,34 @@ const navGroups = [
       { href: "/security", label: "セキュリティ" },
       { href: "/eclipse-ide", label: "Eclipse" },
       { href: "/algorithm", label: "アルゴリズム" },
+    ],
+  },
+  {
+    label: "他言語・技術",
+    items: [
       { href: "/javascript", label: "JavaScript" },
       { href: "/html", label: "HTML" },
       { href: "/htmx", label: "HTMX" },
       { href: "/css", label: "CSS" },
       { href: "/bootstrap", label: "Bootstrap" },
-      { href: "/postgresql", label: "PostgreSQL" },
-      { href: "/aws", label: "AWS" },
-      { href: "/java-cert", label: "Java資格" },
-      { href: "/oracle-cert", label: "Oracle資格" },
-      { href: "/github-pr", label: "GitHub PR" },
-      { href: "/github", label: "GitHub" },
       { href: "/c-lang", label: "C言語" },
       { href: "/cpp-lang", label: "C++" },
     ],
   },
   {
-    label: "学習ツール",
+    label: "DB・インフラ",
     items: [
+      { href: "/postgresql", label: "PostgreSQL" },
+      { href: "/aws", label: "AWS" },
+      { href: "/github", label: "GitHub" },
+      { href: "/github-pr", label: "GitHub PR" },
+    ],
+  },
+  {
+    label: "資格・学習",
+    items: [
+      { href: "/java-cert", label: "Java資格" },
+      { href: "/oracle-cert", label: "Oracle資格" },
       { href: "/docs", label: "APIリファレンス" },
       { href: "/glossary", label: "用語集" },
       { href: "/patterns", label: "デザインパターン" },
@@ -121,7 +131,7 @@ export function Header() {
                     {group.label}
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid w-48 gap-1 p-2">
+                    <ul className={`grid gap-1 p-2 ${group.items.length > 6 ? "w-80 grid-cols-2" : "w-48"}`}>
                       {group.items.map((item) => (
                         <li key={item.href}>
                           <NavigationMenuLink asChild>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
@@ -11,11 +12,36 @@ import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/** Return the dark-safe accent color for a category */
+function getAccentColor(
+  category: (typeof githubCategories)[number] | undefined,
+  isDark: boolean
+) {
+  if (!category) return undefined;
+  if (isDark && "darkColor" in category) {
+    return (category as { darkColor: string }).darkColor;
+  }
+  return category.color;
+}
+
 export default function GitHubChapterClientPage({
   chapterId,
 }: {
   chapterId: string;
 }) {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    setIsDark(root.classList.contains("dark"));
+
+    const observer = new MutationObserver(() => {
+      setIsDark(root.classList.contains("dark"));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
   const chapterIndex = githubChapters.findIndex((c) => c.id === chapterId);
 
   if (chapterIndex === -1) {
@@ -24,6 +50,7 @@ export default function GitHubChapterClientPage({
 
   const chapter = githubChapters[chapterIndex];
   const category = githubCategories.find((c) => c.id === chapter.category);
+  const accentColor = getAccentColor(category, isDark);
 
   const sameCategoryChapters = githubChapters.filter(
     (c) => c.category === chapter.category && c.id !== chapter.id
@@ -65,8 +92,8 @@ export default function GitHubChapterClientPage({
               <Badge
                 variant="outline"
                 style={{
-                  borderColor: category?.color,
-                  color: category?.color,
+                  borderColor: accentColor,
+                  color: accentColor,
                 }}
               >
                 {category?.name}

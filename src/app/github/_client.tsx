@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { githubChapters, githubCategories } from "@/data/github";
@@ -7,7 +8,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Github, ArrowRight, BookOpen } from "lucide-react";
 
+/** Return the dark-safe accent color for a category */
+function getAccentColor(
+  category: (typeof githubCategories)[number],
+  isDark: boolean
+) {
+  if (isDark && "darkColor" in category) {
+    return (category as { darkColor: string }).darkColor;
+  }
+  return category.color;
+}
+
 export default function GitHubClientPage() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    setIsDark(root.classList.contains("dark"));
+
+    const observer = new MutationObserver(() => {
+      setIsDark(root.classList.contains("dark"));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero */}
@@ -59,8 +83,8 @@ export default function GitHubClientPage() {
                 variant="outline"
                 className="text-xs"
                 style={{
-                  borderColor: category.color,
-                  color: category.color,
+                  borderColor: getAccentColor(category, isDark),
+                  color: getAccentColor(category, isDark),
                 }}
               >
                 {chapters.length} チャプター
@@ -118,8 +142,8 @@ export default function GitHubClientPage() {
                     variant="outline"
                     className="font-medium"
                     style={{
-                      borderColor: cat.color,
-                      color: cat.color,
+                      borderColor: getAccentColor(cat, isDark),
+                      color: getAccentColor(cat, isDark),
                     }}
                   >
                     {index + 1}. {cat.name}

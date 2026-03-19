@@ -36,6 +36,14 @@ const jsonLd = {
   url: "https://dotjava.org",
   description:
     "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excel、Oracle Databaseまで、全てをコード例と共に学習できるリファレンスサイト。",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: "https://dotjava.org/search?q={search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
+  },
 };
 
 export default function RootLayout({

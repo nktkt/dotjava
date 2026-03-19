@@ -13,7 +13,7 @@ export interface GitHubChapter {
 }
 
 export const githubCategories = [
-  { id: "overview", name: "GitHubとは", color: "#24292F" },
+  { id: "overview", name: "GitHubとは", color: "#24292F", darkColor: "#8B949E" },
   { id: "account", name: "アカウントと設定", color: "#2563EB" },
   { id: "repo", name: "リポジトリ管理", color: "#059669" },
   { id: "collaboration", name: "コラボレーション", color: "#7C3AED" },

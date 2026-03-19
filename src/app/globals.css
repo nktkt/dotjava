@@ -187,3 +187,31 @@
     letter-spacing: 0.02em;
   }
 }
+
+/* Code block scrollbar — always visible on mobile for discoverability */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #3F3F46 transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #3F3F46;
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #52525B;
+}
+/* On touch devices, briefly flash the scrollbar */
+@media (hover: none) {
+  .scrollbar-thin {
+    scrollbar-width: auto;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 8px;
+  }
+}

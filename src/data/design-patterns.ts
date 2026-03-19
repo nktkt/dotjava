@@ -40,50 +40,95 @@ export const designPatterns: DesignPattern[] = [
       {
         title: "実装例",
         content:
-          "以下は enum を使ったスレッドセーフな Singleton と、従来の double-checked locking による実装例です。enum による実装はシリアライズやリフレクション攻撃にも安全です。",
-        code: `// 推奨: enum による Singleton
+          "以下はアプリケーション設定と DB 接続プールを Singleton で実装した例です。enum 方式（推奨）と double-checked locking の両方を示し、設定ファイルの読み込みや接続プール管理など実用的な処理を含みます。",
+        code: `// 推奨: enum による Singleton（シリアライズ・リフレクション攻撃に安全）
 public enum AppConfig {
     INSTANCE;
 
-    private String appName;
-    private int maxConnections;
+    private final Map<String, String> properties = new ConcurrentHashMap<>();
+    private final Path configPath = Path.of("config/app.properties");
 
     AppConfig() {
-        // 初期設定の読み込み
-        this.appName = "MyApplication";
-        this.maxConnections = 10;
+        loadFromFile();
     }
 
-    public String getAppName() {
-        return appName;
+    private void loadFromFile() {
+        try (var reader = Files.newBufferedReader(configPath)) {
+            var props = new Properties();
+            props.load(reader);
+            props.forEach((k, v) -> properties.put(k.toString(), v.toString()));
+            System.out.println("設定読み込み完了: " + properties.size() + " 件");
+        } catch (IOException e) {
+            // デフォルト設定をセット
+            properties.put("app.name", "MyApplication");
+            properties.put("db.pool.size", "10");
+            properties.put("server.port", "8080");
+        }
     }
 
-    public int getMaxConnections() {
-        return maxConnections;
+    public String get(String key) {
+        return properties.get(key);
+    }
+
+    public String getOrDefault(String key, String defaultValue) {
+        return properties.getOrDefault(key, defaultValue);
+    }
+
+    public int getInt(String key, int defaultValue) {
+        String val = properties.get(key);
+        return val != null ? Integer.parseInt(val) : defaultValue;
+    }
+
+    public void reload() {
+        properties.clear();
+        loadFromFile();
     }
 }
 
 // 使用例
-// AppConfig.INSTANCE.getAppName();
+String appName = AppConfig.INSTANCE.get("app.name");
+int port = AppConfig.INSTANCE.getInt("server.port", 8080);
 
-// 従来の方法: double-checked locking
-public class DatabasePool {
-    private static volatile DatabasePool instance;
+// 従来の方法: double-checked locking（スレッドセーフな遅延初期化）
+public class ConnectionPool {
+    private static volatile ConnectionPool instance;
+    private final List<Connection> pool;
+    private final int maxSize;
 
-    private DatabasePool() {
-        // 接続プール初期化
+    private ConnectionPool(int maxSize) {
+        this.maxSize = maxSize;
+        this.pool = new ArrayList<>(maxSize);
+        // プール初期化: 最小接続数を事前作成
+        for (int i = 0; i < Math.min(3, maxSize); i++) {
+            pool.add(createConnection());
+        }
+        System.out.println("接続プール初期化: " + pool.size() + " 接続");
     }
 
-    public static DatabasePool getInstance() {
-        if (instance == null) {
-            synchronized (DatabasePool.class) {
-                if (instance == null) {
-                    instance = new DatabasePool();
+    public static ConnectionPool getInstance() {
+        if (instance == null) {                     // 1st check (ロック不要)
+            synchronized (ConnectionPool.class) {
+                if (instance == null) {             // 2nd check (ロック内)
+                    instance = new ConnectionPool(
+                        AppConfig.INSTANCE.getInt("db.pool.size", 10));
                 }
             }
         }
         return instance;
     }
+
+    public synchronized Connection acquire() {
+        if (pool.isEmpty() && pool.size() < maxSize) {
+            pool.add(createConnection());
+        }
+        return pool.isEmpty() ? null : pool.removeFirst();
+    }
+
+    public synchronized void release(Connection conn) {
+        if (pool.size() < maxSize) pool.add(conn);
+    }
+
+    private Connection createConnection() { /* DB接続生成 */ return null; }
 }`,
       },
       {
@@ -113,63 +158,115 @@ public class DatabasePool {
       {
         title: "実装例",
         content:
-          "以下は通知システムにおける Factory Method の実装例です。通知の種類（メール、SMS、プッシュ通知）に応じたオブジェクトを生成します。",
-        code: `// Product インターフェース
-public interface Notification {
-    void send(String message);
+          "以下はレポートのエクスポート機能における Factory Method の実装例です。sealed インターフェースで型安全にし、PDF / CSV / Excel といったエクスポート形式をサブクラスで切り替えます。",
+        code: `// Product インターフェース: ドキュメントのエクスポーター
+public sealed interface DocumentExporter permits PdfExporter, CsvExporter, ExcelExporter {
+    // ドキュメントデータを指定形式にエクスポートする
+    byte[] export(List<Map<String, Object>> data);
+    String getContentType();
+    String getFileExtension();
 }
 
-// ConcreteProduct
-public class EmailNotification implements Notification {
+// ConcreteProduct: PDF エクスポーター
+public final class PdfExporter implements DocumentExporter {
     @Override
-    public void send(String message) {
-        System.out.println("メール送信: " + message);
+    public byte[] export(List<Map<String, Object>> data) {
+        // PDF ライブラリ（例: iText）でバイト列を生成
+        var doc = new PdfDocument();
+        var table = doc.addTable(data.getFirst().keySet());
+        data.forEach(row -> table.addRow(row.values()));
+        return doc.toBytes();
     }
-}
 
-public class SmsNotification implements Notification {
     @Override
-    public void send(String message) {
-        System.out.println("SMS送信: " + message);
-    }
-}
-
-public class PushNotification implements Notification {
+    public String getContentType() { return "application/pdf"; }
     @Override
-    public void send(String message) {
-        System.out.println("プッシュ通知: " + message);
-    }
+    public String getFileExtension() { return ".pdf"; }
 }
 
-// Creator
-public abstract class NotificationFactory {
-    // Factory Method
-    public abstract Notification createNotification();
+// ConcreteProduct: CSV エクスポーター
+public final class CsvExporter implements DocumentExporter {
+    @Override
+    public byte[] export(List<Map<String, Object>> data) {
+        var sb = new StringBuilder();
+        // ヘッダー行
+        sb.append(String.join(",", data.getFirst().keySet())).append("\\n");
+        // データ行
+        data.forEach(row ->
+            sb.append(row.values().stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(","))
+            ).append("\\n")
+        );
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
+    }
 
-    public void notifyUser(String message) {
-        Notification notification = createNotification();
-        notification.send(message);
+    @Override
+    public String getContentType() { return "text/csv"; }
+    @Override
+    public String getFileExtension() { return ".csv"; }
+}
+
+// ConcreteProduct: Excel エクスポーター
+public final class ExcelExporter implements DocumentExporter {
+    @Override
+    public byte[] export(List<Map<String, Object>> data) {
+        // Apache POI でワークブックを生成
+        var workbook = new XSSFWorkbook();
+        var sheet = workbook.createSheet("Report");
+        // ヘッダーとデータを書き込み（省略）
+        return workbook.toBytes();
+    }
+
+    @Override
+    public String getContentType() {
+        return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    }
+    @Override
+    public String getFileExtension() { return ".xlsx"; }
+}
+
+// Creator: レポート生成の骨格を定義
+public abstract class ReportGenerator {
+    // Factory Method — サブクラスがエクスポーターを決定する
+    protected abstract DocumentExporter createExporter();
+
+    // テンプレートメソッド的に利用
+    public final Path generateReport(String reportName,
+            List<Map<String, Object>> data) throws IOException {
+        DocumentExporter exporter = createExporter();
+        byte[] content = exporter.export(data);
+        Path filePath = Path.of("reports",
+            reportName + exporter.getFileExtension());
+        Files.write(filePath, content);
+        System.out.printf("レポート生成完了: %s (%s, %d bytes)%n",
+            filePath, exporter.getContentType(), content.length);
+        return filePath;
     }
 }
 
 // ConcreteCreator
-public class EmailNotificationFactory extends NotificationFactory {
+public class PdfReportGenerator extends ReportGenerator {
     @Override
-    public Notification createNotification() {
-        return new EmailNotification();
+    protected DocumentExporter createExporter() {
+        return new PdfExporter();
     }
 }
 
-public class SmsNotificationFactory extends NotificationFactory {
+public class CsvReportGenerator extends ReportGenerator {
     @Override
-    public Notification createNotification() {
-        return new SmsNotification();
+    protected DocumentExporter createExporter() {
+        return new CsvExporter();
     }
 }
 
-// 使用例
-NotificationFactory factory = new EmailNotificationFactory();
-factory.notifyUser("ご注文を承りました");`,
+// 使用例: エクスポート形式を切り替え
+ReportGenerator generator = new PdfReportGenerator();
+var salesData = List.of(
+    Map.of("商品", "ノートPC", "数量", 50, "売上", 5_000_000),
+    Map.of("商品", "マウス",   "数量", 200, "売上", 600_000)
+);
+Path report = generator.generateReport("月次売上", salesData);`,
       },
       {
         title: "使いどころ",
@@ -198,79 +295,149 @@ factory.notifyUser("ご注文を承りました");`,
       {
         title: "実装例",
         content:
-          "以下はクロスプラットフォーム UI コンポーネントを生成する Abstract Factory の例です。OS ごとに異なる外観のボタンとチェックボックスを生成します。",
-        code: `// AbstractProduct
-public interface Button {
-    void render();
-    void onClick(Runnable action);
+          "以下はマルチデータベース対応のリポジトリ層を Abstract Factory で実装した例です。PostgreSQL / MySQL など、DB製品ごとに接続・トランザクション・マイグレーションを一式生成し、整合性を保ちます。",
+        code: `// AbstractProduct: データベース接続
+public interface DbConnection {
+    void connect(String url);
+    void close();
+    ResultSet executeQuery(String sql);
 }
 
-public interface Checkbox {
-    void render();
-    boolean isChecked();
+// AbstractProduct: トランザクションマネージャー
+public interface TransactionManager {
+    void begin();
+    void commit();
+    void rollback();
 }
 
-// ConcreteProduct (Windows)
-public class WindowsButton implements Button {
-    public void render() { System.out.println("[Windows Button]"); }
-    public void onClick(Runnable action) { action.run(); }
+// AbstractProduct: マイグレーションツール
+public interface MigrationTool {
+    void migrate(String scriptPath);
+    int getCurrentVersion();
 }
 
-public class WindowsCheckbox implements Checkbox {
-    private boolean checked = false;
-    public void render() { System.out.println("[Windows Checkbox]"); }
-    public boolean isChecked() { return checked; }
+// ConcreteProduct (PostgreSQL 系)
+public class PostgresConnection implements DbConnection {
+    @Override
+    public void connect(String url) {
+        System.out.println("PostgreSQL へ接続: " + url);
+        // PgConnection の初期化処理
+    }
+    @Override
+    public void close() { System.out.println("PostgreSQL 接続クローズ"); }
+    @Override
+    public ResultSet executeQuery(String sql) {
+        System.out.println("PostgreSQL 実行: " + sql);
+        return null; // 実際は ResultSet を返す
+    }
 }
 
-// ConcreteProduct (macOS)
-public class MacButton implements Button {
-    public void render() { System.out.println("[macOS Button]"); }
-    public void onClick(Runnable action) { action.run(); }
+public class PostgresTransactionManager implements TransactionManager {
+    @Override
+    public void begin() { System.out.println("BEGIN (PostgreSQL MVCC)"); }
+    @Override
+    public void commit() { System.out.println("COMMIT"); }
+    @Override
+    public void rollback() { System.out.println("ROLLBACK"); }
 }
 
-public class MacCheckbox implements Checkbox {
-    private boolean checked = false;
-    public void render() { System.out.println("[macOS Checkbox]"); }
-    public boolean isChecked() { return checked; }
+public class PostgresMigration implements MigrationTool {
+    @Override
+    public void migrate(String scriptPath) {
+        System.out.println("Flyway で PostgreSQL マイグレーション: " + scriptPath);
+    }
+    @Override
+    public int getCurrentVersion() { return 5; }
+}
+
+// ConcreteProduct (MySQL 系)
+public class MySqlConnection implements DbConnection {
+    @Override
+    public void connect(String url) {
+        System.out.println("MySQL へ接続: " + url);
+    }
+    @Override
+    public void close() { System.out.println("MySQL 接続クローズ"); }
+    @Override
+    public ResultSet executeQuery(String sql) {
+        System.out.println("MySQL 実行: " + sql);
+        return null;
+    }
+}
+
+public class MySqlTransactionManager implements TransactionManager {
+    @Override
+    public void begin() { System.out.println("START TRANSACTION (MySQL InnoDB)"); }
+    @Override
+    public void commit() { System.out.println("COMMIT"); }
+    @Override
+    public void rollback() { System.out.println("ROLLBACK"); }
+}
+
+public class MySqlMigration implements MigrationTool {
+    @Override
+    public void migrate(String scriptPath) {
+        System.out.println("Liquibase で MySQL マイグレーション: " + scriptPath);
+    }
+    @Override
+    public int getCurrentVersion() { return 3; }
 }
 
 // AbstractFactory
-public interface UIFactory {
-    Button createButton();
-    Checkbox createCheckbox();
+public interface DatabaseFactory {
+    DbConnection createConnection();
+    TransactionManager createTransactionManager();
+    MigrationTool createMigrationTool();
 }
 
 // ConcreteFactory
-public class WindowsUIFactory implements UIFactory {
-    public Button createButton() { return new WindowsButton(); }
-    public Checkbox createCheckbox() { return new WindowsCheckbox(); }
+public class PostgresFactory implements DatabaseFactory {
+    public DbConnection createConnection() { return new PostgresConnection(); }
+    public TransactionManager createTransactionManager() {
+        return new PostgresTransactionManager();
+    }
+    public MigrationTool createMigrationTool() { return new PostgresMigration(); }
 }
 
-public class MacUIFactory implements UIFactory {
-    public Button createButton() { return new MacButton(); }
-    public Checkbox createCheckbox() { return new MacCheckbox(); }
+public class MySqlFactory implements DatabaseFactory {
+    public DbConnection createConnection() { return new MySqlConnection(); }
+    public TransactionManager createTransactionManager() {
+        return new MySqlTransactionManager();
+    }
+    public MigrationTool createMigrationTool() { return new MySqlMigration(); }
 }
 
-// Client
-public class Application {
-    private final Button button;
-    private final Checkbox checkbox;
+// Client: DB 製品の具体クラスに一切依存しない
+public class ApplicationRepository {
+    private final DbConnection connection;
+    private final TransactionManager txManager;
 
-    public Application(UIFactory factory) {
-        this.button = factory.createButton();
-        this.checkbox = factory.createCheckbox();
+    public ApplicationRepository(DatabaseFactory factory, String dbUrl) {
+        this.connection = factory.createConnection();
+        this.txManager = factory.createTransactionManager();
+        connection.connect(dbUrl);
     }
 
-    public void render() {
-        button.render();
-        checkbox.render();
+    public void saveUser(String name) {
+        txManager.begin();
+        try {
+            connection.executeQuery(
+                "INSERT INTO users (name) VALUES ('" + name + "')");
+            txManager.commit();
+        } catch (Exception e) {
+            txManager.rollback();
+            throw e;
+        }
     }
 }
 
-// 使用例
-UIFactory factory = new MacUIFactory();
-Application app = new Application(factory);
-app.render();`,
+// 使用例: 環境変数でDB製品を切り替え
+DatabaseFactory factory = switch (System.getenv("DB_TYPE")) {
+    case "mysql" -> new MySqlFactory();
+    default      -> new PostgresFactory();
+};
+var repo = new ApplicationRepository(factory, "jdbc:postgresql://localhost/mydb");
+repo.saveUser("太郎");`,
       },
       {
         title: "使いどころ",
@@ -497,62 +664,100 @@ jan.setTitle("1月度報告");`,
       {
         title: "実装例",
         content:
-          "以下は外部ライブラリの JSON パーサーをアプリケーション内の統一インターフェースに適合させる例です。",
-        code: `// Target: アプリケーションが期待するインターフェース
-public interface JsonParser {
-    Map<String, Object> parse(String json);
-    String toJson(Map<String, Object> data);
+          "以下はロギングシステムで、レガシーライブラリとクラウドログサービスを統一インターフェースに適合させる Adapter の実装例です。2 種類の Adaptee を同じ Target に変換します。",
+        code: `// Target: アプリケーションが期待する統一ログインターフェース
+public interface AppLogger {
+    void info(String message);
+    void warn(String message);
+    void error(String message, Throwable cause);
 }
 
-// Adaptee: 外部ライブラリ（異なるインターフェース）
-public class LegacyXmlParser {
-    public Document parseXml(String xml) {
-        // XML をパースする既存処理
-        return new Document(xml);
+// Adaptee 1: 外部ライブラリ（Log4j 風の異なる API）
+public class LegacyLogger {
+    // レベルを数値で受け取る古い API
+    public void log(int level, String msg) {
+        System.out.printf("[Legacy Lv%d] %s%n", level, msg);
     }
+    public void log(int level, String msg, Throwable t) {
+        System.out.printf("[Legacy Lv%d] %s: %s%n", level, msg, t.getMessage());
+    }
+    // レベル定数
+    public static final int INFO = 20, WARN = 30, ERROR = 40;
+}
 
-    public String serialize(Document doc) {
-        // Document を文字列に変換する既存処理
-        return doc.toString();
+// Adaptee 2: クラウド用ログサービス（REST API 風）
+public class CloudLogService {
+    public void sendLog(String severity, String payload,
+                        Map<String, String> metadata) {
+        System.out.printf("[Cloud:%s] %s %s%n", severity, payload, metadata);
     }
 }
 
-// Adapter: LegacyXmlParser を JsonParser として使えるようにする
-public class XmlToJsonAdapter implements JsonParser {
-    private final LegacyXmlParser xmlParser;
+// Adapter 1: LegacyLogger を AppLogger に適合させる
+public class LegacyLoggerAdapter implements AppLogger {
+    private final LegacyLogger legacy;
 
-    public XmlToJsonAdapter(LegacyXmlParser xmlParser) {
-        this.xmlParser = xmlParser;
+    public LegacyLoggerAdapter(LegacyLogger legacy) {
+        this.legacy = legacy;
     }
 
     @Override
-    public Map<String, Object> parse(String json) {
-        // JSON → XML に変換してパース
-        String xml = convertJsonToXml(json);
-        Document doc = xmlParser.parseXml(xml);
-        return convertDocumentToMap(doc);
+    public void info(String message) {
+        legacy.log(LegacyLogger.INFO, message);
     }
 
     @Override
-    public String toJson(Map<String, Object> data) {
-        Document doc = convertMapToDocument(data);
-        String xml = xmlParser.serialize(doc);
-        return convertXmlToJson(xml);
+    public void warn(String message) {
+        legacy.log(LegacyLogger.WARN, message);
     }
 
-    private String convertJsonToXml(String json) { /* 変換処理 */ return ""; }
-    private Map<String, Object> convertDocumentToMap(Document doc) {
-        return new HashMap<>();
+    @Override
+    public void error(String message, Throwable cause) {
+        legacy.log(LegacyLogger.ERROR, message, cause);
     }
-    private Document convertMapToDocument(Map<String, Object> data) {
-        return new Document("");
-    }
-    private String convertXmlToJson(String xml) { return "{}"; }
 }
 
-// 使用例
-JsonParser parser = new XmlToJsonAdapter(new LegacyXmlParser());
-Map<String, Object> data = parser.parse("{\\"name\\": \\"太郎\\"}");`,
+// Adapter 2: CloudLogService を AppLogger に適合させる
+public class CloudLogAdapter implements AppLogger {
+    private final CloudLogService service;
+    private final String appName;
+
+    public CloudLogAdapter(CloudLogService service, String appName) {
+        this.service = service;
+        this.appName = appName;
+    }
+
+    @Override
+    public void info(String message) {
+        service.sendLog("INFO", message,
+            Map.of("app", appName, "timestamp", Instant.now().toString()));
+    }
+
+    @Override
+    public void warn(String message) {
+        service.sendLog("WARNING", message,
+            Map.of("app", appName, "timestamp", Instant.now().toString()));
+    }
+
+    @Override
+    public void error(String message, Throwable cause) {
+        service.sendLog("ERROR", message + " | " + cause.getMessage(),
+            Map.of("app", appName, "stackTrace",
+                Arrays.stream(cause.getStackTrace())
+                    .limit(5)
+                    .map(StackTraceElement::toString)
+                    .collect(Collectors.joining("\\n"))));
+    }
+}
+
+// 使用例: 環境に応じてロガーを切り替え
+AppLogger logger = switch (System.getenv("LOG_TARGET")) {
+    case "cloud" -> new CloudLogAdapter(new CloudLogService(), "my-app");
+    default      -> new LegacyLoggerAdapter(new LegacyLogger());
+};
+// クライアントは AppLogger だけを知っていればよい
+logger.info("アプリケーション起動");
+logger.error("DB接続失敗", new RuntimeException("Connection refused"));`,
       },
       {
         title: "使いどころ",
@@ -581,68 +786,163 @@ Map<String, Object> data = parser.parse("{\\"name\\": \\"太郎\\"}");`,
       {
         title: "実装例",
         content:
-          "以下はメッセージ送信システムの例です。メッセージの優先度（通常/緊急）と送信手段（メール/SMS）を独立に組み合わせられます。",
-        code: `// Implementation: 送信手段のインターフェース
-public interface MessageSender {
-    void sendMessage(String title, String body);
+          "以下はチャートライブラリの例です。チャートの種類（棒グラフ/円グラフ）とレンダリング形式（SVG/PNG）を Bridge で分離し、独立に組み合わせられます。",
+        code: `// Implementation: レンダリングエンジン（描画の「実装」を担当）
+public interface Renderer {
+    void renderShape(String shapeType, Map<String, Double> params);
+    void renderText(String text, double x, double y, int fontSize);
+    byte[] exportAsBytes();
+    String getFormat();
 }
 
-// ConcreteImplementation
-public class EmailSender implements MessageSender {
+// ConcreteImplementation: SVG レンダラー
+public class SvgRenderer implements Renderer {
+    private final StringBuilder svg = new StringBuilder("<svg>");
+
     @Override
-    public void sendMessage(String title, String body) {
-        System.out.println("メール送信 [" + title + "]: " + body);
-    }
-}
-
-public class SmsSender implements MessageSender {
-    @Override
-    public void sendMessage(String title, String body) {
-        System.out.println("SMS送信 [" + title + "]: " + body);
-    }
-}
-
-// Abstraction: メッセージの抽象クラス
-public abstract class Message {
-    protected final MessageSender sender;
-
-    protected Message(MessageSender sender) {
-        this.sender = sender;
-    }
-
-    public abstract void send(String title, String body);
-}
-
-// RefinedAbstraction
-public class NormalMessage extends Message {
-    public NormalMessage(MessageSender sender) {
-        super(sender);
+    public void renderShape(String type, Map<String, Double> params) {
+        // SVG の XML 要素として描画
+        switch (type) {
+            case "circle" -> svg.append(String.format(
+                "<circle cx=\\"%.0f\\" cy=\\"%.0f\\" r=\\"%.0f\\"/>",
+                params.get("x"), params.get("y"), params.get("radius")));
+            case "rect" -> svg.append(String.format(
+                "<rect x=\\"%.0f\\" y=\\"%.0f\\" width=\\"%.0f\\" height=\\"%.0f\\"/>",
+                params.get("x"), params.get("y"),
+                params.get("width"), params.get("height")));
+        }
     }
 
     @Override
-    public void send(String title, String body) {
-        sender.sendMessage(title, body);
-    }
-}
-
-public class UrgentMessage extends Message {
-    public UrgentMessage(MessageSender sender) {
-        super(sender);
+    public void renderText(String text, double x, double y, int fontSize) {
+        svg.append(String.format(
+            "<text x=\\"%.0f\\" y=\\"%.0f\\" font-size=\\"%d\\">%s</text>",
+            x, y, fontSize, text));
     }
 
     @Override
-    public void send(String title, String body) {
-        sender.sendMessage("【緊急】" + title,
-            "*** 至急対応してください ***\\n" + body);
+    public byte[] exportAsBytes() {
+        return (svg + "</svg>").getBytes(StandardCharsets.UTF_8);
+    }
+    @Override
+    public String getFormat() { return "SVG"; }
+}
+
+// ConcreteImplementation: Canvas (ラスター画像) レンダラー
+public class CanvasRenderer implements Renderer {
+    private final BufferedImage image;
+    private final Graphics2D g2d;
+
+    public CanvasRenderer(int width, int height) {
+        image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        g2d = image.createGraphics();
+    }
+
+    @Override
+    public void renderShape(String type, Map<String, Double> params) {
+        switch (type) {
+            case "circle" -> g2d.drawOval(
+                params.get("x").intValue(), params.get("y").intValue(),
+                params.get("radius").intValue() * 2,
+                params.get("radius").intValue() * 2);
+            case "rect" -> g2d.drawRect(
+                params.get("x").intValue(), params.get("y").intValue(),
+                params.get("width").intValue(), params.get("height").intValue());
+        }
+    }
+
+    @Override
+    public void renderText(String text, double x, double y, int fontSize) {
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, fontSize));
+        g2d.drawString(text, (float) x, (float) y);
+    }
+
+    @Override
+    public byte[] exportAsBytes() {
+        var baos = new ByteArrayOutputStream();
+        try { ImageIO.write(image, "PNG", baos); } catch (IOException e) { /**/ }
+        return baos.toByteArray();
+    }
+    @Override
+    public String getFormat() { return "PNG"; }
+}
+
+// Abstraction: チャート（「機能」を担当）
+public abstract class Chart {
+    protected final Renderer renderer;    // Implementation への参照（橋）
+    protected final String title;
+
+    protected Chart(Renderer renderer, String title) {
+        this.renderer = renderer;
+        this.title = title;
+    }
+
+    // テンプレート: 描画 → エクスポート
+    public final byte[] draw() {
+        renderer.renderText(title, 10, 20, 16);  // タイトル描画
+        drawContent();                             // サブクラスが定義
+        return renderer.exportAsBytes();
+    }
+
+    protected abstract void drawContent();
+}
+
+// RefinedAbstraction: 棒グラフ
+public class BarChart extends Chart {
+    private final Map<String, Double> data;
+
+    public BarChart(Renderer renderer, String title,
+                    Map<String, Double> data) {
+        super(renderer, title);
+        this.data = data;
+    }
+
+    @Override
+    protected void drawContent() {
+        int x = 30;
+        for (var entry : data.entrySet()) {
+            double height = entry.getValue();
+            renderer.renderShape("rect", Map.of(
+                "x", (double) x, "y", 200 - height,
+                "width", 40.0, "height", height));
+            renderer.renderText(entry.getKey(), x, 220, 10);
+            x += 60;
+        }
     }
 }
 
-// 使用例: 優先度と送信手段を自由に組み合わせ
-Message normalEmail = new NormalMessage(new EmailSender());
-normalEmail.send("会議のお知らせ", "明日10時から会議です");
+// RefinedAbstraction: 円グラフ（機能の拡張は Renderer と独立）
+public class PieChart extends Chart {
+    private final Map<String, Double> data;
 
-Message urgentSms = new UrgentMessage(new SmsSender());
-urgentSms.send("障害発生", "サーバーダウンしました");`,
+    public PieChart(Renderer renderer, String title,
+                    Map<String, Double> data) {
+        super(renderer, title);
+        this.data = data;
+    }
+
+    @Override
+    protected void drawContent() {
+        // 各セクションを円弧として描画（簡略化）
+        renderer.renderShape("circle",
+            Map.of("x", 150.0, "y", 150.0, "radius", 80.0));
+        renderer.renderText(data.toString(), 10, 260, 10);
+    }
+}
+
+// 使用例: チャート種類 x レンダラーを自由に組み合わせ
+var sales = Map.of("Q1", 120.0, "Q2", 95.0, "Q3", 150.0, "Q4", 180.0);
+
+// 棒グラフ × SVG
+byte[] svgBar = new BarChart(new SvgRenderer(), "四半期売上", sales).draw();
+
+// 円グラフ × PNG
+byte[] pngPie = new PieChart(
+    new CanvasRenderer(400, 300), "売上構成", sales).draw();
+
+// 棒グラフ × PNG（チャート種類とレンダラーを独立に切替可能）
+byte[] pngBar = new BarChart(
+    new CanvasRenderer(600, 400), "四半期売上", sales).draw();`,
       },
       {
         title: "使いどころ",
@@ -1804,88 +2104,112 @@ game.load(saveManager.getLatestSave());`,
       {
         title: "実装例",
         content:
-          "以下は株価の変動を監視し、各種通知を行う Observer パターンの実装例です。",
-        code: `// Observer インターフェース
+          "以下は EC サイトの注文イベントを監視する Observer パターンの実装例です。sealed インターフェースで型安全なイベント型を定義し、メール通知・在庫管理・監査ログの各サービスが独立してイベントを購読します。",
+        code: `// イベント型を sealed で定義（型安全な Observer）
+public sealed interface OrderEvent {
+    String orderId();
+    LocalDateTime timestamp();
+
+    record Created(String orderId, String customerId,
+                   long totalAmount, LocalDateTime timestamp) implements OrderEvent {}
+    record Paid(String orderId, String transactionId,
+                LocalDateTime timestamp) implements OrderEvent {}
+    record Shipped(String orderId, String trackingNumber,
+                   LocalDateTime timestamp) implements OrderEvent {}
+    record Cancelled(String orderId, String reason,
+                     LocalDateTime timestamp) implements OrderEvent {}
+}
+
+// Observer インターフェース（ジェネリクスでイベント型を制約）
 @FunctionalInterface
-public interface StockObserver {
-    void onPriceChanged(String symbol, double oldPrice, double newPrice);
+public interface EventListener<T extends OrderEvent> {
+    void onEvent(T event);
 }
 
-// Subject
-public class StockMarket {
-    private final Map<String, Double> prices = new HashMap<>();
-    private final List<StockObserver> observers = new CopyOnWriteArrayList<>();
+// Subject: 型安全なイベントバス
+public class OrderEventBus {
+    // イベント型ごとにリスナーを管理
+    private final Map<Class<? extends OrderEvent>,
+        List<EventListener<? extends OrderEvent>>> listeners
+            = new ConcurrentHashMap<>();
 
-    public void addObserver(StockObserver observer) {
-        observers.add(observer);
+    @SuppressWarnings("unchecked")
+    public <T extends OrderEvent> void subscribe(
+            Class<T> eventType, EventListener<T> listener) {
+        listeners.computeIfAbsent(eventType,
+            k -> new CopyOnWriteArrayList<>()).add(listener);
     }
 
-    public void removeObserver(StockObserver observer) {
-        observers.remove(observer);
-    }
-
-    public void setPrice(String symbol, double newPrice) {
-        double oldPrice = prices.getOrDefault(symbol, 0.0);
-        prices.put(symbol, newPrice);
-
-        if (oldPrice != newPrice) {
-            notifyObservers(symbol, oldPrice, newPrice);
+    @SuppressWarnings("unchecked")
+    public <T extends OrderEvent> void publish(T event) {
+        var eventListeners = listeners.getOrDefault(
+            event.getClass(), List.of());
+        for (var listener : eventListeners) {
+            ((EventListener<T>) listener).onEvent(event);
         }
     }
+}
 
-    private void notifyObservers(String symbol,
-                                  double oldPrice, double newPrice) {
-        for (StockObserver observer : observers) {
-            observer.onPriceChanged(symbol, oldPrice, newPrice);
-        }
-    }
+// ConcreteObserver 1: メール通知サービス
+public class EmailNotificationService {
+    public void register(OrderEventBus bus) {
+        // 注文作成時に確認メール
+        bus.subscribe(OrderEvent.Created.class, event ->
+            System.out.printf("メール送信: 注文 %s を承りました（%,d円）%n",
+                event.orderId(), event.totalAmount()));
 
-    public double getPrice(String symbol) {
-        return prices.getOrDefault(symbol, 0.0);
+        // 出荷時に発送通知メール
+        bus.subscribe(OrderEvent.Shipped.class, event ->
+            System.out.printf("メール送信: 注文 %s 発送済（追跡: %s）%n",
+                event.orderId(), event.trackingNumber()));
+
+        // キャンセル時にキャンセル確認メール
+        bus.subscribe(OrderEvent.Cancelled.class, event ->
+            System.out.printf("メール送信: 注文 %s キャンセル（理由: %s）%n",
+                event.orderId(), event.reason()));
     }
 }
 
-// ConcreteObserver: ログ記録
-public class PriceLogger implements StockObserver {
-    @Override
-    public void onPriceChanged(String symbol,
-                                double oldPrice, double newPrice) {
-        double change = ((newPrice - oldPrice) / oldPrice) * 100;
-        System.out.printf("[LOG] %s: %.2f → %.2f (%.1f%%)%n",
-            symbol, oldPrice, newPrice, change);
+// ConcreteObserver 2: 在庫管理サービス
+public class InventoryService {
+    public void register(OrderEventBus bus) {
+        bus.subscribe(OrderEvent.Created.class, event -> {
+            System.out.println("在庫引当: 注文 " + event.orderId());
+            // 在庫DBの引当処理...
+        });
+        bus.subscribe(OrderEvent.Cancelled.class, event -> {
+            System.out.println("在庫戻入: 注文 " + event.orderId());
+            // 在庫の引当解除...
+        });
     }
 }
 
-// ConcreteObserver: アラート通知
-public class PriceAlert implements StockObserver {
-    private final double threshold;
-
-    public PriceAlert(double thresholdPercent) {
-        this.threshold = thresholdPercent;
-    }
-
-    @Override
-    public void onPriceChanged(String symbol,
-                                double oldPrice, double newPrice) {
-        double change = Math.abs((newPrice - oldPrice) / oldPrice) * 100;
-        if (change >= threshold) {
-            System.out.printf("[ALERT] %s が %.1f%% 変動しました！%n",
-                symbol, change);
+// ConcreteObserver 3: 監査ログサービス
+public class AuditLogService {
+    public void register(OrderEventBus bus) {
+        // すべてのイベントをログに記録
+        for (var type : List.of(OrderEvent.Created.class,
+                OrderEvent.Paid.class, OrderEvent.Shipped.class,
+                OrderEvent.Cancelled.class)) {
+            bus.subscribe(type, event ->
+                System.out.printf("[AUDIT %s] %s: %s%n",
+                    event.timestamp(), event.getClass().getSimpleName(),
+                    event.orderId()));
         }
     }
 }
 
 // 使用例
-StockMarket market = new StockMarket();
-market.addObserver(new PriceLogger());
-market.addObserver(new PriceAlert(5.0));
+var bus = new OrderEventBus();
+new EmailNotificationService().register(bus);
+new InventoryService().register(bus);
+new AuditLogService().register(bus);
 
-// ラムダ式でも Observer を追加可能
-market.addObserver((symbol, oldPrice, newPrice) ->
-    System.out.println("ポートフォリオ更新: " + symbol));
-
-market.setPrice("AAPL", 150.0);
-market.setPrice("AAPL", 160.0); // 6.7%変動 → アラート発火`,
+// 注文ライフサイクル: 各イベントを発行すると全 Observer に通知
+var now = LocalDateTime.now();
+bus.publish(new OrderEvent.Created("ORD-001", "CUST-42", 15_800, now));
+bus.publish(new OrderEvent.Paid("ORD-001", "TX-abc123", now.plusMinutes(1)));
+bus.publish(new OrderEvent.Shipped("ORD-001", "JP1234567890", now.plusHours(3)));`,
       },
       {
         title: "使いどころ",
@@ -2048,86 +2372,157 @@ vm.selectProduct("コーラ");  // コーラ を選択 → 排出`,
       {
         title: "実装例",
         content:
-          "以下は商品の割引計算を Strategy パターンで実装した例です。割引ルールを動的に切り替えられます。",
-        code: `// Strategy インターフェース
-@FunctionalInterface
-public interface DiscountStrategy {
-    double calculateDiscount(double price);
+          "以下は EC サイトの決済処理を Strategy パターンで実装した例です。クレジットカード・銀行振込・QR コード決済を sealed インターフェースで型安全に定義し、実行時に切り替えられます。",
+        code: `// Strategy インターフェース: 決済処理の戦略
+public sealed interface PaymentStrategy
+        permits CreditCardPayment, BankTransferPayment, QrCodePayment {
+    /** 決済を実行し、トランザクション ID を返す */
+    PaymentResult pay(PaymentRequest request);
+    /** この決済手段が利用可能かチェック */
+    boolean supports(String currency);
 }
 
-// ConcreteStrategy
-public class RegularDiscount implements DiscountStrategy {
-    @Override
-    public double calculateDiscount(double price) {
-        return 0; // 割引なし
-    }
-}
+// 決済リクエスト / 結果を record で定義
+public record PaymentRequest(
+    String orderId, long amount, String currency, String customerEmail
+) {}
 
-public class MemberDiscount implements DiscountStrategy {
-    @Override
-    public double calculateDiscount(double price) {
-        return price * 0.1; // 10%割引
-    }
-}
+public record PaymentResult(
+    String transactionId, boolean success, String message
+) {}
 
-public class PremiumDiscount implements DiscountStrategy {
-    @Override
-    public double calculateDiscount(double price) {
-        return price * 0.2; // 20%割引
-    }
-}
+// ConcreteStrategy: クレジットカード決済
+public final class CreditCardPayment implements PaymentStrategy {
+    private final String cardNumber;
+    private final String expiry;
+    private final String cvv;
 
-public class SeasonalDiscount implements DiscountStrategy {
-    private final double rate;
-
-    public SeasonalDiscount(double rate) {
-        this.rate = rate;
+    public CreditCardPayment(String cardNumber, String expiry, String cvv) {
+        this.cardNumber = cardNumber;
+        this.expiry = expiry;
+        this.cvv = cvv;
     }
 
     @Override
-    public double calculateDiscount(double price) {
-        return price * rate;
+    public PaymentResult pay(PaymentRequest req) {
+        // カード番号の簡易バリデーション
+        if (cardNumber.length() != 16) {
+            return new PaymentResult(null, false, "無効なカード番号");
+        }
+        // 外部決済 API を呼び出す（簡略化）
+        String txId = "CC-" + UUID.randomUUID().toString().substring(0, 8);
+        System.out.printf("カード決済: %s %,d %s [****%s]%n",
+            req.orderId(), req.amount(), req.currency(),
+            cardNumber.substring(12));
+        return new PaymentResult(txId, true, "カード決済完了");
+    }
+
+    @Override
+    public boolean supports(String currency) {
+        // クレジットカードは主要通貨をサポート
+        return Set.of("JPY", "USD", "EUR").contains(currency);
     }
 }
 
-// Context
-public class ShoppingCart {
-    private final List<Item> items = new ArrayList<>();
-    private DiscountStrategy discountStrategy = new RegularDiscount();
+// ConcreteStrategy: 銀行振込
+public final class BankTransferPayment implements PaymentStrategy {
+    private final String bankCode;
+    private final String accountNumber;
 
-    public void setDiscountStrategy(DiscountStrategy strategy) {
-        this.discountStrategy = strategy;
+    public BankTransferPayment(String bankCode, String accountNumber) {
+        this.bankCode = bankCode;
+        this.accountNumber = accountNumber;
     }
 
-    public void addItem(String name, double price) {
-        items.add(new Item(name, price));
+    @Override
+    public PaymentResult pay(PaymentRequest req) {
+        // 振込依頼を生成
+        String txId = "BT-" + UUID.randomUUID().toString().substring(0, 8);
+        System.out.printf("銀行振込: %s %,d %s → 銀行 %s 口座 %s%n",
+            req.orderId(), req.amount(), req.currency(),
+            bankCode, accountNumber);
+        return new PaymentResult(txId, true,
+            "振込依頼受付済（入金確認まで1-2営業日）");
     }
 
-    public double calculateTotal() {
-        double subtotal = items.stream()
-            .mapToDouble(Item::price)
-            .sum();
-        double discount = discountStrategy.calculateDiscount(subtotal);
-        return subtotal - discount;
+    @Override
+    public boolean supports(String currency) {
+        return "JPY".equals(currency); // 国内銀行振込は日本円のみ
+    }
+}
+
+// ConcreteStrategy: QRコード決済 (PayPay, LINE Pay 等)
+public final class QrCodePayment implements PaymentStrategy {
+    private final String providerId;  // "paypay", "linepay" など
+
+    public QrCodePayment(String providerId) {
+        this.providerId = providerId;
     }
 
-    public record Item(String name, double price) {}
+    @Override
+    public PaymentResult pay(PaymentRequest req) {
+        if (req.amount() > 500_000) {
+            return new PaymentResult(null, false,
+                "QR決済は50万円以下が上限です");
+        }
+        String txId = "QR-" + UUID.randomUUID().toString().substring(0, 8);
+        System.out.printf("QR決済 [%s]: %s %,d %s%n",
+            providerId, req.orderId(), req.amount(), req.currency());
+        return new PaymentResult(txId, true, providerId + " 決済完了");
+    }
+
+    @Override
+    public boolean supports(String currency) {
+        return "JPY".equals(currency);
+    }
+}
+
+// Context: 注文の決済処理
+public class PaymentProcessor {
+    private PaymentStrategy strategy;
+
+    public PaymentProcessor(PaymentStrategy strategy) {
+        this.strategy = Objects.requireNonNull(strategy);
+    }
+
+    /** 戦略を実行時に切り替え可能 */
+    public void setStrategy(PaymentStrategy strategy) {
+        this.strategy = Objects.requireNonNull(strategy);
+    }
+
+    /** 決済を実行（通貨チェック → 決済 → 結果ログ） */
+    public PaymentResult processPayment(PaymentRequest request) {
+        if (!strategy.supports(request.currency())) {
+            return new PaymentResult(null, false,
+                request.currency() + " はこの決済手段に対応していません");
+        }
+        PaymentResult result = strategy.pay(request);
+        System.out.printf("決済結果: %s [%s] %s%n",
+            result.transactionId(), result.success() ? "成功" : "失敗",
+            result.message());
+        return result;
+    }
 }
 
 // 使用例
-ShoppingCart cart = new ShoppingCart();
-cart.addItem("Java入門書", 3000);
-cart.addItem("デザパタ本", 4000);
+var request = new PaymentRequest("ORD-2025-001", 12_800, "JPY", "user@example.com");
 
-cart.setDiscountStrategy(new RegularDiscount());
-System.out.println("通常: " + cart.calculateTotal() + "円"); // 7000円
+// カード決済
+var processor = new PaymentProcessor(
+    new CreditCardPayment("4111111111111111", "12/26", "123"));
+processor.processPayment(request);
 
-cart.setDiscountStrategy(new MemberDiscount());
-System.out.println("会員: " + cart.calculateTotal() + "円"); // 6300円
+// 実行時に QR 決済に切り替え
+processor.setStrategy(new QrCodePayment("paypay"));
+processor.processPayment(request);
 
-// ラムダ式で動的に定義
-cart.setDiscountStrategy(price -> price > 5000 ? 500 : 0);
-System.out.println("クーポン: " + cart.calculateTotal() + "円"); // 6500円`,
+// ラムダ風にファクトリで戦略を選択する例
+PaymentStrategy selected = switch (userChoice) {
+    case "card"     -> new CreditCardPayment(cardNo, exp, cvv);
+    case "bank"     -> new BankTransferPayment(bankCode, acctNo);
+    case "qr"       -> new QrCodePayment("paypay");
+    default         -> throw new IllegalArgumentException("未対応の決済手段");
+};`,
       },
       {
         title: "使いどころ",
@@ -2279,114 +2674,159 @@ api.process();`,
       {
         title: "実装例",
         content:
-          "以下は税金計算システムで、商品タイプに応じた異なる税率の計算を Visitor パターンで実装した例です。",
-        code: `// Element
-public interface TaxItem {
-    void accept(TaxVisitor visitor);
-    String getName();
-    double getPrice();
+          "以下は数式の AST（抽象構文木）を Visitor パターンで処理する例です。sealed インターフェースと record で型安全なノードを定義し、評価（Evaluator）と整形表示（PrettyPrinter）を別々の Visitor として実装します。",
+        code: `// Element: sealed で閉じた型階層を定義（Java 17+）
+public sealed interface AstNode {
+    void accept(AstVisitor visitor);
+
+    // ConcreteElement: 数値リテラル
+    record NumberLiteral(double value) implements AstNode {
+        @Override
+        public void accept(AstVisitor visitor) { visitor.visit(this); }
+    }
+
+    // ConcreteElement: 二項演算 (加算、減算、乗算、除算)
+    record BinaryOp(AstNode left, String operator, AstNode right) implements AstNode {
+        @Override
+        public void accept(AstVisitor visitor) { visitor.visit(this); }
+    }
+
+    // ConcreteElement: 変数参照
+    record Variable(String name) implements AstNode {
+        @Override
+        public void accept(AstVisitor visitor) { visitor.visit(this); }
+    }
+
+    // ConcreteElement: 関数呼び出し
+    record FunctionCall(String name, List<AstNode> args) implements AstNode {
+        @Override
+        public void accept(AstVisitor visitor) { visitor.visit(this); }
+    }
 }
 
-// ConcreteElement
-public class Food implements TaxItem {
-    private final String name;
-    private final double price;
+// Visitor インターフェース
+public interface AstVisitor {
+    void visit(AstNode.NumberLiteral node);
+    void visit(AstNode.BinaryOp node);
+    void visit(AstNode.Variable node);
+    void visit(AstNode.FunctionCall node);
+}
 
-    public Food(String name, double price) {
-        this.name = name;
-        this.price = price;
+// ConcreteVisitor 1: 式を評価して計算結果を返す
+public class Evaluator implements AstVisitor {
+    private final Map<String, Double> variables;
+    private double result;
+
+    public Evaluator(Map<String, Double> variables) {
+        this.variables = variables;
+    }
+
+    public double getResult() { return result; }
+
+    @Override
+    public void visit(AstNode.NumberLiteral node) {
+        result = node.value();
     }
 
     @Override
-    public void accept(TaxVisitor visitor) { visitor.visit(this); }
-    @Override
-    public String getName() { return name; }
-    @Override
-    public double getPrice() { return price; }
-}
-
-public class Book implements TaxItem {
-    private final String name;
-    private final double price;
-
-    public Book(String name, double price) {
-        this.name = name;
-        this.price = price;
+    public void visit(AstNode.BinaryOp node) {
+        node.left().accept(this);
+        double left = result;
+        node.right().accept(this);
+        double right = result;
+        result = switch (node.operator()) {
+            case "+" -> left + right;
+            case "-" -> left - right;
+            case "*" -> left * right;
+            case "/" -> {
+                if (right == 0) throw new ArithmeticException("ゼロ除算");
+                yield left / right;
+            }
+            default -> throw new IllegalArgumentException(
+                "未知の演算子: " + node.operator());
+        };
     }
 
     @Override
-    public void accept(TaxVisitor visitor) { visitor.visit(this); }
-    @Override
-    public String getName() { return name; }
-    @Override
-    public double getPrice() { return price; }
-}
-
-public class Electronics implements TaxItem {
-    private final String name;
-    private final double price;
-
-    public Electronics(String name, double price) {
-        this.name = name;
-        this.price = price;
+    public void visit(AstNode.Variable node) {
+        Double val = variables.get(node.name());
+        if (val == null) throw new IllegalArgumentException(
+            "未定義の変数: " + node.name());
+        result = val;
     }
 
     @Override
-    public void accept(TaxVisitor visitor) { visitor.visit(this); }
-    @Override
-    public String getName() { return name; }
-    @Override
-    public double getPrice() { return price; }
+    public void visit(AstNode.FunctionCall node) {
+        double[] args = node.args().stream()
+            .mapToDouble(arg -> { arg.accept(this); return result; })
+            .toArray();
+        result = switch (node.name()) {
+            case "max" -> Arrays.stream(args).max().orElse(0);
+            case "min" -> Arrays.stream(args).min().orElse(0);
+            case "sqrt" -> Math.sqrt(args[0]);
+            default -> throw new IllegalArgumentException(
+                "未知の関数: " + node.name());
+        };
+    }
 }
 
-// Visitor
-public interface TaxVisitor {
-    void visit(Food food);
-    void visit(Book book);
-    void visit(Electronics electronics);
-}
+// ConcreteVisitor 2: AST を可読文字列に変換（別の操作を追加）
+public class PrettyPrinter implements AstVisitor {
+    private final StringBuilder sb = new StringBuilder();
 
-// ConcreteVisitor: 日本の消費税計算
-public class JapanTaxCalculator implements TaxVisitor {
-    private double totalTax = 0;
+    public String getOutput() { return sb.toString(); }
 
     @Override
-    public void visit(Food food) {
-        double tax = food.getPrice() * 0.08; // 軽減税率 8%
-        totalTax += tax;
-        System.out.printf("食品 [%s] 税額: %.0f円 (8%%)%n",
-            food.getName(), tax);
+    public void visit(AstNode.NumberLiteral node) {
+        sb.append(node.value());
     }
 
     @Override
-    public void visit(Book book) {
-        double tax = book.getPrice() * 0.10; // 標準税率 10%
-        totalTax += tax;
-        System.out.printf("書籍 [%s] 税額: %.0f円 (10%%)%n",
-            book.getName(), tax);
+    public void visit(AstNode.BinaryOp node) {
+        sb.append("(");
+        node.left().accept(this);
+        sb.append(" ").append(node.operator()).append(" ");
+        node.right().accept(this);
+        sb.append(")");
     }
 
     @Override
-    public void visit(Electronics electronics) {
-        double tax = electronics.getPrice() * 0.10;
-        totalTax += tax;
-        System.out.printf("電子機器 [%s] 税額: %.0f円 (10%%)%n",
-            electronics.getName(), tax);
+    public void visit(AstNode.Variable node) {
+        sb.append(node.name());
     }
 
-    public double getTotalTax() { return totalTax; }
+    @Override
+    public void visit(AstNode.FunctionCall node) {
+        sb.append(node.name()).append("(");
+        for (int i = 0; i < node.args().size(); i++) {
+            if (i > 0) sb.append(", ");
+            node.args().get(i).accept(this);
+        }
+        sb.append(")");
+    }
 }
 
-// 使用例
-List<TaxItem> items = List.of(
-    new Food("お弁当", 500),
-    new Book("Java入門", 3000),
-    new Electronics("マウス", 2000)
-);
+// 使用例: AST 構築 → 複数の Visitor で操作
+// 式: max(x, 10) + y * 2
+AstNode ast = new AstNode.BinaryOp(
+    new AstNode.FunctionCall("max", List.of(
+        new AstNode.Variable("x"),
+        new AstNode.NumberLiteral(10))),
+    "+",
+    new AstNode.BinaryOp(
+        new AstNode.Variable("y"),
+        "*",
+        new AstNode.NumberLiteral(2)));
 
-JapanTaxCalculator calculator = new JapanTaxCalculator();
-items.forEach(item -> item.accept(calculator));
-System.out.printf("合計税額: %.0f円%n", calculator.getTotalTax());`,
+// Visitor 1: 整形表示
+var printer = new PrettyPrinter();
+ast.accept(printer);
+System.out.println(printer.getOutput()); // (max(x, 10) + (y * 2))
+
+// Visitor 2: 評価（x=7, y=3 の場合）
+var evaluator = new Evaluator(Map.of("x", 7.0, "y", 3.0));
+ast.accept(evaluator);
+System.out.println("結果: " + evaluator.getResult()); // 16.0`,
       },
       {
         title: "使いどころ",
