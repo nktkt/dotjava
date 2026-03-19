@@ -43,11 +43,11 @@ export default function ErrorsClientPage() {
       >
         <div className="inline-flex items-center gap-2 mb-4">
           <AlertTriangle className="h-8 w-8 text-[var(--color-dads-error)]" />
-          <h1 className="text-3xl md:text-4xl font-bold">Java エラー集</h1>
+          <h1 className="text-3xl md:text-4xl font-bold">Java <span className="text-[var(--color-dads-error)]">エラー・例外</span> 完全ガイド</h1>
         </div>
         <p className="text-muted-foreground max-w-xl mx-auto">
-          Javaでよく遭遇するエラー・例外を網羅的に解説。
-          原因、修正方法、回避のコツをコード例付きで学習できます。
+          Javaでよく遭遇するエラー・例外を網羅的に解説。実行時例外、チェック例外、
+          コンパイルエラー、論理エラー、Spring・DB・ビルドエラーの原因と修正方法をコード例付きで学習。
         </p>
         <div className="mt-2 text-sm text-muted-foreground">
           全 {javaErrors.length} 件のエラー・例外を収録
