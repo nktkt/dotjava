@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import ClientPage from "./_client";
 
 export const metadata: Metadata = {
-  title: "Java 面接でよく聞かれる質問200選",
+  title: "Java 面接でよく聞かれる質問250選",
   description:
-    "Java面接で頻出の質問200問を基礎・中級・上級に分類して解説。コード例付きで回答のポイントを学習できます。",
+    "Java面接で頻出の質問250問を基礎・中級・上級に分類して解説。コード例付きで回答のポイントを学習できます。",
 };
 
 const faqJsonLd = {

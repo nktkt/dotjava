@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Code, Blocks, AlertTriangle, Brain, MessageCircleQuestion, Binary, Braces, Code2, Zap, Paintbrush, LayoutGrid, DatabaseZap, Cloud, Award } from "lucide-react";
+import { Globe, ArrowRight, FileInput, Table2, Database, Shield, Code, Blocks, AlertTriangle, Brain, MessageCircleQuestion, Binary, Braces, Code2, Zap, Paintbrush, LayoutGrid, DatabaseZap, Cloud, Award, FlaskConical, Rocket, Layers, BookOpen, Terminal, GitBranch, Container, Gauge, Network, Plug, ShieldCheck, DatabaseIcon, Wrench } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -139,7 +139,7 @@ export default function HomePage() {
               実践ガイド
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              入出力処理、Web開発、Excel、Oracle Database、セキュリティ、Eclipse IDE、アルゴリズム、JavaScript、HTML、HTMX、CSS、Bootstrap、PostgreSQL、AWS、Java資格対策を実践的に体系的に学習
+              Java実践からフレームワーク、他言語、DB・インフラまで30以上のセクションを体系的に学習
             </p>
           </motion.div>
 
@@ -622,6 +622,58 @@ export default function HomePage() {
                 </Card>
               </Link>
             </motion.div>
+
+            {[
+              { href: "/spring-boot", icon: <Rocket className="h-7 w-7 text-[#059669]" />, bg: "bg-[#059669]/10", color: "#059669", title: "Spring Boot", desc: "DI、自動設定、Web MVC、Data JPA、Security、テスト、デプロイまで全8チャプター", tags: ["DI", "MVC", "JPA", "REST"] },
+              { href: "/spring-security", icon: <ShieldCheck className="h-7 w-7 text-[#7C3AED]" />, bg: "bg-[#7C3AED]/10", color: "#7C3AED", title: "Spring Security", desc: "認証・認可、JWT、OAuth2、RBAC、CORS/CSRF対策、テストまで全8チャプター", tags: ["JWT", "OAuth2", "RBAC", "CSRF"] },
+              { href: "/rest-api", icon: <Plug className="h-7 w-7 text-[#2563EB]" />, bg: "bg-[#2563EB]/10", color: "#2563EB", title: "REST API 設計", desc: "RESTful設計原則、バージョニング、エラーハンドリング、認証、ドキュメントまで全8チャプター", tags: ["REST", "HATEOAS", "OpenAPI", "認証"] },
+              { href: "/jpa", icon: <DatabaseIcon className="h-7 w-7 text-[#D97706]" />, bg: "bg-[#D97706]/10", color: "#D97706", title: "JPA / Hibernate", desc: "エンティティ設計、JPQL、Criteria API、キャッシュ、パフォーマンスまで全10チャプター", tags: ["Entity", "JPQL", "N+1", "Cache"] },
+              { href: "/testing", icon: <FlaskConical className="h-7 w-7 text-[#2563EB]" />, bg: "bg-[#2563EB]/10", color: "#2563EB", title: "テスト完全ガイド", desc: "JUnit 5、Mockito、Spring Boot テスト、TDD/BDDまで全22チャプター", tags: ["JUnit", "Mockito", "TDD", "BDD"] },
+              { href: "/build-tools", icon: <Wrench className="h-7 w-7 text-[#059669]" />, bg: "bg-[#059669]/10", color: "#059669", title: "Maven / Gradle", desc: "ビルドライフサイクル、依存関係管理、マルチモジュール、プラグインまで全10チャプター", tags: ["Maven", "Gradle", "POM", "マルチモジュール"] },
+              { href: "/concurrency", icon: <Layers className="h-7 w-7 text-[#7C3AED]" />, bg: "bg-[#7C3AED]/10", color: "#7C3AED", title: "並行処理", desc: "Thread、synchronized、ExecutorService、CompletableFuture、Virtual Threadまで全8チャプター", tags: ["Thread", "Lock", "Future", "Virtual"] },
+              { href: "/logging", icon: <BookOpen className="h-7 w-7 text-[#059669]" />, bg: "bg-[#059669]/10", color: "#059669", title: "ロギング", desc: "SLF4J、Logback、Log4j2、構造化ログ、運用ベストプラクティスまで全8チャプター", tags: ["SLF4J", "Logback", "MDC", "構造化"] },
+              { href: "/clean-code", icon: <Code className="h-7 w-7 text-[#2563EB]" />, bg: "bg-[#2563EB]/10", color: "#2563EB", title: "クリーンコード", desc: "命名規則、SOLID原則、リファクタリング、コードレビューまで全8チャプター", tags: ["SOLID", "命名", "リファクタ", "レビュー"] },
+              { href: "/performance", icon: <Gauge className="h-7 w-7 text-[#D97706]" />, bg: "bg-[#D97706]/10", color: "#D97706", title: "パフォーマンス", desc: "JVM/GCチューニング、プロファイリング、メモリ最適化まで全8チャプター", tags: ["GC", "JMH", "プロファイル", "最適化"] },
+              { href: "/microservices", icon: <Network className="h-7 w-7 text-[#7C3AED]" />, bg: "bg-[#7C3AED]/10", color: "#7C3AED", title: "マイクロサービス", desc: "サービス分割、API Gateway、サーキットブレーカー、分散トレーシングまで全8チャプター", tags: ["Gateway", "Eureka", "Resilience", "Kafka"] },
+              { href: "/docker-java", icon: <Container className="h-7 w-7 text-[#2563EB]" />, bg: "bg-[#2563EB]/10", color: "#2563EB", title: "Docker", desc: "Dockerfile、マルチステージビルド、Compose、Java最適化まで全8チャプター", tags: ["Dockerfile", "Compose", "Jib", "最適化"] },
+              { href: "/cicd", icon: <GitBranch className="h-7 w-7 text-[#D24939]" />, bg: "bg-[#D24939]/10", color: "#D24939", title: "CI/CD", desc: "GitHub Actions、Jenkins、テスト自動化、コンテナデプロイまで全8チャプター", tags: ["Actions", "Jenkins", "自動化", "デプロイ"] },
+              { href: "/linux-cli", icon: <Terminal className="h-7 w-7 text-[#059669]" />, bg: "bg-[#059669]/10", color: "#059669", title: "Linux コマンド", desc: "ファイル操作、テキスト処理、プロセス管理、シェルスクリプトまで全8チャプター", tags: ["bash", "grep", "ssh", "systemd"] },
+              { href: "/sql-basics", icon: <DatabaseZap className="h-7 w-7 text-[#2563EB]" />, bg: "bg-[#2563EB]/10", color: "#2563EB", title: "SQL 基礎", desc: "DDL/DML、JOIN、サブクエリ、ウィンドウ関数、トランザクションまで全10チャプター", tags: ["JOIN", "CTE", "Window", "JDBC"] },
+              { href: "/kotlin", icon: <Code2 className="h-7 w-7 text-[#7F52FF]" />, bg: "bg-[#7F52FF]/10", color: "#7F52FF", title: "Kotlin", desc: "基礎文法、Null安全、コルーチン、Android、Spring Boot連携まで全20チャプター", tags: ["Coroutine", "Null安全", "Android", "DSL"] },
+            ].map((item, i) => (
+              <motion.div
+                key={item.href}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: (i + 16) * 0.05 }}
+                viewport={{ once: true }}
+              >
+                <Link href={item.href}>
+                  <Card className={`group h-full cursor-pointer overflow-hidden border border-border transition-all hover:shadow-md hover:border-[${item.color}]`}>
+                    <CardContent className="flex flex-col items-center sm:items-start gap-4 py-8">
+                      <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
+                        {item.icon}
+                      </div>
+                      <div className="text-center sm:text-left">
+                        <h3 className={`text-xl font-bold mb-2 group-hover:text-[${item.color}] transition-colors`}>
+                          {item.title}
+                        </h3>
+                        <p className="text-muted-foreground text-sm mb-3">
+                          {item.desc}
+                        </p>
+                        <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                          {item.tags.map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -692,7 +744,7 @@ export default function HomePage() {
                     </div>
                     <div className="text-center sm:text-left">
                       <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--color-dads-navy)] transition-colors">
-                        面接質問100選
+                        面接質問250選
                       </h3>
                       <p className="text-muted-foreground text-sm mb-3">
                         Java面接でよく聞かれる質問を基礎・中級・上級に分けてコード例付きで解説

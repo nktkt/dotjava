@@ -3622,4 +3622,1464 @@ java -XX:+UseZGC \\
     category: "design",
     level: "advanced",
   },
+
+  // ===== Spring Security / JWT / OAuth2 (201-205) =====
+  {
+    id: 201,
+    question: "Spring Security のフィルタチェーンの仕組みを説明してください",
+    answer: "Spring Security は Servlet フィルタチェーンを活用してリクエストを保護する。DelegatingFilterProxy が Spring コンテキストの FilterChainProxy に処理を委譲し、FilterChainProxy は SecurityFilterChain のリストを持つ。各 SecurityFilterChain は URL パターンにマッチしたリクエストに対し、CsrfFilter、UsernamePasswordAuthenticationFilter、ExceptionTranslationFilter、FilterSecurityInterceptor などを順番に適用する。カスタムフィルタを addFilterBefore/addFilterAfter で追加でき、複数の SecurityFilterChain を定義して異なる URL パスに異なるセキュリティ設定を適用できる。",
+    category: "security",
+    level: "intermediate",
+    code: `@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(
+            HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            .httpBasic(Customizer.withDefaults());
+        return http.build();
+    }
+}`,
+  },
+  {
+    id: 202,
+    question: "JWT（JSON Web Token）の構造と Spring Security での実装方法を説明してください",
+    answer: "JWT は Header（アルゴリズム情報）、Payload（クレーム情報）、Signature（署名）の3部分を Base64URL エンコードしてドット区切りで結合したトークンである。Spring Security で JWT 認証を実装するには、① ログイン時に認証成功後 JWT を生成して返却、② 以降のリクエストで Authorization ヘッダの Bearer トークンを検証する OncePerRequestFilter を作成、③ SecurityFilterChain に JWT フィルタを登録する。トークンの有効期限設定、リフレッシュトークンの仕組み、秘密鍵の安全な管理が重要である。",
+    category: "security",
+    level: "intermediate",
+    code: `// JWT トークン生成
+public String generateToken(UserDetails user) {
+    return Jwts.builder()
+        .setSubject(user.getUsername())
+        .setIssuedAt(new Date())
+        .setExpiration(new Date(
+            System.currentTimeMillis() + 86400000))
+        .signWith(secretKey, SignatureAlgorithm.HS256)
+        .compact();
+}
+
+// JWT フィルタ
+@Component
+public class JwtAuthFilter
+        extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain) throws Exception {
+        String header = request
+            .getHeader("Authorization");
+        if (header != null
+                && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+            String username = jwtUtil.extractUsername(token);
+            if (username != null) {
+                UserDetails user = userDetailsService
+                    .loadUserByUsername(username);
+                if (jwtUtil.validateToken(token, user)) {
+                    var authToken =
+                        new UsernamePasswordAuthenticationToken(
+                            user, null,
+                            user.getAuthorities());
+                    SecurityContextHolder.getContext()
+                        .setAuthentication(authToken);
+                }
+            }
+        }
+        chain.doFilter(request, response);
+    }
+}`,
+  },
+  {
+    id: 203,
+    question: "OAuth2 の認可コードフローを説明してください",
+    answer: "OAuth2 認可コードフローは最も安全な標準的フローである。① クライアントがユーザーを認可サーバーの認可エンドポイントにリダイレクト ② ユーザーが認証・認可を行う ③ 認可サーバーがクライアントのリダイレクト URI に認可コードを付与してリダイレクト ④ クライアントが認可コードをバックチャネルでアクセストークンと交換 ⑤ アクセストークンでリソースサーバーにアクセスする。PKCE（Proof Key for Code Exchange）を併用することで、認可コード横取り攻撃を防止できる。Spring Security では spring-boot-starter-oauth2-client で簡潔に実装可能。",
+    category: "security",
+    level: "advanced",
+  },
+  {
+    id: 204,
+    question: "CSRF 攻撃とは何か、Spring Security ではどう対策しますか？",
+    answer: "CSRF（Cross-Site Request Forgery）は、ユーザーが認証済みのサイトに対し、悪意あるサイトから意図しないリクエストを送信させる攻撃である。Spring Security はデフォルトで CSRF 保護が有効であり、CSRF トークンをセッションに保存し、フォーム送信時にトークンの一致を検証する。SPA + REST API の場合は CookieCsrfTokenRepository を使い、Cookie にトークンを設定してリクエストヘッダで送信する方法や、完全にステートレスな JWT 認証の場合は CSRF を無効化することもある。ただし無効化する場合は SameSite Cookie 属性や CORS 設定で補完する必要がある。",
+    category: "security",
+    level: "intermediate",
+  },
+  {
+    id: 205,
+    question: "Spring Security の認証と認可の違い、およびメソッドセキュリティについて説明してください",
+    answer: "認証（Authentication）はユーザーの身元を確認するプロセスで、認可（Authorization）は認証済みユーザーにどのリソースへのアクセスを許可するかを決定するプロセスである。Spring Security ではメソッドレベルのセキュリティも提供する。@EnableMethodSecurity を有効にし、@PreAuthorize で事前認可、@PostAuthorize で事後認可、@Secured でロールベースの制御が可能。SpEL 式で柔軟な条件を記述でき、カスタム権限評価も実装できる。",
+    category: "security",
+    level: "intermediate",
+    code: `@EnableMethodSecurity
+@Configuration
+public class MethodSecurityConfig { }
+
+@Service
+public class OrderService {
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteOrder(Long id) { }
+
+    @PreAuthorize("#userId == authentication.principal.id")
+    public List<Order> getOrders(Long userId) {
+        return orderRepository.findByUserId(userId);
+    }
+
+    @PostAuthorize("returnObject.owner == authentication.name")
+    public Order getOrder(Long id) {
+        return orderRepository.findById(id).orElseThrow();
+    }
+}`,
+  },
+  // ===== SQL (206-210) =====
+  {
+    id: 206,
+    question: "SQL の JOIN の種類と違いを説明してください",
+    answer: "SQL の JOIN は複数テーブルを結合する操作である。INNER JOIN は両方のテーブルに一致するレコードのみ返す。LEFT JOIN（LEFT OUTER JOIN）は左テーブルの全レコードと右テーブルの一致レコードを返し、一致しない場合は NULL になる。RIGHT JOIN はその逆。FULL OUTER JOIN は両方のテーブルの全レコードを返す。CROSS JOIN は直積（全組み合わせ）を返す。SELF JOIN は同一テーブル同士の結合。パフォーマンスの観点では結合カラムにインデックスを作成することが重要である。",
+    category: "db",
+    level: "basic",
+    code: `-- INNER JOIN: 両テーブルに一致するもの
+SELECT e.name, d.dept_name
+FROM employees e
+INNER JOIN departments d ON e.dept_id = d.id;
+
+-- LEFT JOIN: 左テーブルの全レコード
+SELECT e.name, d.dept_name
+FROM employees e
+LEFT JOIN departments d ON e.dept_id = d.id;
+
+-- SELF JOIN: 上司と部下の関係
+SELECT e.name AS employee, m.name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;`,
+  },
+  {
+    id: 207,
+    question: "SQL のインデックスの仕組みと使い分けを説明してください",
+    answer: "インデックスはテーブルの検索を高速化するデータ構造である。B-Tree インデックスは最も一般的で、等価検索・範囲検索・ソートに有効。ハッシュインデックスは等価検索のみに特化。複合インデックスは複数カラムに対して作成し、左端のカラムから順に使用される（最左プレフィックス原則）。カバリングインデックスはクエリに必要な全カラムを含み、テーブルアクセスを不要にする。ただしインデックスは書き込み時のオーバーヘッドとストレージを消費するため、SELECT が多いカラム、WHERE/JOIN/ORDER BY で使われるカラムに対して適切に作成する必要がある。",
+    category: "db",
+    level: "intermediate",
+    code: `-- 単一カラムインデックス
+CREATE INDEX idx_email ON users(email);
+
+-- 複合インデックス（最左プレフィックス原則）
+CREATE INDEX idx_name_age
+ON users(last_name, first_name, age);
+-- last_name のみの検索にも有効
+-- last_name + first_name にも有効
+-- first_name のみでは使われない
+
+-- ユニークインデックス
+CREATE UNIQUE INDEX idx_unique_email
+ON users(email);
+
+-- 実行計画の確認
+EXPLAIN ANALYZE
+SELECT * FROM users WHERE email = 'test@example.com';`,
+  },
+  {
+    id: 208,
+    question: "SQL のトランザクション分離レベルを説明してください",
+    answer: "トランザクション分離レベルは並行実行時のデータ整合性レベルを定義する。READ UNCOMMITTED は他トランザクションの未コミットデータを読めるためダーティリードが発生する。READ COMMITTED はコミット済みデータのみ読め、ダーティリードを防ぐが Non-Repeatable Read が起きる。REPEATABLE READ はトランザクション中の再読み込みで同じ結果を保証するが、ファントムリードが起きうる。SERIALIZABLE は完全な直列化で全ての問題を防ぐが、パフォーマンスが最も低い。PostgreSQL のデフォルトは READ COMMITTED、MySQL の InnoDB は REPEATABLE READ である。",
+    category: "db",
+    level: "advanced",
+  },
+  {
+    id: 209,
+    question: "ウィンドウ関数とは何ですか？使用例を挙げてください",
+    answer: "ウィンドウ関数は結果セットの各行に対して、関連する行の集合（ウィンドウ）に基づいて計算を行う関数である。GROUP BY と異なり、個々の行を保持したまま集計値を算出できる。ROW_NUMBER() は連番付与、RANK() は同順位を考慮した順位付け、DENSE_RANK() は飛び番号なしの順位付け、LAG/LEAD は前後の行の値参照、SUM() OVER は累計計算に使用する。PARTITION BY で分割、ORDER BY で順序を指定し、ROWS/RANGE でフレーム範囲を制御する。",
+    category: "db",
+    level: "intermediate",
+    code: `-- 部門ごとの給与ランキング
+SELECT name, department, salary,
+    RANK() OVER (
+        PARTITION BY department
+        ORDER BY salary DESC
+    ) AS dept_rank
+FROM employees;
+
+-- 累計売上の計算
+SELECT order_date, amount,
+    SUM(amount) OVER (
+        ORDER BY order_date
+        ROWS BETWEEN UNBOUNDED PRECEDING
+            AND CURRENT ROW
+    ) AS running_total
+FROM orders;
+
+-- 前月比較
+SELECT month, revenue,
+    LAG(revenue, 1) OVER (ORDER BY month)
+        AS prev_month,
+    revenue - LAG(revenue, 1) OVER (ORDER BY month)
+        AS diff
+FROM monthly_sales;`,
+  },
+  {
+    id: 210,
+    question: "N+1 問題とは何ですか？JPA での対策を説明してください",
+    answer: "N+1 問題は、親エンティティ N 件を取得する1回のクエリの後、各親に対して関連エンティティを取得する N 回のクエリが発行される問題である。例えば注文一覧を取得した後、各注文の商品を個別に取得すると合計 N+1 回の SQL が実行される。JPA での対策は ① JOIN FETCH: JPQL で関連エンティティを一括取得 ② @EntityGraph: 宣言的にフェッチ対象を指定 ③ @BatchSize: IN 句でまとめて取得 ④ DTO プロジェクション: 必要なカラムのみ SELECT する。Hibernate の統計機能や p6spy で発行 SQL を監視することが重要である。",
+    category: "db",
+    level: "intermediate",
+    code: `// N+1 問題が発生する例
+List<Order> orders = orderRepository.findAll();
+for (Order order : orders) {
+    // 各注文ごとにSQLが発行される
+    order.getItems().size();
+}
+
+// 対策1: JOIN FETCH
+@Query("SELECT o FROM Order o JOIN FETCH o.items")
+List<Order> findAllWithItems();
+
+// 対策2: @EntityGraph
+@EntityGraph(attributePaths = {"items", "customer"})
+List<Order> findAll();
+
+// 対策3: @BatchSize
+@Entity
+public class Order {
+    @BatchSize(size = 100)
+    @OneToMany(mappedBy = "order")
+    private List<OrderItem> items;
+}`,
+  },
+  // ===== CI/CD / GitHub Actions / Jenkins (211-215) =====
+  {
+    id: 211,
+    question: "CI/CD とは何ですか？Java プロジェクトでの実践方法を説明してください",
+    answer: "CI（継続的インテグレーション）は開発者のコード変更を頻繁にメインブランチに統合し、自動テストで品質を検証するプラクティス。CD は継続的デリバリー（本番リリース可能な状態を常に維持）と継続的デプロイメント（自動的に本番デプロイ）の2つの意味がある。Java プロジェクトでは、Git へのプッシュをトリガーに ① コードのビルド（Maven/Gradle）② 単体テスト・統合テスト実行 ③ コード品質チェック（SonarQube）④ Docker イメージのビルド ⑤ ステージング環境へのデプロイ ⑥ 承認後に本番デプロイというパイプラインを構築する。",
+    category: "build",
+    level: "intermediate",
+  },
+  {
+    id: 212,
+    question: "GitHub Actions のワークフロー構成を説明してください",
+    answer: "GitHub Actions はリポジトリの .github/workflows/ に YAML ファイルで定義する。Workflow はイベント（push、pull_request、schedule 等）でトリガーされ、1つ以上の Job で構成される。Job は Runner（ubuntu-latest 等）上で実行され、複数の Step を持つ。Step は uses でアクションを使用するか run でコマンドを実行する。Job 間は needs で依存関係を定義でき、matrix で複数環境の並列テストが可能。secrets で機密情報を管理し、artifacts でビルド成果物を保存・共有する。",
+    category: "build",
+    level: "intermediate",
+    code: `# .github/workflows/ci.yml
+name: Java CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [17, 21]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: \${{ matrix.java-version }}
+          distribution: 'temurin'
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: build/reports/tests/`,
+  },
+  {
+    id: 213,
+    question: "Jenkins Pipeline の Declarative と Scripted の違いを説明してください",
+    answer: "Jenkins Pipeline には2つの記述方式がある。Declarative Pipeline は pipeline ブロックで構造化された宣言的な記法で、可読性が高く入門しやすい。agent、stages、steps の階層構造で記述し、post ブロックで後処理を定義する。Scripted Pipeline は node ブロック内で Groovy スクリプトを自由に記述でき、柔軟性が高いが複雑になりやすい。現在は Declarative が推奨されており、script ブロック内で Groovy を使うことで柔軟性も確保できる。Jenkinsfile としてリポジトリに含めることで Pipeline as Code を実現する。",
+    category: "build",
+    level: "intermediate",
+    code: `// Declarative Pipeline（Jenkinsfile）
+pipeline {
+    agent any
+    tools {
+        jdk 'JDK21'
+        gradle 'Gradle8'
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh './gradlew clean build -x test'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh './gradlew test'
+            }
+            post {
+                always {
+                    junit 'build/test-results/**/*.xml'
+                }
+            }
+        }
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh './gradlew bootJar'
+                sh 'docker build -t myapp .'
+            }
+        }
+    }
+    post {
+        failure {
+            mail to: 'team@example.com',
+                 subject: 'Build Failed',
+                 body: 'Check Jenkins for details.'
+        }
+    }
+}`,
+  },
+  {
+    id: 214,
+    question: "CI/CD パイプラインにおけるテスト戦略を説明してください",
+    answer: "CI/CD パイプラインでは段階的なテストを実行する。① 単体テスト: 最速で実行し、プッシュごとに全実行。JUnit 5 + Mockito で個々のクラスを検証する。② 統合テスト: Testcontainers で実際の DB やメッセージブローカーを使い、コンポーネント間の連携を検証。③ E2E テスト: Selenium や Playwright でユーザー操作を自動化。④ パフォーマンステスト: JMeter や Gatling で負荷テスト。テストピラミッドに従い、下層ほどテスト数を多く、実行時間を短くする。テストの並列実行、テスト結果のキャッシュ、flaky テストの管理も重要である。",
+    category: "testing",
+    level: "intermediate",
+  },
+  {
+    id: 215,
+    question: "GitHub Actions でのシークレット管理とセキュリティベストプラクティスを説明してください",
+    answer: "GitHub Actions のシークレットは暗号化されてリポジトリまたは Organization レベルで管理される。① Repository secrets: Settings > Secrets で登録し、ワークフロー内で secrets.SECRET_NAME で参照する。② Environment secrets: 特定環境（production 等）に紐づけ、承認者による保護が可能。③ OIDC 連携: AWS や GCP への認証で長期的なクレデンシャルの代わりに短命トークンを使用する。ベストプラクティスとして、サードパーティアクションはコミットハッシュで固定する、GITHUB_TOKEN の権限は最小限にする、dependabot でアクションのバージョンを更新する、pull_request_target の使用に注意するなどが挙げられる。",
+    category: "build",
+    level: "advanced",
+  },
+  // ===== Kotlin (216-220) =====
+  {
+    id: 216,
+    question: "Kotlin の null 安全の仕組みを説明してください",
+    answer: "Kotlin は型システムレベルで null 安全を実現する。型名の後に ? を付けると Nullable 型（null を許容）、付けないと Non-null 型になる。Non-null 型に null を代入しようとするとコンパイルエラーになる。Nullable 型の値にアクセスするには、安全呼び出し演算子（?.）、エルビス演算子（?:）、非null アサーション（!!）を使用する。スマートキャストにより、null チェック後は自動的に Non-null 型として扱われる。Java との相互運用では、プラットフォーム型（型安全性が不明）として扱われるため @Nullable/@NotNull アノテーションの活用が重要である。",
+    category: "modern",
+    level: "basic",
+    code: `// Non-null 型と Nullable 型
+var name: String = "Kotlin"   // null 不可
+var nullable: String? = null  // null 可
+
+// 安全呼び出し演算子
+val length: Int? = nullable?.length
+
+// エルビス演算子（null 時のデフォルト値）
+val len: Int = nullable?.length ?: 0
+
+// スマートキャスト
+if (nullable != null) {
+    // ここでは String 型として扱える
+    println(nullable.length)
+}
+
+// スコープ関数との組み合わせ
+nullable?.let { value ->
+    println("値は: \$value")
+}`,
+  },
+  {
+    id: 217,
+    question: "Kotlin のデータクラスと sealed クラスを説明してください",
+    answer: "データクラスは data class キーワードで定義し、equals()、hashCode()、toString()、copy()、componentN() が自動生成される。Java の record に近いが、copy() によるイミュータブルな更新が可能である。sealed クラスは継承を同一ファイル（または同一パッケージ）内に制限するクラスで、when 式で全パターンを網羅的にチェックできる。コンパイラが全サブクラスを認識するため、else 分岐が不要になり、新しいサブクラス追加時に未処理の箇所をコンパイルエラーで検出できる。API のレスポンスや状態管理に非常に有用である。",
+    category: "modern",
+    level: "intermediate",
+    code: `// データクラス
+data class User(
+    val name: String,
+    val age: Int,
+    val email: String
+)
+
+val user = User("田中", 30, "tanaka@example.com")
+val copy = user.copy(age = 31)  // age のみ変更
+val (name, age, _) = user       // 分割代入
+
+// sealed クラス
+sealed class Result<out T> {
+    data class Success<T>(val data: T) : Result<T>()
+    data class Error(val message: String) : Result<Nothing>()
+    data object Loading : Result<Nothing>()
+}
+
+fun handleResult(result: Result<String>) {
+    when (result) {
+        is Result.Success -> println(result.data)
+        is Result.Error -> println(result.message)
+        is Result.Loading -> println("読み込み中...")
+        // else 不要（全パターン網羅済み）
+    }
+}`,
+  },
+  {
+    id: 218,
+    question: "Kotlin コルーチンの仕組みと使い方を説明してください",
+    answer: "Kotlin コルーチンは軽量な非同期処理の仕組みで、suspend 関数とコルーチンビルダーで構成される。suspend 関数は中断可能な関数で、他の suspend 関数やコルーチンスコープ内からのみ呼び出せる。launch は結果を返さないコルーチン、async は Deferred<T> を返し await() で結果を取得するコルーチンを起動する。CoroutineScope でライフサイクルを管理し、Dispatcher で実行スレッドを制御する（Dispatchers.IO は I/O 処理、Dispatchers.Default は CPU 処理向け）。構造化された並行性により、親コルーチンがキャンセルされると子もキャンセルされる。",
+    category: "modern",
+    level: "advanced",
+    code: `// suspend 関数
+suspend fun fetchUser(id: Long): User {
+    return withContext(Dispatchers.IO) {
+        userRepository.findById(id)
+    }
+}
+
+// コルーチンビルダー
+fun main() = runBlocking {
+    // launch: 結果不要の非同期処理
+    val job = launch {
+        delay(1000L)
+        println("World!")
+    }
+    println("Hello,")
+    job.join()
+
+    // async: 結果を返す非同期処理
+    val deferred1 = async { fetchUser(1) }
+    val deferred2 = async { fetchUser(2) }
+    val user1 = deferred1.await()
+    val user2 = deferred2.await()
+}
+
+// Spring Boot での使用
+@RestController
+class UserController(
+    private val userService: UserService
+) {
+    @GetMapping("/users/{id}")
+    suspend fun getUser(@PathVariable id: Long): User {
+        return userService.findById(id)
+    }
+}`,
+  },
+  {
+    id: 219,
+    question: "Kotlin の拡張関数とスコープ関数を説明してください",
+    answer: "拡張関数は既存クラスにメソッドを追加する機能で、クラスの修正なしに機能を拡張できる。内部的にはレシーバーを第一引数とする静的メソッドにコンパイルされる。スコープ関数は let、run、with、apply、also の5つで、オブジェクトのコンテキスト内でコードブロックを実行する。let は Nullable の安全処理や変換、apply はオブジェクトの初期化設定、also はデバッグログの挿入、run はオブジェクトの設定と結果の計算、with は既存オブジェクトへの複数操作に使い分ける。",
+    category: "modern",
+    level: "intermediate",
+    code: `// 拡張関数
+fun String.toSlug(): String =
+    this.lowercase()
+        .replace(Regex("[^a-z0-9]"), "-")
+        .replace(Regex("-+"), "-")
+        .trim('-')
+
+println("Hello World!".toSlug())  // "hello-world"
+
+// スコープ関数の使い分け
+// let: null チェック + 変換
+val length: Int? = nullableStr?.let {
+    println("値: \$it")
+    it.length
+}
+
+// apply: オブジェクト初期化
+val user = User().apply {
+    name = "田中"
+    age = 30
+    email = "tanaka@example.com"
+}
+
+// also: 副作用（ログ等）
+val result = repository.findById(id)
+    .also { println("取得結果: \$it") }
+    .orElseThrow()`,
+  },
+  {
+    id: 220,
+    question: "Java と Kotlin の相互運用で注意すべき点を説明してください",
+    answer: "Java と Kotlin は同一プロジェクトで共存でき、相互に呼び出せる。注意点は ① Null 安全: Java のメソッド戻り値はプラットフォーム型になるため @Nullable/@NotNull アノテーションを活用する ② SAM 変換: Java の単一抽象メソッドインターフェースはラムダで呼び出せる ③ 名前衝突: Kotlin のキーワード（when、is 等）を Java 側で使う場合はバッククォートで囲む ④ static メソッド: Kotlin では companion object や @JvmStatic を使用 ⑤ デフォルト引数: Java からは @JvmOverloads を付けないとオーバーロードが生成されない ⑥ プロパティ: @JvmField でフィールド直接アクセスを提供する。",
+    category: "modern",
+    level: "intermediate",
+    code: `// Kotlin から Java に公開する際のアノテーション
+class KotlinService {
+    companion object {
+        @JvmStatic
+        fun create(): KotlinService = KotlinService()
+    }
+
+    @JvmOverloads
+    fun greet(
+        name: String,
+        greeting: String = "こんにちは"
+    ): String = "\$greeting、\$name さん"
+
+    @JvmField
+    val version: String = "1.0.0"
+}
+
+// Java から呼び出し
+KotlinService service = KotlinService.create();
+service.greet("田中");          // デフォルト引数使用
+service.greet("田中", "おはよう");
+String v = service.version;    // getter 不要`,
+  },
+  // ===== Linux / コマンドライン (221-225) =====
+  {
+    id: 221,
+    question: "Java 開発で必須の Linux コマンドを説明してください",
+    answer: "Java 開発で頻用する Linux コマンドは以下の通り。ファイル操作: ls、cp、mv、rm、find、chmod。テキスト処理: grep（ログ検索）、tail -f（リアルタイムログ監視）、awk、sed。プロセス管理: ps aux、top/htop、kill、nohup。ネットワーク: curl（API テスト）、netstat/ss（ポート確認）、ping。ディスク: df -h、du -sh。パイプ（|）とリダイレクト（>、>>、2>&1）を組み合わせることで強力なコマンドライン処理が実現できる。",
+    category: "build",
+    level: "basic",
+    code: `# ログからエラーを検索
+grep -n "ERROR" application.log
+grep -A 5 "NullPointerException" app.log
+
+# リアルタイムログ監視
+tail -f /var/log/app/application.log
+
+# Java プロセスの確認と停止
+ps aux | grep java
+kill -15 <PID>    # SIGTERM（graceful）
+kill -9 <PID>     # SIGKILL（強制）
+
+# ポート使用状況の確認
+ss -tlnp | grep 8080
+
+# ディスク使用量の確認
+du -sh /var/log/*
+df -h`,
+  },
+  {
+    id: 222,
+    question: "シェルスクリプトの基本構文と Java アプリ運用での活用例を説明してください",
+    answer: "シェルスクリプトは #!/bin/bash で始まり、変数定義、条件分岐（if/elif/else）、ループ（for/while）、関数で構成される。Java アプリ運用では、アプリケーションの起動・停止スクリプト、ログローテーション、ヘルスチェック、デプロイ自動化などに活用する。終了コード（$?）で前コマンドの成否を判定し、trap でシグナルハンドリングを行う。set -euo pipefail でエラー時の即座停止を有効にすることが本番運用スクリプトのベストプラクティスである。",
+    category: "build",
+    level: "intermediate",
+    code: `#!/bin/bash
+set -euo pipefail
+
+APP_NAME="myapp"
+JAR_FILE="/opt/app/myapp.jar"
+LOG_FILE="/var/log/app/application.log"
+PID_FILE="/var/run/myapp.pid"
+
+start() {
+    if [ -f "\$PID_FILE" ]; then
+        echo "\$APP_NAME is already running"
+        exit 1
+    fi
+    echo "Starting \$APP_NAME..."
+    nohup java -Xmx512m -jar "\$JAR_FILE" \\
+        --spring.profiles.active=prod \\
+        > "\$LOG_FILE" 2>&1 &
+    echo \$! > "\$PID_FILE"
+    echo "\$APP_NAME started (PID: \$!)"
+}
+
+stop() {
+    if [ ! -f "\$PID_FILE" ]; then
+        echo "\$APP_NAME is not running"
+        exit 1
+    fi
+    PID=\$(cat "\$PID_FILE")
+    echo "Stopping \$APP_NAME (PID: \$PID)..."
+    kill -15 "\$PID"
+    rm -f "\$PID_FILE"
+}
+
+case "\$1" in
+    start) start ;;
+    stop)  stop ;;
+    *)     echo "Usage: \$0 {start|stop}" ;;
+esac`,
+  },
+  {
+    id: 223,
+    question: "Linux のファイルパーミッションと Java アプリのセキュリティ設定を説明してください",
+    answer: "Linux のパーミッションは所有者（u）、グループ（g）、その他（o）に対して読み取り（r=4）、書き込み（w=2）、実行（x=1）を設定する。Java アプリの運用では、JAR ファイルは 644（所有者が読み書き、他は読み取り）、設定ファイルは 600（所有者のみ読み書き）、ログディレクトリは 755 が推奨。アプリケーション専用ユーザーを作成し、root での実行を避ける。機密情報を含む application.yml は適切なパーミッションで保護し、umask でデフォルトパーミッションを制限する。SELinux や AppArmor による追加保護も検討すべきである。",
+    category: "security",
+    level: "intermediate",
+  },
+  {
+    id: 224,
+    question: "Linux のプロセス管理と systemd によるサービス管理を説明してください",
+    answer: "Linux のプロセスは PID で識別され、ps、top、htop でモニタリングする。フォアグラウンドプロセスとバックグラウンドプロセスがあり、& でバックグラウンド実行、nohup でターミナル切断後も継続実行できる。systemd は現代の Linux の init システムで、Unit ファイルでサービスを定義する。systemctl start/stop/restart/status でサービスを管理し、enable で自動起動を設定する。journalctl でログを確認する。Java アプリを systemd サービスとして登録することで、自動起動、プロセス監視、再起動ポリシーを一元管理できる。",
+    category: "build",
+    level: "intermediate",
+    code: `# /etc/systemd/system/myapp.service
+[Unit]
+Description=My Java Application
+After=network.target
+
+[Service]
+Type=simple
+User=appuser
+Group=appuser
+ExecStart=/usr/bin/java \\
+    -Xmx512m \\
+    -jar /opt/app/myapp.jar \\
+    --spring.profiles.active=prod
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+# サービス管理コマンド
+# systemctl daemon-reload
+# systemctl enable myapp
+# systemctl start myapp
+# systemctl status myapp
+# journalctl -u myapp -f`,
+  },
+  {
+    id: 225,
+    question: "Java アプリの障害調査で使用する Linux コマンドを説明してください",
+    answer: "Java アプリの障害調査では以下のコマンドを使用する。① メモリ調査: free -h でシステムメモリ確認、jmap でヒープダンプ取得、jstat で GC 統計確認。② CPU 調査: top -H -p PID でスレッド別 CPU 使用率確認、jstack でスレッドダンプ取得。③ ネットワーク調査: ss -tlnp でリッスンポート確認、tcpdump でパケットキャプチャ。④ ディスク I/O: iostat でディスク性能確認、lsof でオープンファイル確認。⑤ ログ調査: grep/awk でログ解析、zgrep で圧縮ログ検索。これらを組み合わせて、OutOfMemoryError やデッドロック、レスポンス遅延の原因を特定する。",
+    category: "performance",
+    level: "advanced",
+    code: `# スレッドダンプの取得
+jstack <PID> > threaddump.txt
+
+# ヒープダンプの取得
+jmap -dump:format=b,file=heapdump.hprof <PID>
+
+# GC 統計の確認（1秒間隔）
+jstat -gcutil <PID> 1000
+
+# スレッド別 CPU 使用率
+top -H -p <PID>
+
+# オープンファイル数の確認
+lsof -p <PID> | wc -l
+
+# ネットワーク接続状態の確認
+ss -tlnp | grep <PID>
+
+# OOM 発生時の自動ヒープダンプ設定
+java -XX:+HeapDumpOnOutOfMemoryError \\
+     -XX:HeapDumpPath=/tmp/heapdump.hprof \\
+     -jar app.jar`,
+  },
+  // ===== Spring Boot (226-230) =====
+  {
+    id: 226,
+    question: "Spring Boot の自動構成（Auto-Configuration）の仕組みを説明してください",
+    answer: "Spring Boot の自動構成はクラスパス上のライブラリ、既存の Bean 定義、プロパティ設定に基づいて自動的に Bean を登録する仕組みである。@SpringBootApplication に含まれる @EnableAutoConfiguration がトリガーとなり、META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports に登録された構成クラスを読み込む。各構成クラスは @ConditionalOnClass、@ConditionalOnMissingBean、@ConditionalOnProperty などの条件アノテーションで、適用条件を制御する。開発者が明示的に Bean を定義すれば自動構成より優先される。--debug フラグでどの自動構成が適用されたか確認できる。",
+    category: "spring",
+    level: "intermediate",
+  },
+  {
+    id: 227,
+    question: "Spring Boot Actuator とは何ですか？主要なエンドポイントを説明してください",
+    answer: "Spring Boot Actuator はアプリケーションの監視・管理機能を提供するモジュールである。/actuator/health はアプリの稼働状況（DB 接続、ディスク容量等）を返す。/actuator/metrics は JVM メモリ、HTTP リクエスト数等のメトリクスを提供。/actuator/info はアプリ情報、/actuator/env は環境変数・設定値、/actuator/loggers はログレベルの動的変更、/actuator/threaddump はスレッドダンプを返す。本番環境では公開するエンドポイントを制限し、Spring Security で保護する必要がある。Micrometer と連携して Prometheus/Grafana でのメトリクス可視化も容易である。",
+    category: "spring",
+    level: "intermediate",
+    code: `# application.yml での設定
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info,loggers
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: myapp
+
+# カスタムヘルスインジケーター
+@Component
+public class CustomHealthIndicator
+        implements HealthIndicator {
+    @Override
+    public Health health() {
+        boolean isHealthy = checkExternalService();
+        if (isHealthy) {
+            return Health.up()
+                .withDetail("service", "Available")
+                .build();
+        }
+        return Health.down()
+            .withDetail("service", "Unavailable")
+            .build();
+    }
+}`,
+  },
+  {
+    id: 228,
+    question: "Spring Boot のプロファイル管理と外部設定の優先順位を説明してください",
+    answer: "Spring Boot は多段階の設定ソースを持ち、優先順位が高い順に ① コマンドライン引数 ② Java システムプロパティ ③ OS 環境変数 ④ application-{profile}.yml ⑤ application.yml ⑥ @ConfigurationProperties のデフォルト値となる。プロファイルは spring.profiles.active で指定し、環境ごと（dev、staging、prod）に設定を切り替える。@ConfigurationProperties でタイプセーフな設定バインディングが可能で、@Validated でバリデーションも適用できる。Spring Cloud Config Server を使えば、設定の一元管理と動的更新も実現できる。",
+    category: "spring",
+    level: "intermediate",
+    code: `# application.yml（共通設定）
+spring:
+  application:
+    name: myapp
+server:
+  port: 8080
+
+# application-dev.yml
+spring:
+  datasource:
+    url: jdbc:h2:mem:devdb
+
+# application-prod.yml
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/proddb
+
+# タイプセーフな設定
+@ConfigurationProperties(prefix = "app")
+@Validated
+public record AppConfig(
+    @NotBlank String name,
+    @Min(1) int maxRetries,
+    Duration timeout
+) { }
+
+# 起動時のプロファイル指定
+# java -jar app.jar --spring.profiles.active=prod`,
+  },
+  {
+    id: 229,
+    question: "Spring Boot でのエラーハンドリングのベストプラクティスを説明してください",
+    answer: "Spring Boot のエラーハンドリングは @RestControllerAdvice と @ExceptionHandler を組み合わせて一元化する。カスタム例外クラスを定義し、ビジネスロジック層から適切な例外をスローする。Problem Details（RFC 9457）準拠のレスポンスを返すことで API の一貫性を保つ。Spring Boot 3 では spring.mvc.problemdetails.enabled=true で自動サポート。バリデーションエラー（MethodArgumentNotValidException）は各フィールドのエラーメッセージを含める。予期しない例外は 500 エラーとして汎用メッセージを返し、詳細はログに記録する。",
+    category: "spring",
+    level: "intermediate",
+    code: `@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ProblemDetail handleNotFound(
+            ResourceNotFoundException ex) {
+        ProblemDetail pd = ProblemDetail
+            .forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage());
+        pd.setTitle("リソースが見つかりません");
+        pd.setProperty("timestamp", Instant.now());
+        return pd;
+    }
+
+    @ExceptionHandler(
+        MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(
+            MethodArgumentNotValidException ex) {
+        ProblemDetail pd = ProblemDetail
+            .forStatus(HttpStatus.BAD_REQUEST);
+        pd.setTitle("バリデーションエラー");
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult()
+            .getFieldErrors()
+            .forEach(e -> errors.put(
+                e.getField(),
+                e.getDefaultMessage()));
+        pd.setProperty("errors", errors);
+        return pd;
+    }
+}`,
+  },
+  {
+    id: 230,
+    question: "Spring Boot アプリケーションの起動高速化とネイティブイメージについて説明してください",
+    answer: "Spring Boot の起動高速化には複数のアプローチがある。① Lazy Initialization: spring.main.lazy-initialization=true で Bean の遅延初期化 ② AOT（Ahead-of-Time）処理: ビルド時に Bean 定義やプロキシを事前生成 ③ GraalVM ネイティブイメージ: AOT コンパイルで起動時間を数十ミリ秒に短縮し、メモリ消費を大幅削減。ネイティブイメージは Spring Boot 3 で公式サポートされ、Buildpacks または native-maven-plugin で生成する。ただしリフレクション・動的プロキシに制限があり、ヒントファイルの設定が必要になる場合がある。サーバーレスやコンテナ環境で特に有効である。",
+    category: "spring",
+    level: "advanced",
+    code: `# GraalVM ネイティブイメージのビルド
+# Maven の場合
+./mvnw -Pnative native:compile
+
+# Gradle の場合
+./gradlew nativeCompile
+
+# Buildpacks でコンテナ化
+./gradlew bootBuildImage \\
+    --imageName=myapp:native \\
+    -Pbuildpack=native
+
+# 起動時間の比較
+# JVM:    Started in 2.345 seconds
+# Native: Started in 0.045 seconds
+
+# リフレクションヒントの登録
+@RegisterReflectionForBinding({
+    User.class,
+    OrderDto.class
+})
+@SpringBootApplication
+public class MyApp { }`,
+  },
+  // ===== Docker (231-235) =====
+  {
+    id: 231,
+    question: "Docker の基本概念（イメージ、コンテナ、レイヤー）を説明してください",
+    answer: "Docker イメージはアプリケーションとその実行環境を含む読み取り専用のテンプレートで、Dockerfile から構築する。コンテナはイメージのインスタンスで、隔離された環境でプロセスを実行する。イメージは複数のレイヤーで構成され、各レイヤーは Dockerfile の命令に対応する。レイヤーはキャッシュされ、変更されたレイヤー以降のみ再構築されるため、命令の順序がビルド速度に影響する。頻繁に変更されるファイル（アプリの JAR 等）は後のレイヤーに配置し、依存ライブラリは前のレイヤーで取得するのがベストプラクティスである。",
+    category: "build",
+    level: "basic",
+    code: `# Java アプリの基本的な Dockerfile
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY target/myapp.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# 基本的な Docker コマンド
+# docker build -t myapp:1.0 .
+# docker run -d -p 8080:8080 --name myapp myapp:1.0
+# docker ps                   # 実行中コンテナ一覧
+# docker logs -f myapp        # ログ確認
+# docker exec -it myapp sh    # コンテナ内に入る
+# docker stop myapp           # 停止
+# docker rm myapp             # 削除`,
+  },
+  {
+    id: 232,
+    question: "Java アプリケーション向けのマルチステージビルドを説明してください",
+    answer: "マルチステージビルドは複数の FROM 命令を使い、ビルド環境と実行環境を分離する手法である。ビルドステージでは JDK + ビルドツールを含む大きなイメージで JAR を生成し、実行ステージでは JRE のみの軽量イメージにコピーする。これにより最終イメージのサイズを大幅に削減できる。さらに依存関係の解決とアプリケーションのビルドをレイヤー分離することで、Docker のビルドキャッシュを効率的に活用できる。Spring Boot の Layered JAR を使えば、依存ライブラリ層とアプリケーション層を分離してさらにキャッシュ効率を高められる。",
+    category: "build",
+    level: "intermediate",
+    code: `# マルチステージビルド（Gradle）
+FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /build
+COPY gradle/ gradle/
+COPY gradlew build.gradle.kts settings.gradle.kts ./
+RUN ./gradlew dependencies --no-daemon
+COPY src/ src/
+RUN ./gradlew bootJar --no-daemon
+
+# Layered JAR を展開
+FROM eclipse-temurin:21-jdk-alpine AS extractor
+WORKDIR /extract
+COPY --from=builder /build/build/libs/*.jar app.jar
+RUN java -Djarmode=layertools -jar app.jar extract
+
+# 実行ステージ（軽量イメージ）
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=extractor /extract/dependencies/ ./
+COPY --from=extractor /extract/spring-boot-loader/ ./
+COPY --from=extractor /extract/snapshot-dependencies/ ./
+COPY --from=extractor /extract/application/ ./
+EXPOSE 8080
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]`,
+  },
+  {
+    id: 233,
+    question: "Docker Compose を使った Java 開発環境の構築方法を説明してください",
+    answer: "Docker Compose は複数コンテナの定義・管理を YAML ファイルで行うツールである。Java 開発では、アプリケーション、データベース（PostgreSQL/MySQL）、キャッシュ（Redis）、メッセージブローカー（RabbitMQ/Kafka）などを compose.yml で定義し、docker compose up で一括起動する。depends_on でサービスの起動順序を制御し、healthcheck で準備完了を検知する。volumes でデータを永続化し、networks でサービス間の通信を分離する。環境変数は .env ファイルや environment セクションで管理する。",
+    category: "build",
+    level: "intermediate",
+    code: `# compose.yml
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mydb
+      - SPRING_REDIS_HOST=redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:`,
+  },
+  {
+    id: 234,
+    question: "Docker イメージのセキュリティベストプラクティスを説明してください",
+    answer: "Docker イメージのセキュリティ対策は ① 最小ベースイメージの使用: Alpine や distroless イメージでアタックサーフェスを削減 ② root ユーザーの回避: USER 命令で非特権ユーザーを指定 ③ マルチステージビルド: ビルドツールを最終イメージに含めない ④ 脆弱性スキャン: Trivy や Snyk でイメージをスキャン ⑤ .dockerignore: 不要ファイルをイメージに含めない ⑥ イメージの固定: latest タグではなくダイジェストやバージョンタグを使用 ⑦ シークレット管理: Docker secrets や環境変数で機密情報を注入し、イメージに埋め込まない ⑧ ヘルスチェックの設定である。",
+    category: "security",
+    level: "intermediate",
+    code: `# セキュアな Dockerfile の例
+FROM eclipse-temurin:21-jre-alpine
+
+# セキュリティアップデート
+RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
+
+# 非 root ユーザーの作成
+RUN addgroup -S appgroup && \\
+    adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# アプリケーションのコピー
+COPY --chown=appuser:appgroup \\
+    target/myapp.jar app.jar
+
+# 非 root ユーザーに切り替え
+USER appuser
+
+# ヘルスチェック
+HEALTHCHECK --interval=30s --timeout=3s \\
+    CMD wget -q --spider http://localhost:8080/actuator/health || exit 1
+
+EXPOSE 8080
+ENTRYPOINT ["java", \\
+    "-XX:MaxRAMPercentage=75.0", \\
+    "-jar", "app.jar"]`,
+  },
+  {
+    id: 235,
+    question: "Docker コンテナでの Java アプリのメモリ設定について説明してください",
+    answer: "Docker コンテナでの Java メモリ管理には注意が必要である。コンテナのメモリ制限は --memory フラグで設定し、Java 10 以降はコンテナのメモリ制限を自動検出する。-XX:MaxRAMPercentage（デフォルト25%）でヒープサイズをコンテナメモリの割合で指定するのが推奨される。コンテナメモリにはヒープ以外にメタスペース、スレッドスタック、ネイティブメモリ、GC オーバーヘッドも含まれるため、MaxRAMPercentage は 75% 程度が目安。-Xmx で固定値を設定する場合は、非ヒープメモリ分の余裕を確保する。OOM Killer によるコンテナ強制停止を防ぐためにメモリ設定の監視が重要である。",
+    category: "performance",
+    level: "advanced",
+    code: `# コンテナのメモリ制限と Java 設定
+docker run -m 512m myapp:1.0
+
+# Dockerfile での設定
+ENTRYPOINT ["java", \\
+    "-XX:MaxRAMPercentage=75.0", \\
+    "-XX:InitialRAMPercentage=50.0", \\
+    "-XX:+UseContainerSupport", \\
+    "-jar", "app.jar"]
+
+# メモリの内訳確認
+# java -XX:+PrintFlagsFinal -version | grep -i heap
+# jcmd <PID> VM.native_memory summary
+
+# docker stats でリアルタイム監視
+# docker stats myapp
+# CONTAINER  CPU%  MEM USAGE/LIMIT  MEM%
+# myapp      2.5%  384MiB/512MiB    75%`,
+  },
+  // ===== マイクロサービス (236-240) =====
+  {
+    id: 236,
+    question: "マイクロサービスアーキテクチャとモノリスの違いを説明してください",
+    answer: "モノリスは全機能を1つのアプリケーションに統合するアーキテクチャで、開発・デプロイがシンプルだが規模拡大に伴いコードが複雑化し、部分的なスケーリングが困難になる。マイクロサービスはビジネスドメインごとに独立したサービスに分割し、それぞれが独自のデータストアを持ち、API（REST/gRPC/メッセージング）で通信する。利点は独立デプロイ、技術選択の自由度、スケーラビリティ。課題は分散システムの複雑性、データ整合性、サービス間通信のレイテンシ、運用負荷の増大である。適切なサービス境界の設計が成功の鍵であり、ドメイン駆動設計（DDD）の境界づけられたコンテキストが指針となる。",
+    category: "design",
+    level: "intermediate",
+  },
+  {
+    id: 237,
+    question: "サービス間通信のパターン（同期・非同期）を説明してください",
+    answer: "同期通信は REST API や gRPC で直接呼び出す方式で、即座にレスポンスを得られるが、呼び出し先の障害が連鎖する（カスケード障害）リスクがある。非同期通信はメッセージブローカー（Kafka、RabbitMQ）を介したイベント駆動で、サービス間の結合度が低く障害耐性が高いが、最終的整合性（Eventual Consistency）を受け入れる必要がある。Request-Reply パターン、Pub-Sub パターン、Event Sourcing + CQRS など用途に応じた使い分けが重要。Spring Cloud Stream や Spring Integration で抽象化した実装が可能である。",
+    category: "design",
+    level: "advanced",
+    code: `// 同期通信: RestClient（Spring Boot 3.2+）
+@Service
+public class OrderService {
+    private final RestClient restClient;
+
+    public OrderService(RestClient.Builder builder) {
+        this.restClient = builder
+            .baseUrl("http://user-service")
+            .build();
+    }
+
+    public User getUser(Long userId) {
+        return restClient.get()
+            .uri("/api/users/{id}", userId)
+            .retrieve()
+            .body(User.class);
+    }
+}
+
+// 非同期通信: Spring Kafka
+@Service
+public class OrderEventPublisher {
+    private final KafkaTemplate<String, OrderEvent>
+        kafkaTemplate;
+
+    public void publishOrderCreated(Order order) {
+        var event = new OrderCreatedEvent(
+            order.getId(), order.getUserId());
+        kafkaTemplate.send("order-events", event);
+    }
+}
+
+@Component
+public class OrderEventListener {
+    @KafkaListener(topics = "order-events")
+    public void handleOrderEvent(OrderEvent event) {
+        // イベント処理
+    }
+}`,
+  },
+  {
+    id: 238,
+    question: "サーキットブレーカーパターンとは何ですか？",
+    answer: "サーキットブレーカーは外部サービス呼び出しの障害を検知し、連鎖的な障害を防止するパターンである。3つの状態を持つ。CLOSED（正常）: リクエストを通過させ失敗率を監視。OPEN（遮断）: 失敗率が閾値を超えるとリクエストを即座に拒否し、フォールバック処理を実行。HALF-OPEN（半開）: 一定時間後に試行リクエストを通し、成功すれば CLOSED に戻る。Spring Cloud Circuit Breaker と Resilience4j を組み合わせて実装する。タイムアウト、リトライ、バルクヘッド（同時呼び出し制限）と組み合わせることで堅牢なサービス間通信を実現する。",
+    category: "design",
+    level: "advanced",
+    code: `// Resilience4j サーキットブレーカー
+@Service
+public class UserServiceClient {
+
+    @CircuitBreaker(
+        name = "userService",
+        fallbackMethod = "getUserFallback")
+    @Retry(name = "userService")
+    @TimeLimiter(name = "userService")
+    public CompletableFuture<User> getUser(Long id) {
+        return CompletableFuture.supplyAsync(
+            () -> restClient.get()
+                .uri("/api/users/{id}", id)
+                .retrieve()
+                .body(User.class));
+    }
+
+    // フォールバック処理
+    public CompletableFuture<User> getUserFallback(
+            Long id, Throwable t) {
+        return CompletableFuture.completedFuture(
+            User.unknown(id));
+    }
+}
+
+# application.yml
+resilience4j:
+  circuitbreaker:
+    instances:
+      userService:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        sliding-window-size: 10`,
+  },
+  {
+    id: 239,
+    question: "API ゲートウェイの役割と Spring Cloud Gateway について説明してください",
+    answer: "API ゲートウェイはクライアントとマイクロサービス群の間に位置し、ルーティング、認証認可、レート制限、ロードバランシング、リクエスト/レスポンス変換、サーキットブレーカーなどの横断的関心事を一元的に処理する。Spring Cloud Gateway は非同期・リアクティブな API ゲートウェイで、Route（ルーティングルール）、Predicate（マッチ条件）、Filter（リクエスト/レスポンス加工）の3要素で構成される。パスベース、ヘッダーベース、ホストベースのルーティングが可能で、カスタムフィルタで独自処理を追加できる。サービスディスカバリ（Eureka/Consul）と連携した動的ルーティングも実現できる。",
+    category: "spring",
+    level: "advanced",
+    code: `# Spring Cloud Gateway の設定
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: userCircuitBreaker
+                fallbackUri: forward:/fallback/users
+
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20`,
+  },
+  {
+    id: 240,
+    question: "分散トレーシングとは何ですか？Java での実装方法を説明してください",
+    answer: "分散トレーシングはマイクロサービス間のリクエストフローを追跡し、レイテンシのボトルネックやエラーの発生箇所を特定する手法である。各リクエストにトレース ID を付与し、サービスを跨いで伝播させる。Span は個々のサービスでの処理単位を表し、親子関係で処理の階層を表現する。Spring Boot 3 では Micrometer Tracing が標準で、OpenTelemetry または Brave をブリッジとして使用する。収集したトレースは Zipkin や Jaeger で可視化する。ログに traceId と spanId を含めることで、ログとトレースの相関分析が可能になる。",
+    category: "spring",
+    level: "advanced",
+    code: `# 依存関係（build.gradle.kts）
+# implementation("io.micrometer:micrometer-tracing-bridge-otel")
+# implementation("io.opentelemetry.exporter:opentelemetry-exporter-zipkin")
+
+# application.yml
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # 本番では 0.1 等に調整
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+
+logging:
+  pattern:
+    level: "%5p [traceId=%X{traceId},spanId=%X{spanId}]"
+
+# ログ出力例:
+# INFO [traceId=abc123,spanId=def456]
+#   o.e.OrderService : 注文作成開始
+# INFO [traceId=abc123,spanId=ghi789]
+#   o.e.UserClient : ユーザー情報取得`,
+  },
+  // ===== REST API 設計 (241-245) =====
+  {
+    id: 241,
+    question: "RESTful API の設計原則を説明してください",
+    answer: "REST（Representational State Transfer）の設計原則は ① リソース指向: URI はリソース（名詞）を表し動詞を含めない（/users、/orders）② HTTP メソッドの適切な使用: GET（取得）、POST（作成）、PUT（全体更新）、PATCH（部分更新）、DELETE（削除）③ ステートレス: サーバーはクライアントの状態を保持しない ④ 統一インターフェース: 一貫した URI 構造とレスポンス形式 ⑤ HATEOAS: レスポンスに関連リソースへのリンクを含める。URI は複数形名詞を使い、ネストは浅く保ち、バージョニング（/api/v1/）で後方互換性を確保する。",
+    category: "network",
+    level: "basic",
+    code: `// Spring Boot での RESTful API 実装
+@RestController
+@RequestMapping("/api/v1/users")
+public class UserController {
+
+    @GetMapping
+    public Page<UserResponse> getUsers(Pageable pageable) {
+        return userService.findAll(pageable);
+    }
+
+    @GetMapping("/{id}")
+    public UserResponse getUser(@PathVariable Long id) {
+        return userService.findById(id);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserResponse createUser(
+            @Valid @RequestBody CreateUserRequest req) {
+        return userService.create(req);
+    }
+
+    @PutMapping("/{id}")
+    public UserResponse updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest req) {
+        return userService.update(id, req);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable Long id) {
+        userService.delete(id);
+    }
+}`,
+  },
+  {
+    id: 242,
+    question: "REST API のページネーションとフィルタリングの設計を説明してください",
+    answer: "ページネーションは大量データの効率的な取得に不可欠で、主に3つの方式がある。① オフセットベース: ?page=0&size=20 で指定。実装が簡潔だが、データ変動時に重複・欠落が起きる。② カーソルベース: ?cursor=abc&size=20 で前回の最終 ID を基点にする。大量データでも高速で一貫性がある。③ キーセットベース: WHERE id > :lastId ORDER BY id で SQL レベルで効率化。フィルタリングはクエリパラメータで ?status=active&sort=createdAt,desc のように設計し、レスポンスには totalElements、totalPages、hasNext 等のメタ情報を含める。Spring Data の Pageable を活用すると実装が容易である。",
+    category: "network",
+    level: "intermediate",
+    code: `// Spring Data のページネーション
+@GetMapping("/api/v1/orders")
+public Page<OrderResponse> getOrders(
+        @RequestParam(required = false) String status,
+        @PageableDefault(size = 20, sort = "createdAt",
+            direction = Sort.Direction.DESC)
+        Pageable pageable) {
+    if (status != null) {
+        return orderService
+            .findByStatus(status, pageable);
+    }
+    return orderService.findAll(pageable);
+}
+
+// レスポンス例:
+// {
+//   "content": [...],
+//   "totalElements": 150,
+//   "totalPages": 8,
+//   "number": 0,
+//   "size": 20,
+//   "first": true,
+//   "last": false
+// }
+
+// カーソルベース（カスタム実装）
+@GetMapping("/api/v1/feed")
+public CursorPage<Post> getFeed(
+        @RequestParam(required = false) String cursor,
+        @RequestParam(defaultValue = "20") int size) {
+    return postService.findAfterCursor(cursor, size);
+}`,
+  },
+  {
+    id: 243,
+    question: "REST API のバージョニング戦略を説明してください",
+    answer: "API バージョニングには4つの主要な戦略がある。① URI パスバージョニング（/api/v1/users）: 最も直感的で広く採用。URL が変わるためキャッシュしやすい。② クエリパラメータ（/api/users?version=1）: URI は変わらないがパラメータ管理が煩雑。③ カスタムヘッダー（X-API-Version: 1）: URI がクリーンだがヘッダー管理が必要。④ Accept ヘッダー（Content Negotiation）: application/vnd.myapp.v1+json のように MIME タイプで指定。RESTful だが複雑。実務では URI パスバージョニングが最も一般的。後方互換性を維持し、非推奨期間を設けた段階的な移行が重要である。",
+    category: "network",
+    level: "intermediate",
+  },
+  {
+    id: 244,
+    question: "REST API のレスポンス設計とHTTPステータスコードの使い分けを説明してください",
+    answer: "HTTP ステータスコードは適切に使い分ける。2xx 成功: 200 OK（取得・更新成功）、201 Created（作成成功、Location ヘッダー付与）、204 No Content（削除成功）。3xx リダイレクト: 301/302 で移動先を示す。4xx クライアントエラー: 400 Bad Request（バリデーション失敗）、401 Unauthorized（未認証）、403 Forbidden（権限なし）、404 Not Found、409 Conflict（重複）、429 Too Many Requests。5xx サーバーエラー: 500 Internal Server Error、503 Service Unavailable。エラーレスポンスは RFC 9457 Problem Details 形式で type、title、status、detail、instance を含め、API 全体で一貫した形式にする。",
+    category: "network",
+    level: "intermediate",
+  },
+  {
+    id: 245,
+    question: "REST API のセキュリティ対策を説明してください",
+    answer: "REST API のセキュリティ対策は多層的に行う。① 認証・認可: OAuth2 + JWT でステートレスな認証、スコープベースの認可 ② 通信の暗号化: HTTPS（TLS 1.3）の強制 ③ 入力バリデーション: 全入力をサーバー側で検証し、SQL インジェクション・XSS を防止 ④ レート制限: Token Bucket 等のアルゴリズムで API の過負荷を防止 ⑤ CORS 設定: 許可するオリジンを明示的に指定 ⑥ セキュリティヘッダー: X-Content-Type-Options、X-Frame-Options、Content-Security-Policy ⑦ ログ監査: 全 API アクセスをログに記録 ⑧ API キー管理: 機密情報の適切な管理と定期ローテーション。OWASP API Security Top 10 を参考に脅威に対応する。",
+    category: "security",
+    level: "advanced",
+    code: `@Configuration
+@EnableWebSecurity
+public class ApiSecurityConfig {
+
+    @Bean
+    public SecurityFilterChain apiFilterChain(
+            HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/**")
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(
+                corsConfigurationSource()))
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(STATELESS))
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(Customizer.withDefaults()))
+            .headers(headers -> headers
+                .contentTypeOptions(Customizer
+                    .withDefaults())
+                .frameOptions(frame -> frame.deny()));
+        return http.build();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        var config = new CorsConfiguration();
+        config.setAllowedOrigins(
+            List.of("https://example.com"));
+        config.setAllowedMethods(
+            List.of("GET", "POST", "PUT", "DELETE"));
+        config.setAllowedHeaders(
+            List.of("Authorization", "Content-Type"));
+        var source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", config);
+        return source;
+    }
+}`,
+  },
+  // ===== クリーンコード / リファクタリング (246-250) =====
+  {
+    id: 246,
+    question: "クリーンコードの原則を説明してください",
+    answer: "クリーンコードとは、読みやすく、理解しやすく、変更しやすいコードである。主な原則は ① 意味のある命名: 変数・メソッド・クラス名は意図を明確に表す ② 小さな関数: 1つの関数は1つの責務（SRP）、引数は少なく ③ コメントよりコードで語る: コメントが必要な複雑なコードはリファクタリング対象 ④ DRY（Don't Repeat Yourself）: 重複を排除 ⑤ KISS（Keep It Simple, Stupid）: 不要な複雑さを避ける ⑥ ボーイスカウトルール: コードを見つけた時よりも綺麗にする。テスタブルなコードを書くことも重要で、依存性注入やインターフェースの活用が鍵となる。",
+    category: "design",
+    level: "basic",
+    code: `// 悪い例
+public double calc(double a, double b, int t) {
+    if (t == 1) return a + b;
+    else if (t == 2) return a - b;
+    else return 0;
+}
+
+// 良い例: 意味のある命名 + ポリモーフィズム
+public interface Calculator {
+    double calculate(double left, double right);
+}
+
+public class AdditionCalculator implements Calculator {
+    @Override
+    public double calculate(double left, double right) {
+        return left + right;
+    }
+}
+
+// 悪い例: 長いメソッド
+public void processOrder(Order order) {
+    // バリデーション（20行）
+    // 在庫チェック（15行）
+    // 合計計算（10行）
+    // 保存処理（10行）
+}
+
+// 良い例: 小さなメソッドに分割
+public void processOrder(Order order) {
+    validateOrder(order);
+    checkInventory(order);
+    BigDecimal total = calculateTotal(order);
+    saveOrder(order, total);
+}`,
+  },
+  {
+    id: 247,
+    question: "SOLID 原則を具体例とともに説明してください",
+    answer: "SOLID は5つの設計原則の頭文字。S（Single Responsibility）: クラスの変更理由は1つだけ。O（Open/Closed）: 拡張に対して開き、修正に対して閉じる。L（Liskov Substitution）: 子クラスは親クラスと置換可能であるべき。I（Interface Segregation）: クライアントが使わないメソッドへの依存を強制しない。D（Dependency Inversion）: 上位モジュールは下位モジュールに依存せず、両方とも抽象に依存する。Spring Framework の DI コンテナは D の原則を自然に適用する仕組みを提供している。",
+    category: "design",
+    level: "intermediate",
+    code: `// NG: Interface Segregation 違反
+interface Worker {
+    void work();
+    void eat();      // ロボットは食べない
+    void sleep();    // ロボットは寝ない
+}
+
+// OK: インターフェースを分離
+interface Workable { void work(); }
+interface Eatable  { void eat(); }
+interface Sleepable { void sleep(); }
+
+class Human implements Workable, Eatable, Sleepable {
+    public void work() { }
+    public void eat() { }
+    public void sleep() { }
+}
+
+class Robot implements Workable {
+    public void work() { }
+}
+
+// Dependency Inversion の例
+// NG: 具象クラスに依存
+class OrderService {
+    private MySQLOrderRepository repo = new MySQLOrderRepository();
+}
+
+// OK: 抽象に依存
+class OrderService {
+    private final OrderRepository repo; // インターフェース
+    OrderService(OrderRepository repo) {
+        this.repo = repo;
+    }
+}`,
+  },
+  {
+    id: 248,
+    question: "代表的なリファクタリングパターンを説明してください",
+    answer: "リファクタリングは外部の振る舞いを変えずに内部構造を改善する。代表的パターンは ① メソッドの抽出（Extract Method）: 長いメソッドから意味のある処理を分離 ② 変数の導入（Introduce Explaining Variable）: 複雑な式に名前をつける ③ ガード節の導入（Replace Nested Conditional with Guard Clauses）: 深いネストを早期リターンで解消 ④ ポリモーフィズムで条件分岐を置換: switch/if-else チェーンをクラス階層に変換 ⑤ パラメータオブジェクトの導入: 関連するパラメータを1つのオブジェクトにまとめる ⑥ メソッドの移動: メソッドを適切なクラスに移動する。リファクタリング前にテストを書いておくことが必須である。",
+    category: "design",
+    level: "intermediate",
+    code: `// Before: 深いネスト
+public String getShippingLabel(Order order) {
+    if (order != null) {
+        if (order.getAddress() != null) {
+            if (order.getAddress().getCountry() != null) {
+                return formatLabel(order.getAddress());
+            } else {
+                throw new InvalidAddressException();
+            }
+        } else {
+            throw new InvalidAddressException();
+        }
+    } else {
+        throw new OrderNotFoundException();
+    }
+}
+
+// After: ガード節で早期リターン
+public String getShippingLabel(Order order) {
+    if (order == null) {
+        throw new OrderNotFoundException();
+    }
+    Address address = order.getAddress();
+    if (address == null || address.getCountry() == null) {
+        throw new InvalidAddressException();
+    }
+    return formatLabel(address);
+}`,
+  },
+  {
+    id: 249,
+    question: "コードスメル（Code Smell）の代表例と対処法を説明してください",
+    answer: "コードスメルは設計上の問題を示す兆候である。① 長いメソッド: メソッドの抽出で分割 ② 巨大クラス（God Class）: 単一責任原則に従いクラスを分割 ③ 重複コード: テンプレートメソッドパターンやユーティリティクラスで共通化 ④ プリミティブ執着: 値オブジェクトの導入（Email クラス、Money クラス等）⑤ フィーチャーエンビー: 他クラスのデータに過度にアクセスするメソッドを適切なクラスに移動 ⑥ マジックナンバー: 定数に名前をつける ⑦ 過剰な引数: パラメータオブジェクトの導入。SonarQube や IntelliJ の検査機能でコードスメルを自動検出できる。",
+    category: "design",
+    level: "intermediate",
+    code: `// プリミティブ執着の例
+// NG: String で全てを表現
+public void createUser(
+        String email,
+        String phone,
+        String zipCode) { }
+
+// OK: 値オブジェクトの導入
+public record Email(String value) {
+    public Email {
+        if (!value.matches("^[\\w.-]+@[\\w.-]+\\.\\w+$")) {
+            throw new IllegalArgumentException(
+                "不正なメール形式: " + value);
+        }
+    }
+}
+
+public record PhoneNumber(String value) {
+    public PhoneNumber {
+        String cleaned = value.replaceAll("[^0-9]", "");
+        if (cleaned.length() < 10) {
+            throw new IllegalArgumentException(
+                "不正な電話番号: " + value);
+        }
+    }
+}
+
+public void createUser(
+        Email email,
+        PhoneNumber phone,
+        ZipCode zipCode) { }`,
+  },
+  {
+    id: 250,
+    question: "テスタブルなコードを書くための設計指針を説明してください",
+    answer: "テスタブルなコードの設計指針は ① 依存性の注入（DI）: new で直接生成せずコンストラクタインジェクションで依存を注入し、テスト時にモックに差し替え可能にする ② インターフェースの活用: 実装ではなくインターフェースに依存し、テスト用の偽実装を容易に作成 ③ static メソッドの最小化: static は差し替え不可能なため、ステートレスなユーティリティ以外では避ける ④ 副作用の分離: ビジネスロジックと I/O を分離（Ports & Adapters パターン）⑤ 小さなメソッド: テスト対象を明確にし、テストケースを簡潔に保つ ⑥ 不変オブジェクトの活用: テスト時の状態管理が容易になる。テスト容易性の高い設計は自然と良い設計になる。",
+    category: "testing",
+    level: "intermediate",
+    code: `// テストしにくいコード
+public class OrderService {
+    public BigDecimal calculateTotal(List<Item> items) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Item item : items) {
+            total = total.add(item.getPrice());
+        }
+        // 現在時刻に依存（テスト困難）
+        if (LocalDate.now().getDayOfWeek() == FRIDAY) {
+            total = total.multiply(new BigDecimal("0.9"));
+        }
+        return total;
+    }
+}
+
+// テストしやすいコード
+public class OrderService {
+    private final Clock clock;
+
+    public OrderService(Clock clock) {
+        this.clock = clock;
+    }
+
+    public BigDecimal calculateTotal(List<Item> items) {
+        BigDecimal total = items.stream()
+            .map(Item::getPrice)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (isFriday()) {
+            total = applyFridayDiscount(total);
+        }
+        return total;
+    }
+
+    private boolean isFriday() {
+        return LocalDate.now(clock).getDayOfWeek()
+            == FRIDAY;
+    }
+
+    private BigDecimal applyFridayDiscount(
+            BigDecimal total) {
+        return total.multiply(new BigDecimal("0.9"));
+    }
+}`,
+  }
 ];
