@@ -13,21 +13,10 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#2563EB",
-          borderRadius: 8,
+          background: "transparent",
         }}
       >
-        <span
-          style={{
-            fontSize: 20,
-            fontWeight: 900,
-            color: "#ffffff",
-            lineHeight: 1,
-            letterSpacing: -1,
-          }}
-        >
-          .j
-        </span>
+        <span style={{ fontSize: 28, lineHeight: 1 }}>☕</span>
       </div>
     ),
     { ...size }
