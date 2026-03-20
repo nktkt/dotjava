@@ -13,19 +13,20 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#DC2626",
-          borderRadius: 6,
+          background: "#2563EB",
+          borderRadius: 8,
         }}
       >
         <span
           style={{
-            fontSize: 22,
-            fontWeight: 800,
+            fontSize: 20,
+            fontWeight: 900,
             color: "#ffffff",
             lineHeight: 1,
+            letterSpacing: -1,
           }}
         >
-          J
+          .j
         </span>
       </div>
     ),
