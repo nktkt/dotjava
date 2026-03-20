@@ -96,6 +96,8 @@ const navGroups = [
       { href: "/errors", label: "エラー集" },
       { href: "/interview", label: "面接対策" },
       { href: "/quiz", label: "クイズ" },
+      { href: "/cheatsheet", label: "チートシート" },
+      { href: "/projects", label: "プロジェクト集" },
     ],
   },
 ];
