@@ -22,6 +22,8 @@ export const kotlinCategories: KotlinCategory[] = [
   { id: "basics", name: "基礎文法", color: "#7F52FF" },
   { id: "features", name: "Kotlin特有機能", color: "#059669" },
   { id: "practice", name: "実践", color: "#D97706" },
+  { id: "android", name: "Android開発", color: "#3DDC84" },
+  { id: "ecosystem", name: "エコシステム", color: "#2563EB" },
 ];
 
 export const kotlinChapters: KotlinChapter[] = [
@@ -2080,4 +2082,5362 @@ class ReactiveUserController(private val userService: UserService) {
       },
     ],
   },
+
+  // ===== 型システムとジェネリクス =====
+  {
+    id: "type-system",
+    title: "型システムとジェネリクス",
+    category: "basics",
+    description:
+      "Kotlinの型階層（Any, Unit, Nothing）、ジェネリクス、共変・反変（in/out）、型消去と具体化（reified）、型エイリアスとインライン型を学ぶ",
+    sections: [
+      {
+        title: "Kotlinの型階層（Any, Unit, Nothing）",
+        content:
+          "Kotlinの型システムはすべての型が階層構造を持ちます。Any はすべての非null型のスーパークラスであり、Javaの Object に相当します。Unit は戻り値がないことを示す型で、Javaの void に相当しますが、Unit はれっきとしたオブジェクト型でシングルトンインスタンスを持ちます。Nothing はすべての型のサブタイプであり、値が存在しないことを表します。例外をスローする関数や無限ループなど、正常に戻ることがない関数の戻り値型として使われます。Any? はnullable型を含むすべての型のスーパータイプです。",
+        code: `// Any: すべての非null型のスーパークラス
+fun printInfo(value: Any) {
+    println("値: \${value}, 型: \${value::class.simpleName}")
+}
+printInfo(42)        // 値: 42, 型: Int
+printInfo("Hello")   // 値: Hello, 型: String
+printInfo(listOf(1)) // 値: [1], 型: ArrayList
+
+// Any のメンバー: equals, hashCode, toString
+val obj: Any = "Kotlin"
+println(obj.equals("Kotlin"))  // true
+println(obj.hashCode())        // ハッシュ値
+println(obj.toString())        // Kotlin
+
+// Unit: void相当だが、オブジェクト型
+fun logMessage(msg: String): Unit {
+    println("[LOG] \${msg}")
+}
+
+// Unit はジェネリクスで活用できる
+val callback: () -> Unit = { println("完了") }
+val results: List<Unit> = listOf(Unit, Unit)
+
+// Nothing: 正常に戻らない関数の戻り値型
+fun fail(message: String): Nothing {
+    throw IllegalArgumentException(message)
+}
+
+// Nothing は全型のサブタイプなので型推論に役立つ
+val value: String = if (true) "OK" else fail("エラー")
+
+// Nothing? は null のみ取りうる型
+val n: Nothing? = null`,
+      },
+      {
+        title: "ジェネリクスの基本",
+        content:
+          "Kotlinのジェネリクスは型パラメータを使って型安全な汎用コードを書くための仕組みです。クラスや関数に型パラメータ <T> を付けて定義します。Javaと同様に型消去（type erasure）が行われますが、Kotlinでは宣言側で変位（variance）を指定できる宣言サイト変位や、reified型パラメータによる型消去の回避など、Javaにはない強力な機能があります。ジェネリック制約（上界）を指定することで、型パラメータに特定のスーパータイプを要求できます。",
+        code: `// ジェネリッククラス
+class Stack<T> {
+    private val elements = mutableListOf<T>()
+
+    fun push(element: T) {
+        elements.add(element)
+    }
+
+    fun pop(): T {
+        if (elements.isEmpty()) throw NoSuchElementException("スタックが空です")
+        return elements.removeAt(elements.size - 1)
+    }
+
+    fun peek(): T = elements.last()
+    fun isEmpty(): Boolean = elements.isEmpty()
+    override fun toString(): String = elements.toString()
+}
+
+val intStack = Stack<Int>()
+intStack.push(1)
+intStack.push(2)
+println(intStack.pop())  // 2
+
+// ジェネリック関数
+fun <T> singletonList(item: T): List<T> = listOf(item)
+val list = singletonList("Kotlin")  // 型推論でString
+
+// 上界制約（Javaの <T extends Comparable<T>> に相当）
+fun <T : Comparable<T>> maxOf(a: T, b: T): T {
+    return if (a >= b) a else b
+}
+println(maxOf(3, 7))        // 7
+println(maxOf("abc", "xyz")) // xyz
+
+// 複数の制約（where句）
+fun <T> ensureValid(value: T)
+    where T : CharSequence,
+          T : Comparable<T> {
+    require(value.length > 0) { "空文字列は不可" }
+    println("有効な値: \${value}")
+}
+ensureValid("Hello")  // 有効な値: Hello`,
+      },
+      {
+        title: "共変・反変（out / in）",
+        content:
+          "ジェネリクスの変位（variance）は型パラメータの代入互換性を制御します。Kotlinでは宣言サイト変位をサポートしており、out キーワードで共変（covariant）、in キーワードで反変（contravariant）を指定します。共変（out T）は T を出力（戻り値）にのみ使用でき、Producer<Dog> を Producer<Animal> として扱えます。反変（in T）は T を入力（引数）にのみ使用でき、Consumer<Animal> を Consumer<Dog> として扱えます。Javaの <? extends T> が out T に、<? super T> が in T に対応します。",
+        code: `// 共変（out）: 型パラメータを出力（戻り値）にのみ使用
+interface Producer<out T> {
+    fun produce(): T
+    // fun consume(item: T)  // コンパイルエラー！out は引数に使えない
+}
+
+open class Animal(val name: String)
+class Dog(name: String, val breed: String) : Animal(name)
+
+class DogProducer : Producer<Dog> {
+    override fun produce(): Dog = Dog("ポチ", "柴犬")
+}
+
+// Dog は Animal のサブタイプなので、Producer<Dog> を Producer<Animal> として扱える
+val animalProducer: Producer<Animal> = DogProducer()
+println(animalProducer.produce().name)  // ポチ
+
+// 反変（in）: 型パラメータを入力（引数）にのみ使用
+interface Consumer<in T> {
+    fun consume(item: T)
+    // fun produce(): T  // コンパイルエラー！in は戻り値に使えない
+}
+
+class AnimalConsumer : Consumer<Animal> {
+    override fun consume(item: Animal) {
+        println("動物を処理: \${item.name}")
+    }
+}
+
+// Animal は Dog のスーパータイプなので、Consumer<Animal> を Consumer<Dog> として扱える
+val dogConsumer: Consumer<Dog> = AnimalConsumer()
+dogConsumer.consume(Dog("タロウ", "秋田犬"))
+
+// 使用サイト変位（型プロジェクション）
+fun copy(from: Array<out Animal>, to: Array<in Animal>) {
+    for (i in from.indices) {
+        to[i] = from[i]
+    }
+}
+
+// スター投影（Javaの <?> に相当）
+fun printAll(list: List<*>) {
+    list.forEach { println(it) }
+}`,
+      },
+      {
+        title: "型消去と具体化（reified）",
+        content:
+          "JVM上ではジェネリクスの型情報はコンパイル時に消去されます（型消去 / type erasure）。そのため、実行時に is List<String> のようなジェネリック型チェックは通常できません。Kotlinでは inline 関数と reified 型パラメータを組み合わせることで、この制限を回避できます。reified を付けた型パラメータは実行時にも型情報が保持され、is チェックや ::class の取得が可能になります。これはKotlin独自の強力な機能で、Javaには同等の仕組みがありません。",
+        code: `// 型消去により実行時にジェネリック型を取得できない
+// fun <T> isType(value: Any): Boolean {
+//     return value is T  // コンパイルエラー：型消去のため
+// }
+
+// reified + inline で型情報を保持
+inline fun <reified T> isType(value: Any): Boolean {
+    return value is T  // OK！reified により型情報が保持される
+}
+
+println(isType<String>("Hello"))  // true
+println(isType<Int>("Hello"))     // false
+println(isType<List<*>>(listOf(1, 2)))  // true
+
+// reified で型安全なキャスト
+inline fun <reified T> filterByType(list: List<Any>): List<T> {
+    return list.filterIsInstance<T>()
+}
+
+val mixed: List<Any> = listOf(1, "hello", 2.0, "world", 3)
+val strings = filterByType<String>(mixed)
+println(strings)  // [hello, world]
+val ints = filterByType<Int>(mixed)
+println(ints)  // [1, 3]
+
+// reified でクラス参照を取得
+inline fun <reified T> printClassName() {
+    println("クラス名: \${T::class.simpleName}")
+    println("Java クラス: \${T::class.java}")
+}
+printClassName<String>()  // クラス名: String
+
+// 実用例: JSON デシリアライゼーション
+inline fun <reified T> fromJson(json: String): T {
+    val mapper = ObjectMapper()
+    return mapper.readValue(json, T::class.java)
+}
+
+data class User(val name: String, val age: Int)
+val user = fromJson<User>("""{"name":"太郎","age":25}""")
+println(user)  // User(name=太郎, age=25)
+
+// reified はインライン関数でのみ使用可能
+// fun <reified T> notInline() {}  // コンパイルエラー`,
+      },
+      {
+        title: "型エイリアスとインライン型（value class）",
+        content:
+          "型エイリアス（typealias）は既存の型に別名を付ける機能で、長い型名を短くしたり、意図を明確にするのに使います。ただし型エイリアスは新しい型を作るわけではなく、コンパイル時に元の型に置き換えられます。一方、value class（旧 inline class）は実行時のオーバーヘッドなしに新しい型を定義できる機能です。プリミティブ型をラップして型安全性を高めるのに最適で、ドメイン駆動設計のValue Objectパターンを軽量に実現できます。",
+        code: `// 型エイリアス: 長い型に短い別名を付ける
+typealias UserMap = Map<String, List<User>>
+typealias Predicate<T> = (T) -> Boolean
+typealias ClickHandler = (view: View, x: Int, y: Int) -> Unit
+
+// 使用例
+fun findUsers(predicate: Predicate<User>): List<User> {
+    val allUsers = listOf(
+        User("太郎", 25),
+        User("花子", 30),
+        User("次郎", 20)
+    )
+    return allUsers.filter(predicate)
+}
+
+val adults = findUsers { it.age >= 25 }
+println(adults)  // [User(太郎, 25), User(花子, 30)]
+
+// value class（インライン型）: ゼロオーバーヘッドのラッパー型
+@JvmInline
+value class UserId(val value: Long)
+
+@JvmInline
+value class Email(val value: String) {
+    init {
+        require(value.contains("@")) { "無効なメール: \${value}" }
+    }
+
+    val domain: String
+        get() = value.substringAfter("@")
+}
+
+// 型安全性の確保（IDの取り違え防止）
+@JvmInline
+value class OrderId(val value: Long)
+
+fun findUser(userId: UserId): User? = null
+fun findOrder(orderId: OrderId): Order? = null
+
+val userId = UserId(123L)
+val orderId = OrderId(456L)
+
+findUser(userId)    // OK
+// findUser(orderId) // コンパイルエラー！型が異なる
+
+// 実行時にはアンボクシングされるためオーバーヘッドなし
+val email = Email("taro@example.com")
+println(email.domain)  // example.com
+
+// 関数型の型エイリアスでコールバック定義を明確化
+typealias OnSuccess<T> = (T) -> Unit
+typealias OnError = (Exception) -> Unit
+
+fun fetchData(
+    onSuccess: OnSuccess<String>,
+    onError: OnError
+) {
+    try {
+        onSuccess("データ取得成功")
+    } catch (e: Exception) {
+        onError(e)
+    }
+}`,
+      },
+    ],
+  },
+  // ===== 委譲パターン =====
+  {
+    id: "delegation",
+    title: "委譲パターン",
+    category: "features",
+    description:
+      "by キーワードによるクラス委譲、委譲プロパティ（lazy, observable, vetoable）、Map委譲、カスタム委譲の実装方法を学ぶ",
+    sections: [
+      {
+        title: "by キーワードによるクラス委譲",
+        content:
+          "Kotlinでは by キーワードを使ってクラス委譲（Delegation Pattern）を言語レベルでサポートしています。インターフェースの実装を別のオブジェクトに委譲することで、継承を使わずにコードの再利用が可能になります。GoFのデコレータパターンをボイラープレートなしに実現でき、「継承より委譲」の原則を容易に適用できます。委譲先のオブジェクトのメソッドが自動的に呼び出され、必要なメソッドだけをオーバーライドして振る舞いを変更できます。",
+        code: `// インターフェースの定義
+interface Logger {
+    fun log(message: String)
+    fun error(message: String)
+    fun warn(message: String)
+}
+
+// 基本的な実装
+class ConsoleLogger : Logger {
+    override fun log(message: String) = println("[INFO] \${message}")
+    override fun error(message: String) = println("[ERROR] \${message}")
+    override fun warn(message: String) = println("[WARN] \${message}")
+}
+
+// by で委譲（ConsoleLogger にすべてを委譲し、一部をオーバーライド）
+class TimestampLogger(
+    private val delegate: Logger
+) : Logger by delegate {
+    // log のみオーバーライド。error, warn は delegate に自動委譲
+    override fun log(message: String) {
+        val timestamp = java.time.LocalDateTime.now()
+        delegate.log("[\${timestamp}] \${message}")
+    }
+}
+
+val logger = TimestampLogger(ConsoleLogger())
+logger.log("処理開始")   // [INFO] [2024-01-01T10:00:00] 処理開始
+logger.error("失敗")     // [ERROR] 失敗（委譲される）
+
+// 複数インターフェースの委譲
+interface Printer {
+    fun printDoc(content: String)
+}
+
+interface Scanner {
+    fun scan(): String
+}
+
+class SimplePrinter : Printer {
+    override fun printDoc(content: String) = println("印刷: \${content}")
+}
+
+class SimpleScanner : Scanner {
+    override fun scan(): String = "スキャン結果"
+}
+
+// 複合機：2つのインターフェースをそれぞれ委譲
+class MultiFunctionDevice(
+    printer: Printer,
+    scanner: Scanner
+) : Printer by printer, Scanner by scanner
+
+val device = MultiFunctionDevice(SimplePrinter(), SimpleScanner())
+device.printDoc("資料")  // 印刷: 資料
+println(device.scan())   // スキャン結果`,
+      },
+      {
+        title: "委譲プロパティ: lazy, observable, vetoable",
+        content:
+          "Kotlinの委譲プロパティ（delegated properties）は、プロパティの get/set を別のオブジェクトに委譲する仕組みです。標準ライブラリには便利な委譲プロパティが用意されています。lazy は初回アクセス時に値を計算してキャッシュし、observable はプロパティの変更を監視してコールバックを実行し、vetoable は変更を条件付きで拒否できます。これらを活用することで、ボイラープレートコードを大幅に削減できます。",
+        code: `import kotlin.properties.Delegates
+
+// lazy: 遅延初期化（初回アクセス時に計算し、結果をキャッシュ）
+class DatabaseConnection {
+    // 重い初期化を遅延させる
+    val connection: Connection by lazy {
+        println("データベース接続を初期化...")
+        DriverManager.getConnection("jdbc:postgresql://localhost/mydb")
+    }
+    // connectionを使うまでDBに接続しない
+}
+
+// lazy のスレッドセーフモード指定
+val config: Map<String, String> by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+    println("設定を読み込み中...")
+    loadConfigFromFile()
+}
+
+// observable: プロパティ変更の監視
+class UserProfile {
+    var name: String by Delegates.observable("未設定") { prop, old, new ->
+        println("\${prop.name} が '\${old}' から '\${new}' に変更されました")
+    }
+
+    var score: Int by Delegates.observable(0) { _, old, new ->
+        if (new > old) println("スコアUP: \${old} → \${new}")
+        else println("スコアDOWN: \${old} → \${new}")
+    }
+}
+
+val profile = UserProfile()
+profile.name = "太郎"  // name が '未設定' から '太郎' に変更されました
+profile.score = 100    // スコアUP: 0 → 100
+profile.score = 80     // スコアDOWN: 100 → 80
+
+// vetoable: 条件を満たさない変更を拒否
+class BankAccount {
+    var balance: Int by Delegates.vetoable(0) { _, _, newValue ->
+        newValue >= 0  // 残高がマイナスになる変更は拒否
+    }
+}
+
+val account = BankAccount()
+account.balance = 1000
+println(account.balance)  // 1000
+account.balance = -500    // 拒否される
+println(account.balance)  // 1000（変更されない）`,
+      },
+      {
+        title: "Map委譲",
+        content:
+          "KotlinではMapをプロパティの委譲先として使用できます。val プロパティには Map を、var プロパティには MutableMap を委譲します。プロパティ名がMapのキーとして使われ、Mapから値が取得されます。JSONやYAMLのパース結果など、動的なキー・バリューデータをオブジェクトのプロパティとして扱いたい場合に非常に便利です。設定ファイルの読み込みやAPIレスポンスのマッピングなどで活用されます。",
+        code: `// Map 委譲: Map のキーをプロパティ名として使う
+class UserConfig(map: Map<String, Any?>) {
+    val name: String by map
+    val age: Int by map
+    val email: String by map
+}
+
+val configMap = mapOf(
+    "name" to "太郎",
+    "age" to 25,
+    "email" to "taro@example.com"
+)
+
+val userConfig = UserConfig(configMap)
+println(userConfig.name)   // 太郎
+println(userConfig.age)    // 25
+println(userConfig.email)  // taro@example.com
+
+// MutableMap 委譲: 書き込み可能なプロパティ
+class MutableSettings(map: MutableMap<String, Any?>) {
+    var theme: String by map
+    var fontSize: Int by map
+    var darkMode: Boolean by map
+}
+
+val settingsMap = mutableMapOf<String, Any?>(
+    "theme" to "default",
+    "fontSize" to 14,
+    "darkMode" to false
+)
+
+val settings = MutableSettings(settingsMap)
+println(settings.theme)  // default
+
+settings.theme = "dark"
+settings.darkMode = true
+// Map も更新される
+println(settingsMap["theme"])     // dark
+println(settingsMap["darkMode"])  // true
+
+// 実用例: JSONレスポンスのパース
+fun parseApiResponse(json: String): Map<String, Any?> {
+    // 実際にはJSON パーサーを使用
+    return mapOf(
+        "id" to 1,
+        "title" to "Kotlin入門",
+        "published" to true
+    )
+}
+
+class Article(response: Map<String, Any?>) {
+    val id: Int by response
+    val title: String by response
+    val published: Boolean by response
+
+    override fun toString() = "Article(id=\${id}, title=\${title})"
+}
+
+val article = Article(parseApiResponse("{}"))
+println(article)  // Article(id=1, title=Kotlin入門)`,
+      },
+      {
+        title: "カスタム委譲プロパティ",
+        content:
+          "独自の委譲プロパティを作成するには、ReadOnlyProperty<R, T> または ReadWriteProperty<R, T> インターフェースを実装するか、operator fun getValue / operator fun setValue を持つクラスを定義します。バリデーション付きプロパティ、キャッシュ付きプロパティ、ログ出力付きプロパティなど、プロパティのアクセスパターンを再利用可能な形でカプセル化できます。provideDelegate 演算子を使えば、委譲の初期化時にバリデーションを行うこともできます。",
+        code: `import kotlin.reflect.KProperty
+
+// カスタム委譲クラス: バリデーション付きプロパティ
+class Validated<T>(
+    private var value: T,
+    private val validator: (T) -> Boolean,
+    private val errorMessage: String = "無効な値"
+) {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T = value
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, newValue: T) {
+        if (validator(newValue)) {
+            value = newValue
+        } else {
+            throw IllegalArgumentException(
+                "\${property.name}: \${errorMessage} (値: \${newValue})"
+            )
+        }
+    }
+}
+
+// 使用例
+class RegistrationForm {
+    var age: Int by Validated(0, { it in 0..150 }, "年齢は0〜150")
+    var email: String by Validated("", { it.contains("@") }, "無効なメール形式")
+    var name: String by Validated("", { it.isNotBlank() }, "空文字不可")
+}
+
+val form = RegistrationForm()
+form.age = 25       // OK
+form.name = "太郎"  // OK
+// form.age = 200   // IllegalArgumentException: age: 年齢は0〜150
+
+// キャッシュ付き委譲プロパティ（TTL付き）
+class CachedProperty<T>(
+    private val ttlMillis: Long,
+    private val loader: () -> T
+) {
+    private var cachedValue: T? = null
+    private var lastLoadTime: Long = 0
+
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+        val now = System.currentTimeMillis()
+        if (cachedValue == null || now - lastLoadTime > ttlMillis) {
+            cachedValue = loader()
+            lastLoadTime = now
+            println("\${property.name} をリロード")
+        }
+        return cachedValue!!
+    }
+}
+
+// 委譲プロパティを作成するヘルパー関数
+fun <T> cached(ttlMillis: Long = 60_000, loader: () -> T) =
+    CachedProperty(ttlMillis, loader)
+
+class ApiClient {
+    // 60秒キャッシュ
+    val users: List<String> by cached(60_000) {
+        println("APIからユーザー一覧を取得中...")
+        listOf("太郎", "花子", "次郎")
+    }
+}
+
+val client = ApiClient()
+println(client.users)  // APIから取得（初回）
+println(client.users)  // キャッシュから返す`,
+      },
+      {
+        title: "クラス委譲の実践パターン",
+        content:
+          "クラス委譲は実際のプロジェクトで様々なパターンに活用できます。ログ付きラッパー、アクセス制御付きコレクション、イベント発行機能の追加など、既存クラスの機能を拡張する際に威力を発揮します。継承よりも柔軟で、インターフェースに対して実装を差し替えやすいため、テスタブルな設計にも貢献します。Kotlinでは委譲がゼロオーバーヘッドでコンパイルされるため、パフォーマンス面の心配もありません。",
+        code: `// パターン1: アクセス制御付きコレクション
+class ReadOnlyAfterInit<T>(
+    private val inner: MutableList<T> = mutableListOf()
+) : List<T> by inner {
+    private var initialized = false
+
+    fun initialize(items: List<T>) {
+        check(!initialized) { "既に初期化済み" }
+        inner.addAll(items)
+        initialized = true
+    }
+}
+
+val items = ReadOnlyAfterInit<String>()
+items.initialize(listOf("A", "B", "C"))
+println(items[0])   // A
+println(items.size) // 3
+// items.initialize(listOf("D"))  // IllegalStateException
+
+// パターン2: イベント通知付きリスト
+interface ListChangeListener<T> {
+    fun onAdd(item: T)
+    fun onRemove(item: T)
+}
+
+class ObservableList<T>(
+    private val inner: MutableList<T> = mutableListOf(),
+    private val listener: ListChangeListener<T>
+) : MutableList<T> by inner {
+    override fun add(element: T): Boolean {
+        val result = inner.add(element)
+        if (result) listener.onAdd(element)
+        return result
+    }
+
+    override fun remove(element: T): Boolean {
+        val result = inner.remove(element)
+        if (result) listener.onRemove(element)
+        return result
+    }
+}
+
+val observableList = ObservableList<String>(
+    listener = object : ListChangeListener<String> {
+        override fun onAdd(item: String) = println("追加: \${item}")
+        override fun onRemove(item: String) = println("削除: \${item}")
+    }
+)
+observableList.add("Kotlin")   // 追加: Kotlin
+observableList.add("Java")     // 追加: Java
+observableList.remove("Java")  // 削除: Java
+
+// パターン3: リポジトリの委譲でキャッシュ層を追加
+interface UserRepository {
+    fun findById(id: Long): User?
+    fun findAll(): List<User>
+    fun save(user: User): User
+}
+
+class CachedUserRepository(
+    private val delegate: UserRepository
+) : UserRepository by delegate {
+    private val cache = mutableMapOf<Long, User>()
+
+    override fun findById(id: Long): User? {
+        return cache.getOrPut(id) {
+            delegate.findById(id) ?: return null
+        }
+    }
+
+    override fun save(user: User): User {
+        val saved = delegate.save(user)
+        cache[saved.id] = saved  // キャッシュを更新
+        return saved
+    }
+}`,
+      },
+    ],
+  },
+  // ===== DSL構築 =====
+  {
+    id: "dsl",
+    title: "DSL構築",
+    category: "features",
+    description:
+      "レシーバー付きラムダ、型安全ビルダー、@DslMarkerを活用したドメイン固有言語（DSL）の構築方法を学ぶ",
+    sections: [
+      {
+        title: "レシーバー付きラムダ",
+        content:
+          "レシーバー付きラムダ（Lambda with Receiver）はKotlinのDSL構築の基盤となる機能です。通常のラムダ式 (引数) -> 戻り値 に対して、レシーバー型を追加した レシーバー型.(引数) -> 戻り値 という関数型です。ラムダ内で this でレシーバーオブジェクトにアクセスでき、レシーバーのメンバーを直接呼び出せます。標準ライブラリの apply, run, with もこの仕組みで実装されています。拡張関数と組み合わせることで、自然な記述のDSLを構築できます。",
+        code: `// 通常のラムダ
+val normalLambda: (StringBuilder) -> Unit = { sb ->
+    sb.append("Hello")
+    sb.append(" World")
+}
+
+// レシーバー付きラムダ: this で StringBuilder にアクセス
+val receiverLambda: StringBuilder.() -> Unit = {
+    append("Hello")   // this.append("Hello") と同じ
+    append(" World")
+}
+
+// 実行方法
+val sb1 = StringBuilder()
+normalLambda(sb1)
+
+val sb2 = StringBuilder()
+sb2.receiverLambda()  // レシーバーオブジェクトに対して呼び出し
+
+// buildString の自作実装
+fun buildString(action: StringBuilder.() -> Unit): String {
+    val sb = StringBuilder()
+    sb.action()  // レシーバー付きラムダを呼び出し
+    return sb.toString()
+}
+
+val result = buildString {
+    append("Kotlin ")
+    append("DSL ")
+    append("構築")
+}
+println(result)  // Kotlin DSL 構築
+
+// 実用例: 設定ビルダー
+class ServerConfig {
+    var host: String = "localhost"
+    var port: Int = 8080
+    var maxConnections: Int = 100
+    var ssl: Boolean = false
+
+    override fun toString() =
+        "Server(\${host}:\${port}, maxConn=\${maxConnections}, ssl=\${ssl})"
+}
+
+fun server(config: ServerConfig.() -> Unit): ServerConfig {
+    return ServerConfig().apply(config)
+}
+
+val myServer = server {
+    host = "api.example.com"
+    port = 443
+    maxConnections = 500
+    ssl = true
+}
+println(myServer)  // Server(api.example.com:443, maxConn=500, ssl=true)`,
+      },
+      {
+        title: "型安全ビルダー",
+        content:
+          "型安全ビルダー（Type-safe Builder）はレシーバー付きラムダを組み合わせて、階層的な構造をDSLとして記述するパターンです。各レベルのビルダークラスがレシーバーとして機能し、ネストされたラムダで子要素を追加します。コンパイル時に型チェックが行われるため、不正な構造はコンパイルエラーになります。HTML、設定ファイル、テスト仕様などの階層構造を直感的に記述できます。",
+        code: `// メニューDSLの例
+class MenuItem(val name: String, val price: Int)
+
+class MenuCategory(val name: String) {
+    private val items = mutableListOf<MenuItem>()
+
+    fun item(name: String, price: Int) {
+        items.add(MenuItem(name, price))
+    }
+
+    fun display() {
+        println("【\${name}】")
+        items.forEach { println("  \${it.name}: \${it.price}円") }
+    }
+}
+
+class Menu(val restaurantName: String) {
+    private val categories = mutableListOf<MenuCategory>()
+
+    fun category(name: String, init: MenuCategory.() -> Unit) {
+        val cat = MenuCategory(name)
+        cat.init()
+        categories.add(cat)
+    }
+
+    fun display() {
+        println("=== \${restaurantName} メニュー ===")
+        categories.forEach { it.display() }
+    }
+}
+
+fun menu(name: String, init: Menu.() -> Unit): Menu {
+    val m = Menu(name)
+    m.init()
+    return m
+}
+
+// DSL として使用
+val lunchMenu = menu("Kotlin食堂") {
+    category("メイン") {
+        item("カレーライス", 800)
+        item("ハンバーグ定食", 950)
+        item("パスタセット", 900)
+    }
+    category("ドリンク") {
+        item("コーヒー", 300)
+        item("紅茶", 300)
+        item("オレンジジュース", 250)
+    }
+    category("デザート") {
+        item("ケーキ", 400)
+        item("アイスクリーム", 350)
+    }
+}
+lunchMenu.display()
+// === Kotlin食堂 メニュー ===
+// 【メイン】
+//   カレーライス: 800円
+//   ハンバーグ定食: 950円
+//   パスタセット: 900円
+// 【ドリンク】
+//   ...`,
+      },
+      {
+        title: "@DslMarker によるスコープ制御",
+        content:
+          "@DslMarker はDSL構築時にレシーバーのスコープを制御するためのメタアノテーションです。ネストされたラムダ内で外側のレシーバーに暗黙的にアクセスすることを禁止し、誤った使い方をコンパイルエラーで防ぎます。例えば、HTML DSLでtableタグの中に直接tdタグを書くことを防げます。@DslMarker を付けたアノテーションをビルダークラスに適用することで、DSLの構造的な正しさを型システムで保証できます。",
+        code: `// DslMarker アノテーションの定義
+@DslMarker
+annotation class FormDsl
+
+// フォームDSL のビルダークラス群
+@FormDsl
+class Form(val action: String) {
+    private val fields = mutableListOf<FormField>()
+    private val buttons = mutableListOf<String>()
+
+    fun textField(init: TextField.() -> Unit) {
+        val field = TextField()
+        field.init()
+        fields.add(field)
+    }
+
+    fun selectField(init: SelectField.() -> Unit) {
+        val field = SelectField()
+        field.init()
+        fields.add(field)
+    }
+
+    fun submitButton(label: String) {
+        buttons.add(label)
+    }
+
+    fun render(): String = buildString {
+        appendLine("<form action=\"\${action}\">")
+        fields.forEach { appendLine("  \${it.render()}") }
+        buttons.forEach { appendLine("  <button type=\"submit\">\${it}</button>") }
+        appendLine("</form>")
+    }
+}
+
+@FormDsl
+abstract class FormField {
+    var name: String = ""
+    var label: String = ""
+    var required: Boolean = false
+    abstract fun render(): String
+}
+
+@FormDsl
+class TextField : FormField() {
+    var placeholder: String = ""
+    var maxLength: Int = 255
+
+    override fun render(): String {
+        val req = if (required) " required" else ""
+        return "<label>\${label}</label>" +
+            "<input type=\"text\" name=\"\${name}\" " +
+            "placeholder=\"\${placeholder}\" maxlength=\"\${maxLength}\"\${req}>"
+    }
+}
+
+@FormDsl
+class SelectField : FormField() {
+    private val options = mutableListOf<Pair<String, String>>()
+
+    fun option(value: String, label: String) {
+        options.add(value to label)
+    }
+
+    override fun render(): String = buildString {
+        append("<label>\${label}</label><select name=\"\${name}\">")
+        options.forEach { (v, l) -> append("<option value=\"\${v}\">\${l}</option>") }
+        append("</select>")
+    }
+}
+
+// DSLエントリポイント
+fun form(action: String, init: Form.() -> Unit): Form {
+    return Form(action).apply(init)
+}
+
+// 使用例
+val loginForm = form("/login") {
+    textField {
+        name = "username"
+        label = "ユーザー名"
+        placeholder = "メールアドレスを入力"
+        required = true
+        // submitButton("送信")  // コンパイルエラー！@DslMarker により外側スコープにアクセス不可
+    }
+    submitButton("ログイン")
+}
+println(loginForm.render())`,
+      },
+      {
+        title: "HTML DSL の実装例",
+        content:
+          "HTML DSLはKotlinのDSL構築の代表的な応用例です。kotlinx.html ライブラリが公式に提供されていますが、ここではDSL構築の理解を深めるために、HTMLの基本構造を型安全に生成するDSLを自作します。各HTMLタグをビルダークラスとして定義し、レシーバー付きラムダでネスト構造を表現します。属性の設定、テキストコンテンツの追加、子要素の追加をすべて型安全に行えるようにします。",
+        code: `// HTML DSL の基盤
+@DslMarker
+annotation class HtmlDsl
+
+@HtmlDsl
+open class Tag(val name: String) {
+    val children = mutableListOf<Any>()  // Tag または String
+    val attributes = mutableMapOf<String, String>()
+
+    fun attr(key: String, value: String) {
+        attributes[key] = value
+    }
+
+    operator fun String.unaryPlus() {
+        children.add(this)
+    }
+
+    override fun toString(): String = buildString {
+        append("<\${name}")
+        attributes.forEach { (k, v) -> append(" \${k}=\"\${v}\"") }
+        append(">")
+        children.forEach { append(it.toString()) }
+        append("</\${name}>")
+    }
+}
+
+class HTML : Tag("html") {
+    fun head(init: Head.() -> Unit) = initTag(Head(), init)
+    fun body(init: Body.() -> Unit) = initTag(Body(), init)
+}
+
+class Head : Tag("head") {
+    fun title(text: String) {
+        val t = Tag("title")
+        t.children.add(text)
+        children.add(t)
+    }
+    fun meta(charset: String) {
+        val m = Tag("meta")
+        m.attr("charset", charset)
+        children.add(m)
+    }
+}
+
+class Body : Tag("body") {
+    fun h1(init: Tag.() -> Unit) = initTag(Tag("h1"), init)
+    fun p(init: Tag.() -> Unit) = initTag(Tag("p"), init)
+    fun div(init: Div.() -> Unit) = initTag(Div(), init)
+    fun ul(init: UL.() -> Unit) = initTag(UL(), init)
+    fun a(href: String, init: Tag.() -> Unit) {
+        val a = Tag("a")
+        a.attr("href", href)
+        a.init()
+        children.add(a)
+    }
+}
+
+class Div : Tag("div") {
+    fun p(init: Tag.() -> Unit) = initTag(Tag("p"), init)
+    fun h2(init: Tag.() -> Unit) = initTag(Tag("h2"), init)
+}
+
+class UL : Tag("ul") {
+    fun li(init: Tag.() -> Unit) = initTag(Tag("li"), init)
+}
+
+fun <T : Tag> Tag.initTag(tag: T, init: T.() -> Unit): T {
+    tag.init()
+    children.add(tag)
+    return tag
+}
+
+// DSL エントリポイント
+fun html(init: HTML.() -> Unit): HTML = HTML().apply(init)
+
+// 使用例
+val page = html {
+    head {
+        meta("UTF-8")
+        title("Kotlin DSL サンプル")
+    }
+    body {
+        h1 { +"Kotlin DSL へようこそ" }
+        div {
+            attr("class", "content")
+            h2 { +"特徴" }
+            p { +"型安全にHTMLを構築できます" }
+        }
+        ul {
+            li { +"簡潔な構文" }
+            li { +"コンパイル時チェック" }
+            li { +"IDEサポート" }
+        }
+        a("https://kotlinlang.org") { +"Kotlin公式サイト" }
+    }
+}
+println(page)`,
+      },
+      {
+        title: "テスト DSL の実装例",
+        content:
+          "テストDSLはBDD（振る舞い駆動開発）スタイルのテスト記述を実現するDSLです。KotlinのテストフレームワークであるKotestやSpekもDSLを活用しています。ここでは、given-when-then スタイルのテスト仕様をDSLで記述する例を示します。infix関数やレシーバー付きラムダを組み合わせることで、自然言語に近いテストコードを実現できます。実プロジェクトではKotestなどのライブラリを使うことが推奨されます。",
+        code: `// テスト DSL の定義
+@DslMarker
+annotation class TestDsl
+
+@TestDsl
+class TestSuite(val name: String) {
+    private val specs = mutableListOf<TestSpec>()
+    private var passCount = 0
+    private var failCount = 0
+
+    fun scenario(name: String, init: TestSpec.() -> Unit) {
+        val spec = TestSpec(name)
+        spec.init()
+        specs.add(spec)
+    }
+
+    fun run() {
+        println("テストスイート: \${name}")
+        println("=".repeat(50))
+        specs.forEach { spec ->
+            try {
+                spec.execute()
+                passCount++
+                println("  ✓ \${spec.name}")
+            } catch (e: AssertionError) {
+                failCount++
+                println("  ✗ \${spec.name}: \${e.message}")
+            }
+        }
+        println("=".repeat(50))
+        println("結果: \${passCount} 成功, \${failCount} 失敗")
+    }
+}
+
+@TestDsl
+class TestSpec(val name: String) {
+    private var givenBlock: (() -> Unit)? = null
+    private var whenBlock: (() -> Unit)? = null
+    private var thenBlock: (() -> Unit)? = null
+
+    fun given(description: String, block: () -> Unit) {
+        givenBlock = block
+    }
+
+    fun whenever(description: String, block: () -> Unit) {
+        whenBlock = block
+    }
+
+    fun then(description: String, block: () -> Unit) {
+        thenBlock = block
+    }
+
+    fun execute() {
+        givenBlock?.invoke()
+        whenBlock?.invoke()
+        thenBlock?.invoke()
+    }
+}
+
+// アサーション用の infix 関数
+infix fun <T> T.shouldBe(expected: T) {
+    if (this != expected) {
+        throw AssertionError("期待値: \${expected}, 実際: \${this}")
+    }
+}
+
+infix fun <T> Collection<T>.shouldContain(element: T) {
+    if (!this.contains(element)) {
+        throw AssertionError("\${this} に \${element} が含まれていません")
+    }
+}
+
+fun Boolean.shouldBeTrue() {
+    if (!this) throw AssertionError("true が期待されましたが false でした")
+}
+
+// DSL エントリポイント
+fun describe(name: String, init: TestSuite.() -> Unit): TestSuite {
+    return TestSuite(name).apply(init)
+}
+
+// 使用例
+val tests = describe("電卓のテスト") {
+    scenario("足し算が正しく動作する") {
+        var result = 0
+        given("2つの数値がある") { }
+        whenever("足し算を実行する") { result = 2 + 3 }
+        then("正しい結果が返る") { result shouldBe 5 }
+    }
+
+    scenario("リストのフィルタリング") {
+        var filtered = emptyList<Int>()
+        given("数値リストがある") { }
+        whenever("偶数をフィルタする") {
+            filtered = listOf(1, 2, 3, 4, 5).filter { it % 2 == 0 }
+        }
+        then("偶数のみ残る") {
+            filtered shouldBe listOf(2, 4)
+            filtered shouldContain 2
+        }
+    }
+}
+tests.run()`,
+      },
+    ],
+  },
+  // ===== Android Kotlin基礎 =====
+  {
+    id: "android-basics",
+    title: "Android Kotlin基礎",
+    category: "android",
+    description:
+      "Activity/Fragment、ViewModel/LiveData、ViewBinding、Jetpack Compose基礎、ナビゲーションなどAndroid開発の基礎をKotlinで学ぶ",
+    sections: [
+      {
+        title: "Activity と Fragment",
+        content:
+          "ActivityはAndroidアプリの画面を表す基本コンポーネントです。Kotlinでは簡潔な記法でActivityを定義でき、Javaの冗長なボイラープレートが大幅に削減されます。FragmentはActivity内で再利用可能なUI部品で、画面の一部を担当します。KTX拡張により、Fragmentの取得やトランザクションがより直感的に書けます。ライフサイクルを理解し、適切にリソース管理を行うことが重要です。",
+        code: `// Activity の定義
+class MainActivity : AppCompatActivity() {
+
+    // ViewBinding を使ったビューの参照
+    private lateinit var binding: ActivityMainBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        // ビューの操作
+        binding.greetingText.text = "こんにちは、Kotlin！"
+        binding.actionButton.setOnClickListener {
+            showMessage("ボタンが押されました")
+        }
+
+        // Fragment の追加
+        if (savedInstanceState == null) {
+            supportFragmentManager.commit {
+                replace(R.id.fragmentContainer, HomeFragment())
+            }
+        }
+    }
+
+    private fun showMessage(msg: String) {
+        Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
+    }
+}
+
+// Fragment の定義
+class HomeFragment : Fragment(R.layout.fragment_home) {
+
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentHomeBinding.bind(view)
+
+        binding.titleText.text = "ホーム画面"
+        binding.refreshButton.setOnClickListener {
+            loadData()
+        }
+    }
+
+    private fun loadData() {
+        // データ読み込み処理
+        binding.statusText.text = "データを読み込みました"
+    }
+
+    // メモリリーク防止のためbindingを解放
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}
+
+// Intent による画面遷移（KTX拡張）
+fun navigateToDetail(context: Context, itemId: Long) {
+    val intent = Intent(context, DetailActivity::class.java).apply {
+        putExtra("ITEM_ID", itemId)
+        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    }
+    context.startActivity(intent)
+}`,
+      },
+      {
+        title: "ViewModel と LiveData",
+        content:
+          "ViewModelはUIに関連するデータを保持し、画面の回転などの構成変更を跨いでデータを保持するJetpackコンポーネントです。LiveDataはライフサイクルを認識するオブザーバブルなデータホルダーで、Activityの状態に応じて自動的に更新を通知・停止します。ViewModelとLiveDataを組み合わせることで、UIとビジネスロジックを分離した堅牢なアーキテクチャを構築できます。StateFlowやSharedFlowを使ったCoroutinesベースのアプローチも近年主流になっています。",
+        code: `// ViewModel の定義
+class TaskViewModel(
+    private val repository: TaskRepository
+) : ViewModel() {
+
+    // LiveData: UIが監視するデータ
+    private val _tasks = MutableLiveData<List<Task>>()
+    val tasks: LiveData<List<Task>> = _tasks
+
+    // ローディング状態
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    // エラーメッセージ（イベントとして1回だけ消費）
+    private val _errorMessage = MutableLiveData<Event<String>>()
+    val errorMessage: LiveData<Event<String>> = _errorMessage
+
+    init {
+        loadTasks()
+    }
+
+    fun loadTasks() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val result = repository.getTasks()
+                _tasks.value = result
+            } catch (e: Exception) {
+                _errorMessage.value = Event("読み込み失敗: \${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun addTask(title: String) {
+        viewModelScope.launch {
+            try {
+                repository.addTask(Task(title = title))
+                loadTasks()  // リストを更新
+            } catch (e: Exception) {
+                _errorMessage.value = Event("追加失敗: \${e.message}")
+            }
+        }
+    }
+}
+
+// Activity で ViewModel を使用
+class TaskActivity : AppCompatActivity() {
+
+    // ViewModel の取得（by viewModels デリゲート）
+    private val viewModel: TaskViewModel by viewModels {
+        TaskViewModelFactory(TaskRepository(database.taskDao()))
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // LiveData の監視
+        viewModel.tasks.observe(this) { tasks ->
+            // UIを更新（RecyclerView等）
+            adapter.submitList(tasks)
+        }
+
+        viewModel.isLoading.observe(this) { isLoading ->
+            binding.progressBar.isVisible = isLoading
+        }
+
+        viewModel.errorMessage.observe(this) { event ->
+            event.getContentIfNotHandled()?.let { message ->
+                Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
+            }
+        }
+    }
+}
+
+// StateFlow を使った現代的なアプローチ
+class ModernViewModel(
+    private val repository: TaskRepository
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(TaskUiState())
+    val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
+
+    fun loadTasks() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val tasks = repository.getTasks()
+                _uiState.update { it.copy(tasks = tasks, isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message, isLoading = false) }
+            }
+        }
+    }
+}
+
+data class TaskUiState(
+    val tasks: List<Task> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)`,
+      },
+      {
+        title: "ViewBinding",
+        content:
+          "ViewBindingはXMLレイアウトのビューに型安全にアクセスするための仕組みです。findViewById を使う従来の方法に比べて、NullPointerExceptionや型キャストエラーのリスクがなく、コンパイル時にビューの存在と型が保証されます。レイアウトファイルごとにバインディングクラスが自動生成され、各ビューのIDに対応するプロパティが用意されます。build.gradleで有効化するだけで使い始められ、DataBindingよりも軽量です。",
+        code: `// build.gradle.kts での有効化
+// android {
+//     buildFeatures {
+//         viewBinding = true
+//     }
+// }
+
+// activity_main.xml に対して ActivityMainBinding が自動生成される
+// <LinearLayout>
+//     <TextView android:id="@+id/titleText" ... />
+//     <Button android:id="@+id/submitButton" ... />
+//     <RecyclerView android:id="@+id/itemList" ... />
+// </LinearLayout>
+
+// Activity での使用
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // レイアウトのインフレートとバインディングの取得
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        // 型安全にビューにアクセス（findViewByIdは不要）
+        binding.titleText.text = "タスク一覧"
+        binding.submitButton.setOnClickListener {
+            handleSubmit()
+        }
+
+        // RecyclerView のセットアップ
+        binding.itemList.apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = TaskAdapter()
+        }
+    }
+
+    private fun handleSubmit() {
+        binding.submitButton.isEnabled = false
+        binding.titleText.text = "送信中..."
+    }
+}
+
+// Fragment での使用（メモリリーク防止が重要）
+class ItemFragment : Fragment(R.layout.fragment_item) {
+
+    // Fragment のビューのライフサイクルに合わせて管理
+    private var _binding: FragmentItemBinding? = null
+    private val binding get() = _binding!!
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentItemBinding.bind(view)
+
+        binding.itemName.text = "サンプルアイテム"
+        binding.itemDescription.text = "これは説明文です"
+        binding.deleteButton.setOnClickListener {
+            deleteItem()
+        }
+    }
+
+    private fun deleteItem() {
+        binding.deleteButton.isEnabled = false
+        // 削除処理
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null  // メモリリーク防止
+    }
+}
+
+// RecyclerView の ViewHolder でも ViewBinding を活用
+class TaskViewHolder(
+    private val binding: ItemTaskBinding
+) : RecyclerView.ViewHolder(binding.root) {
+
+    fun bind(task: Task) {
+        binding.taskTitle.text = task.title
+        binding.taskDate.text = task.createdAt.format()
+        binding.taskCheckbox.isChecked = task.isCompleted
+        binding.taskCheckbox.setOnCheckedChangeListener { _, checked ->
+            onTaskChecked(task.id, checked)
+        }
+    }
+
+    companion object {
+        fun create(parent: ViewGroup): TaskViewHolder {
+            val binding = ItemTaskBinding.inflate(
+                LayoutInflater.from(parent.context), parent, false
+            )
+            return TaskViewHolder(binding)
+        }
+    }
+}`,
+      },
+      {
+        title: "Jetpack Compose 基礎",
+        content:
+          "Jetpack ComposeはAndroidの宣言的UIフレームワークです。XMLレイアウトの代わりにKotlinコードでUIを記述し、状態の変化に応じて自動的にUIを再描画（リコンポジション）します。@Composable関数でUI要素を定義し、remember や mutableStateOf で状態を管理します。Composeを使うことで、UIコードが大幅に簡潔になり、プレビュー機能によりリアルタイムでUIを確認しながら開発できます。",
+        code: `// 基本的な Composable 関数
+@Composable
+fun Greeting(name: String, modifier: Modifier = Modifier) {
+    Text(
+        text = "こんにちは、\${name}さん！",
+        modifier = modifier.padding(16.dp),
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold
+    )
+}
+
+// 状態管理
+@Composable
+fun Counter() {
+    var count by remember { mutableStateOf(0) }
+
+    Column(
+        modifier = Modifier.padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "カウント: \${count}",
+            fontSize = 24.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { count-- }) {
+                Text("−")
+            }
+            Button(onClick = { count++ }) {
+                Text("＋")
+            }
+        }
+    }
+}
+
+// リスト表示
+@Composable
+fun TaskList(tasks: List<Task>, onToggle: (Task) -> Unit) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(tasks, key = { it.id }) { task ->
+            TaskCard(task = task, onToggle = { onToggle(task) })
+        }
+    }
+}
+
+@Composable
+fun TaskCard(task: Task, onToggle: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = task.isCompleted,
+                onCheckedChange = { onToggle() }
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = task.title,
+                    fontWeight = FontWeight.Medium,
+                    textDecoration = if (task.isCompleted)
+                        TextDecoration.LineThrough else TextDecoration.None
+                )
+                Text(
+                    text = task.dueDate ?: "期限なし",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+// ViewModel と連携
+@Composable
+fun TaskScreen(viewModel: TaskViewModel = viewModel()) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when {
+        uiState.isLoading -> CircularProgressIndicator()
+        uiState.error != null -> ErrorMessage(uiState.error!!)
+        else -> TaskList(
+            tasks = uiState.tasks,
+            onToggle = { viewModel.toggleTask(it) }
+        )
+    }
+}`,
+      },
+      {
+        title: "ナビゲーション",
+        content:
+          "Navigation ComponentはAndroidアプリの画面遷移を管理するJetpackライブラリです。ナビゲーショングラフでアプリの画面構成を定義し、Safe Argsプラグインで型安全に引数を受け渡せます。FragmentベースとComposeベースの両方に対応しています。バックスタックの管理、ディープリンク、ボトムナビゲーションとの統合など、画面遷移に関する多くの課題を統一的に解決できます。",
+        code: `// Compose Navigation の定義
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+        // ホーム画面
+        composable("home") {
+            HomeScreen(
+                onTaskClick = { taskId ->
+                    navController.navigate("detail/\${taskId}")
+                },
+                onSettingsClick = {
+                    navController.navigate("settings")
+                }
+            )
+        }
+
+        // 詳細画面（引数付き）
+        composable(
+            route = "detail/{taskId}",
+            arguments = listOf(
+                navArgument("taskId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getLong("taskId") ?: 0L
+            DetailScreen(
+                taskId = taskId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // 設定画面
+        composable("settings") {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
+
+// Sealed class でルートを型安全に管理
+sealed class Screen(val route: String) {
+    object Home : Screen("home")
+    object Settings : Screen("settings")
+    data class Detail(val taskId: Long) : Screen("detail/\${taskId}") {
+        companion object {
+            const val ROUTE = "detail/{taskId}"
+        }
+    }
+}
+
+// ボトムナビゲーション付きレイアウト
+@Composable
+fun MainScreen() {
+    val navController = rememberNavController()
+    val items = listOf(
+        BottomNavItem("ホーム", Icons.Default.Home, "home"),
+        BottomNavItem("検索", Icons.Default.Search, "search"),
+        BottomNavItem("設定", Icons.Default.Settings, "settings")
+    )
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                val currentRoute = navController
+                    .currentBackStackEntryAsState().value
+                    ?.destination?.route
+
+                items.forEach { item ->
+                    NavigationBarItem(
+                        icon = { Icon(item.icon, item.label) },
+                        label = { Text(item.label) },
+                        selected = currentRoute == item.route,
+                        onClick = {
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        NavHost(
+            navController = navController,
+            startDestination = "home",
+            modifier = Modifier.padding(padding)
+        ) {
+            composable("home") { HomeScreen(navController) }
+            composable("search") { SearchScreen(navController) }
+            composable("settings") { SettingsScreen(navController) }
+        }
+    }
+}
+
+data class BottomNavItem(
+    val label: String,
+    val icon: ImageVector,
+    val route: String
+)`,
+      },
+    ],
+  },
+  // ===== Android実践パターン =====
+  {
+    id: "android-advanced",
+    title: "Android実践パターン",
+    category: "android",
+    description:
+      "Room DB、Retrofit + Coroutines、Hilt DI、WorkManager、DataStoreなどAndroid実践的な開発パターンをKotlinで学ぶ",
+    sections: [
+      {
+        title: "Room データベース",
+        content:
+          "RoomはSQLiteのラッパーライブラリで、型安全なデータベースアクセスを提供するJetpackコンポーネントです。@Entity でテーブルを、@Dao でデータアクセスオブジェクトを、@Database でデータベースを定義します。Kotlin Coroutines や Flow との統合により、非同期かつリアクティブなデータベース操作が可能です。コンパイル時にSQLの検証が行われるため、実行時エラーを未然に防げます。",
+        code: `// Entity（テーブル定義）
+@Entity(tableName = "tasks")
+data class TaskEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    @ColumnInfo(name = "title")
+    val title: String,
+    @ColumnInfo(name = "description")
+    val description: String? = null,
+    @ColumnInfo(name = "is_completed")
+    val isCompleted: Boolean = false,
+    @ColumnInfo(name = "created_at")
+    val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "priority")
+    val priority: Int = 0
+)
+
+// DAO（データアクセスオブジェクト）
+@Dao
+interface TaskDao {
+    // Flow で変更をリアクティブに監視
+    @Query("SELECT * FROM tasks ORDER BY priority DESC, created_at DESC")
+    fun getAllTasks(): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks WHERE id = :taskId")
+    suspend fun getTaskById(taskId: Long): TaskEntity?
+
+    @Query("SELECT * FROM tasks WHERE is_completed = :completed")
+    fun getTasksByStatus(completed: Boolean): Flow<List<TaskEntity>>
+
+    @Query("SELECT COUNT(*) FROM tasks WHERE is_completed = 0")
+    fun getIncompleteCount(): Flow<Int>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(task: TaskEntity): Long
+
+    @Update
+    suspend fun update(task: TaskEntity)
+
+    @Delete
+    suspend fun delete(task: TaskEntity)
+
+    @Query("DELETE FROM tasks WHERE is_completed = 1")
+    suspend fun deleteCompleted(): Int
+
+    // トランザクション
+    @Transaction
+    suspend fun replaceAll(tasks: List<TaskEntity>) {
+        deleteAll()
+        insertAll(tasks)
+    }
+
+    @Query("DELETE FROM tasks")
+    suspend fun deleteAll()
+
+    @Insert
+    suspend fun insertAll(tasks: List<TaskEntity>)
+}
+
+// Database 定義
+@Database(
+    entities = [TaskEntity::class],
+    version = 1,
+    exportSchema = true
+)
+@TypeConverters(Converters::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun taskDao(): TaskDao
+
+    companion object {
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
+
+        fun getInstance(context: Context): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "app_database"
+                )
+                .addMigrations(MIGRATION_1_2)
+                .build()
+                .also { INSTANCE = it }
+            }
+        }
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN due_date INTEGER")
+            }
+        }
+    }
+}
+
+// Repository での使用
+class TaskRepository(private val dao: TaskDao) {
+    val allTasks: Flow<List<TaskEntity>> = dao.getAllTasks()
+
+    suspend fun addTask(title: String, description: String? = null) {
+        dao.insert(TaskEntity(title = title, description = description))
+    }
+
+    suspend fun toggleComplete(task: TaskEntity) {
+        dao.update(task.copy(isCompleted = !task.isCompleted))
+    }
+}`,
+      },
+      {
+        title: "Retrofit と Coroutines",
+        content:
+          "RetrofitはHTTPクライアントライブラリで、REST APIとの通信を型安全なインターフェースとして定義できます。Kotlin Coroutinesと組み合わせることで、suspend関数としてAPI呼び出しを定義し、非同期通信を同期的なコードのように記述できます。OkHttpインターセプターでログ出力や認証トークンの付与を行い、Gsonやkotlinx.serializationでJSONの自動変換を行います。",
+        code: `// API インターフェースの定義
+interface ApiService {
+    @GET("users")
+    suspend fun getUsers(): List<UserResponse>
+
+    @GET("users/{id}")
+    suspend fun getUser(@Path("id") userId: Long): UserResponse
+
+    @POST("users")
+    suspend fun createUser(@Body request: CreateUserRequest): UserResponse
+
+    @PUT("users/{id}")
+    suspend fun updateUser(
+        @Path("id") userId: Long,
+        @Body request: UpdateUserRequest
+    ): UserResponse
+
+    @DELETE("users/{id}")
+    suspend fun deleteUser(@Path("id") userId: Long)
+
+    @GET("users")
+    suspend fun searchUsers(
+        @Query("q") query: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): PaginatedResponse<UserResponse>
+}
+
+// データクラス
+@Serializable
+data class UserResponse(
+    val id: Long,
+    val name: String,
+    val email: String,
+    @SerialName("created_at")
+    val createdAt: String
+)
+
+@Serializable
+data class CreateUserRequest(
+    val name: String,
+    val email: String
+)
+
+// Retrofit インスタンスの構築
+object ApiClient {
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        })
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("Authorization", "Bearer \${TokenManager.getToken()}")
+                .addHeader("Accept", "application/json")
+                .build()
+            chain.proceed(request)
+        }
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    val apiService: ApiService = Retrofit.Builder()
+        .baseUrl("https://api.example.com/v1/")
+        .client(okHttpClient)
+        .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
+        .build()
+        .create(ApiService::class.java)
+}
+
+// Repository での使用
+class UserRepository(private val api: ApiService) {
+    // 結果をResult型でラップ
+    suspend fun getUsers(): Result<List<UserResponse>> {
+        return try {
+            Result.success(api.getUsers())
+        } catch (e: HttpException) {
+            Result.failure(ApiError("API エラー: \${e.code()}", e))
+        } catch (e: IOException) {
+            Result.failure(NetworkError("ネットワークエラー", e))
+        }
+    }
+
+    // Flow でページネーション
+    fun searchUsers(query: String): Flow<PagingData<UserResponse>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            pagingSourceFactory = { UserPagingSource(api, query) }
+        ).flow
+    }
+}
+
+// ViewModel での使用
+class UserViewModel(private val repository: UserRepository) : ViewModel() {
+    private val _users = MutableStateFlow<UiState<List<UserResponse>>>(UiState.Loading)
+    val users: StateFlow<UiState<List<UserResponse>>> = _users.asStateFlow()
+
+    fun loadUsers() {
+        viewModelScope.launch {
+            _users.value = UiState.Loading
+            repository.getUsers()
+                .onSuccess { _users.value = UiState.Success(it) }
+                .onFailure { _users.value = UiState.Error(it.message ?: "不明なエラー") }
+        }
+    }
+}`,
+      },
+      {
+        title: "Hilt による依存性注入",
+        content:
+          "HiltはAndroid向けの依存性注入（DI）フレームワークで、Dagger2の上に構築されています。アノテーションベースで依存関係を定義し、コンパイル時にDIコードが生成されるため、実行時のオーバーヘッドがありません。@HiltAndroidApp、@AndroidEntryPoint、@Inject、@Module、@Provides などのアノテーションで簡潔にDI設定を行えます。ViewModelへのインジェクションもシームレスにサポートされています。",
+        code: `// Application クラスに @HiltAndroidApp を付与
+@HiltAndroidApp
+class MyApplication : Application()
+
+// Module の定義（依存関係のバインディング）
+@Module
+@InstallIn(SingletonComponent::class)
+object NetworkModule {
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(HttpLoggingInterceptor())
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://api.example.com/v1/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideApiService(retrofit: Retrofit): ApiService {
+        return retrofit.create(ApiService::class.java)
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context, AppDatabase::class.java, "app_database"
+        ).build()
+    }
+
+    @Provides
+    fun provideTaskDao(database: AppDatabase): TaskDao {
+        return database.taskDao()
+    }
+}
+
+// Repository（コンストラクタインジェクション）
+@Singleton
+class TaskRepository @Inject constructor(
+    private val api: ApiService,
+    private val taskDao: TaskDao
+) {
+    fun getTasks(): Flow<List<Task>> = taskDao.getAllTasks()
+
+    suspend fun refreshTasks() {
+        val remoteTasks = api.getTasks()
+        taskDao.replaceAll(remoteTasks.map { it.toEntity() })
+    }
+
+    suspend fun addTask(task: Task) {
+        val entity = task.toEntity()
+        taskDao.insert(entity)
+        api.createTask(task.toRequest())
+    }
+}
+
+// ViewModel（@HiltViewModel で自動インジェクション）
+@HiltViewModel
+class TaskViewModel @Inject constructor(
+    private val repository: TaskRepository,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    val tasks = repository.getTasks()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun refresh() {
+        viewModelScope.launch {
+            repository.refreshTasks()
+        }
+    }
+}
+
+// Activity での使用
+@AndroidEntryPoint
+class TaskActivity : AppCompatActivity() {
+
+    // Hilt が自動的に ViewModel を提供
+    private val viewModel: TaskViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // viewModel は自動的に依存関係が注入済み
+        lifecycleScope.launch {
+            viewModel.tasks.collect { tasks ->
+                updateUI(tasks)
+            }
+        }
+    }
+}`,
+      },
+      {
+        title: "WorkManager",
+        content:
+          "WorkManagerはバックグラウンドタスクを確実に実行するためのJetpackライブラリです。アプリが終了してもデバイスが再起動しても、スケジュールされたタスクは保証されて実行されます。一回限りのタスク（OneTimeWorkRequest）と定期タスク（PeriodicWorkRequest）をサポートし、ネットワーク接続や充電状態などの制約条件を設定できます。タスクのチェーン実行や進捗の監視も可能です。",
+        code: `// Worker の定義
+class SyncWorker(
+    context: Context,
+    params: WorkerParameters
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        val userId = inputData.getLong("USER_ID", -1)
+        if (userId == -1L) return Result.failure()
+
+        return try {
+            // 進捗を通知
+            setProgress(workDataOf("progress" to 0))
+
+            // データの同期処理
+            val repository = getRepository()
+            val localData = repository.getLocalChanges(userId)
+
+            setProgress(workDataOf("progress" to 50))
+
+            repository.syncToServer(localData)
+
+            setProgress(workDataOf("progress" to 100))
+
+            // 成功時に結果データを返す
+            val outputData = workDataOf(
+                "SYNCED_COUNT" to localData.size,
+                "TIMESTAMP" to System.currentTimeMillis()
+            )
+            Result.success(outputData)
+        } catch (e: IOException) {
+            // リトライ（最大3回まで自動リトライ）
+            if (runAttemptCount < 3) Result.retry()
+            else Result.failure(workDataOf("ERROR" to e.message))
+        } catch (e: Exception) {
+            Result.failure(workDataOf("ERROR" to e.message))
+        }
+    }
+
+    private fun getRepository(): SyncRepository {
+        // Hilt を使う場合は @HiltWorker で自動注入可能
+        return SyncRepository(ApiClient.apiService)
+    }
+}
+
+// タスクのスケジュール
+class WorkScheduler(private val context: Context) {
+
+    private val workManager = WorkManager.getInstance(context)
+
+    // 一回限りのタスク
+    fun scheduleSyncNow(userId: Long) {
+        val inputData = workDataOf("USER_ID" to userId)
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiresBatteryNotLow(true)
+            .build()
+
+        val request = OneTimeWorkRequestBuilder<SyncWorker>()
+            .setInputData(inputData)
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                Duration.ofMinutes(1)
+            )
+            .addTag("sync")
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "sync_\${userId}",
+            ExistingWorkPolicy.REPLACE,
+            request
+        )
+    }
+
+    // 定期タスク（最短15分間隔）
+    fun schedulePeriodicSync() {
+        val request = PeriodicWorkRequestBuilder<SyncWorker>(
+            repeatInterval = 1, TimeUnit.HOURS,
+            flexInterval = 15, TimeUnit.MINUTES
+        )
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.UNMETERED)
+                    .setRequiresCharging(true)
+                    .build()
+            )
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            "periodic_sync",
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
+    }
+
+    // タスクの監視
+    fun observeSync(userId: Long): LiveData<WorkInfo> {
+        return workManager.getWorkInfosForUniqueWorkLiveData("sync_\${userId}")
+            .map { workInfos -> workInfos.firstOrNull() ?: return@map null }
+    }
+
+    // チェーンタスク
+    fun scheduleChainedWork() {
+        val download = OneTimeWorkRequestBuilder<DownloadWorker>().build()
+        val process = OneTimeWorkRequestBuilder<ProcessWorker>().build()
+        val upload = OneTimeWorkRequestBuilder<UploadWorker>().build()
+
+        workManager
+            .beginWith(download)
+            .then(process)
+            .then(upload)
+            .enqueue()
+    }
+}`,
+      },
+      {
+        title: "DataStore",
+        content:
+          "DataStoreはSharedPreferencesの後継として設計されたデータ永続化ライブラリです。Preferences DataStoreはキー・バリュー形式で、Proto DataStoreはProtocol Buffersベースの型安全なストレージを提供します。Kotlin CoroutinesとFlowの上に構築されており、非同期かつスレッドセーフにデータの読み書きが可能です。SharedPreferencesの同期的なブロッキングI/Oやコミットの失敗といった問題を解決します。",
+        code: `// Preferences DataStore の定義
+private val Context.settingsDataStore by preferencesDataStore(
+    name = "settings"
+)
+
+// キーの定義
+object PrefsKeys {
+    val DARK_MODE = booleanPreferencesKey("dark_mode")
+    val FONT_SIZE = intPreferencesKey("font_size")
+    val USER_NAME = stringPreferencesKey("user_name")
+    val LANGUAGE = stringPreferencesKey("language")
+    val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
+}
+
+// 設定リポジトリ
+class SettingsRepository(private val context: Context) {
+
+    // Flow でリアクティブに読み取り
+    val darkMode: Flow<Boolean> = context.settingsDataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences())
+            else throw exception
+        }
+        .map { preferences ->
+            preferences[PrefsKeys.DARK_MODE] ?: false
+        }
+
+    val fontSize: Flow<Int> = context.settingsDataStore.data
+        .map { it[PrefsKeys.FONT_SIZE] ?: 14 }
+
+    // 複数の設定をまとめて読み取り
+    val settings: Flow<AppSettings> = context.settingsDataStore.data
+        .map { prefs ->
+            AppSettings(
+                darkMode = prefs[PrefsKeys.DARK_MODE] ?: false,
+                fontSize = prefs[PrefsKeys.FONT_SIZE] ?: 14,
+                userName = prefs[PrefsKeys.USER_NAME] ?: "",
+                language = prefs[PrefsKeys.LANGUAGE] ?: "ja",
+                notificationEnabled = prefs[PrefsKeys.NOTIFICATION_ENABLED] ?: true
+            )
+        }
+
+    // 個別の設定を更新
+    suspend fun setDarkMode(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PrefsKeys.DARK_MODE] = enabled
+        }
+    }
+
+    suspend fun setFontSize(size: Int) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PrefsKeys.FONT_SIZE] = size
+        }
+    }
+
+    // 複数の設定を一括更新（アトミック）
+    suspend fun updateSettings(
+        darkMode: Boolean? = null,
+        fontSize: Int? = null,
+        language: String? = null
+    ) {
+        context.settingsDataStore.edit { preferences ->
+            darkMode?.let { preferences[PrefsKeys.DARK_MODE] = it }
+            fontSize?.let { preferences[PrefsKeys.FONT_SIZE] = it }
+            language?.let { preferences[PrefsKeys.LANGUAGE] = it }
+        }
+    }
+
+    // 全設定をクリア
+    suspend fun clearAll() {
+        context.settingsDataStore.edit { it.clear() }
+    }
+}
+
+data class AppSettings(
+    val darkMode: Boolean,
+    val fontSize: Int,
+    val userName: String,
+    val language: String,
+    val notificationEnabled: Boolean
+)
+
+// ViewModel での使用
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val repository: SettingsRepository
+) : ViewModel() {
+
+    val settings = repository.settings
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = AppSettings(
+                darkMode = false, fontSize = 14,
+                userName = "", language = "ja",
+                notificationEnabled = true
+            )
+        )
+
+    fun toggleDarkMode() {
+        viewModelScope.launch {
+            val current = settings.value.darkMode
+            repository.setDarkMode(!current)
+        }
+    }
+
+    fun updateFontSize(size: Int) {
+        viewModelScope.launch {
+            repository.setFontSize(size)
+        }
+    }
+}
+
+// Compose UI での使用
+@Composable
+fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        SwitchPreference(
+            title = "ダークモード",
+            checked = settings.darkMode,
+            onCheckedChange = { viewModel.toggleDarkMode() }
+        )
+        SliderPreference(
+            title = "フォントサイズ: \${settings.fontSize}",
+            value = settings.fontSize.toFloat(),
+            onValueChange = { viewModel.updateFontSize(it.toInt()) }
+        )
+    }
+}`,
+      },
+    ],
+  },
+  // ===== Kotlin Multiplatform =====
+  {
+    id: "multiplatform",
+    title: "Kotlin Multiplatform",
+    category: "ecosystem",
+    description:
+      "KMP（Kotlin Multiplatform）の概要、expect/actual、共有ロジック、Compose Multiplatform、プロジェクト構成を学ぶ",
+    sections: [
+      {
+        title: "KMP（Kotlin Multiplatform）概要",
+        content:
+          "Kotlin Multiplatform（KMP）はKotlinコードを複数のプラットフォーム（Android、iOS、Web、デスクトップ、サーバー）で共有するための技術です。ビジネスロジック、データ層、ネットワーク通信などを共通コード（commonMain）として記述し、UI部分は各プラットフォーム固有の技術で実装します。Compose Multiplatformを使えばUIも共有可能です。2023年にStable版となり、Netflix、McDonald's、VMwareなど多くの企業が採用しています。",
+        code: `// KMP プロジェクトの build.gradle.kts
+plugins {
+    kotlin("multiplatform") version "2.0.0"
+    id("com.android.library")
+}
+
+kotlin {
+    // ターゲットプラットフォームの定義
+    androidTarget {
+        compilations.all {
+            kotlinOptions { jvmTarget = "17" }
+        }
+    }
+
+    // iOS ターゲット
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    // JVM ターゲット（デスクトップ/サーバー）
+    jvm("desktop")
+
+    // ソースセットの設定
+    sourceSets {
+        // 共通コード
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+                implementation("io.ktor:ktor-client-core:2.3.8")
+            }
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
+        // Android 固有コード
+        val androidMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-android:2.3.8")
+            }
+        }
+
+        // iOS 固有コード
+        val iosMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation("io.ktor:ktor-client-darwin:2.3.8")
+            }
+        }
+
+        // デスクトップ固有コード
+        val desktopMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-cio:2.3.8")
+            }
+        }
+    }
+}
+
+// プロジェクト構造:
+// shared/
+//   src/
+//     commonMain/kotlin/   ← 共通コード
+//     androidMain/kotlin/  ← Android固有
+//     iosMain/kotlin/      ← iOS固有
+//     desktopMain/kotlin/  ← デスクトップ固有`,
+      },
+      {
+        title: "expect / actual メカニズム",
+        content:
+          "expect / actual はKMP における「プラットフォーム固有の実装を定義する」メカニズムです。commonMain で expect 宣言（インターフェースのようなもの）を定義し、各プラットフォームのソースセットで actual 実装を提供します。クラス、関数、プロパティ、オブジェクトに適用でき、コンパイル時にプラットフォームに応じた実装が選択されます。これにより、共通コードからプラットフォーム固有のAPIを型安全に呼び出せます。",
+        code: `// === commonMain === (共通コード)
+
+// expect 宣言: プラットフォーム固有の実装が必要
+expect class Platform() {
+    val name: String
+    val version: String
+}
+
+expect fun currentTimeMillis(): Long
+
+expect fun generateUUID(): String
+
+// expect クラス
+expect class FileStorage(basePath: String) {
+    suspend fun readText(fileName: String): String
+    suspend fun writeText(fileName: String, content: String)
+    suspend fun exists(fileName: String): Boolean
+}
+
+// 共通コードから expect を使用
+class AppInfo(private val platform: Platform) {
+    fun getDescription(): String {
+        return "アプリ v1.0 - \${platform.name} \${platform.version}"
+    }
+
+    fun generateId(): String {
+        val uuid = generateUUID()
+        val timestamp = currentTimeMillis()
+        return "\${uuid}-\${timestamp}"
+    }
+}
+
+// === androidMain === (Android 実装)
+actual class Platform actual constructor() {
+    actual val name: String = "Android"
+    actual val version: String = "\${Build.VERSION.SDK_INT}"
+}
+
+actual fun currentTimeMillis(): Long = System.currentTimeMillis()
+
+actual fun generateUUID(): String = java.util.UUID.randomUUID().toString()
+
+actual class FileStorage actual constructor(private val basePath: String) {
+    actual suspend fun readText(fileName: String): String {
+        return File(basePath, fileName).readText()
+    }
+    actual suspend fun writeText(fileName: String, content: String) {
+        File(basePath, fileName).writeText(content)
+    }
+    actual suspend fun exists(fileName: String): Boolean {
+        return File(basePath, fileName).exists()
+    }
+}
+
+// === iosMain === (iOS 実装)
+actual class Platform actual constructor() {
+    actual val name: String = UIDevice.currentDevice.systemName
+    actual val version: String = UIDevice.currentDevice.systemVersion
+}
+
+actual fun currentTimeMillis(): Long =
+    (NSDate().timeIntervalSince1970 * 1000).toLong()
+
+actual fun generateUUID(): String =
+    NSUUID().UUIDString()
+
+actual class FileStorage actual constructor(private val basePath: String) {
+    private val fileManager = NSFileManager.defaultManager
+    actual suspend fun readText(fileName: String): String {
+        val path = "\${basePath}/\${fileName}"
+        return NSString.stringWithContentsOfFile(path, NSUTF8StringEncoding, null)
+            ?: throw FileNotFoundException(path)
+    }
+    actual suspend fun writeText(fileName: String, content: String) {
+        val path = "\${basePath}/\${fileName}"
+        (content as NSString).writeToFile(path, true, NSUTF8StringEncoding, null)
+    }
+    actual suspend fun exists(fileName: String): Boolean {
+        return fileManager.fileExistsAtPath("\${basePath}/\${fileName}")
+    }
+}`,
+      },
+      {
+        title: "共有ロジック（ビジネスロジック・データ層）",
+        content:
+          "KMPの最大の利点は、ビジネスロジックとデータ層を一度だけ実装し、全プラットフォームで共有できることです。リポジトリパターン、ユースケース、バリデーション、データ変換ロジックなどを commonMain に配置します。Ktor（HTTP通信）、kotlinx.serialization（JSON変換）、SQLDelight（データベース）、kotlinx-datetime（日時処理）などのマルチプラットフォーム対応ライブラリを活用することで、プラットフォーム固有のコードを最小限に抑えられます。",
+        code: `// === commonMain === 共有ビジネスロジック
+
+// ドメインモデル
+data class Article(
+    val id: String,
+    val title: String,
+    val content: String,
+    val author: String,
+    val publishedAt: Instant,
+    val tags: List<String>
+)
+
+// API レスポンス
+@Serializable
+data class ArticleResponse(
+    val id: String,
+    val title: String,
+    val content: String,
+    val author: String,
+    @SerialName("published_at")
+    val publishedAt: String,
+    val tags: List<String>
+) {
+    fun toDomain(): Article = Article(
+        id = id,
+        title = title,
+        content = content,
+        author = author,
+        publishedAt = Instant.parse(publishedAt),
+        tags = tags
+    )
+}
+
+// API クライアント（Ktor を使用）
+class ArticleApi(private val httpClient: HttpClient) {
+    suspend fun getArticles(page: Int = 1): List<ArticleResponse> {
+        return httpClient.get("https://api.example.com/articles") {
+            parameter("page", page)
+            parameter("limit", 20)
+        }.body()
+    }
+
+    suspend fun getArticle(id: String): ArticleResponse {
+        return httpClient.get("https://api.example.com/articles/\${id}").body()
+    }
+
+    suspend fun searchArticles(query: String): List<ArticleResponse> {
+        return httpClient.get("https://api.example.com/articles/search") {
+            parameter("q", query)
+        }.body()
+    }
+}
+
+// リポジトリ（データ層の抽象化）
+class ArticleRepository(
+    private val api: ArticleApi,
+    private val cache: ArticleCache
+) {
+    suspend fun getArticles(forceRefresh: Boolean = false): List<Article> {
+        if (!forceRefresh) {
+            val cached = cache.getAll()
+            if (cached.isNotEmpty()) return cached
+        }
+
+        val articles = api.getArticles().map { it.toDomain() }
+        cache.saveAll(articles)
+        return articles
+    }
+
+    suspend fun getArticle(id: String): Article {
+        cache.get(id)?.let { return it }
+        val article = api.getArticle(id).toDomain()
+        cache.save(article)
+        return article
+    }
+}
+
+// ユースケース（ビジネスルール）
+class GetTrendingArticlesUseCase(
+    private val repository: ArticleRepository
+) {
+    suspend operator fun invoke(limit: Int = 10): List<Article> {
+        return repository.getArticles()
+            .sortedByDescending { it.publishedAt }
+            .take(limit)
+    }
+}
+
+// バリデーション（共有ロジック）
+object ArticleValidator {
+    fun validateTitle(title: String): ValidationResult {
+        return when {
+            title.isBlank() -> ValidationResult.Error("タイトルは必須です")
+            title.length < 5 -> ValidationResult.Error("タイトルは5文字以上")
+            title.length > 200 -> ValidationResult.Error("タイトルは200文字以内")
+            else -> ValidationResult.Valid
+        }
+    }
+}
+
+sealed class ValidationResult {
+    object Valid : ValidationResult()
+    data class Error(val message: String) : ValidationResult()
+}
+
+// Ktor HttpClient のファクトリ（プラットフォーム共通設定）
+fun createHttpClient(): HttpClient = HttpClient {
+    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+    install(Logging) { level = LogLevel.INFO }
+    install(HttpTimeout) {
+        requestTimeoutMillis = 30_000
+        connectTimeoutMillis = 10_000
+    }
+    defaultRequest {
+        header("Accept", "application/json")
+    }
+}`,
+      },
+      {
+        title: "Compose Multiplatform",
+        content:
+          "Compose MultiplatformはJetBrainsが開発する、Jetpack Composeを複数プラットフォーム（Android、iOS、デスクトップ、Web）に拡張するフレームワークです。同じComposable関数でUI を記述し、各プラットフォームのネイティブUIとしてレンダリングされます。iOS対応は2024年にStable版となり、Android開発者のスキルをそのまま活かしてクロスプラットフォーム開発ができるようになりました。",
+        code: `// === commonMain === 共有UI
+
+// 共通の Composable 関数
+@Composable
+fun App() {
+    MaterialTheme {
+        var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.List) }
+
+        when (val screen = currentScreen) {
+            is AppScreen.List -> ArticleListScreen(
+                onArticleClick = { currentScreen = AppScreen.Detail(it) }
+            )
+            is AppScreen.Detail -> ArticleDetailScreen(
+                articleId = screen.articleId,
+                onBack = { currentScreen = AppScreen.List }
+            )
+        }
+    }
+}
+
+sealed class AppScreen {
+    object List : AppScreen()
+    data class Detail(val articleId: String) : AppScreen()
+}
+
+// 記事一覧画面
+@Composable
+fun ArticleListScreen(
+    onArticleClick: (String) -> Unit,
+    viewModel: ArticleListViewModel = remember { ArticleListViewModel() }
+) {
+    val articles by viewModel.articles.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopAppBar(title = { Text("記事一覧") })
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(articles) { article ->
+                    ArticleCard(
+                        article = article,
+                        onClick = { onArticleClick(article.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// 共通UIコンポーネント
+@Composable
+fun ArticleCard(article: Article, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = article.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = article.author,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                article.tags.take(3).forEach { tag ->
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(tag, fontSize = 11.sp) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// === androidMain === Android エントリポイント
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent { App() }
+    }
+}
+
+// === iosMain === iOS エントリポイント
+fun MainViewController(): UIViewController {
+    return ComposeUIViewController { App() }
+}
+
+// === desktopMain === デスクトップエントリポイント
+fun main() = application {
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "Kotlin記事アプリ",
+        state = rememberWindowState(width = 900.dp, height = 700.dp)
+    ) {
+        App()
+    }
+}`,
+      },
+      {
+        title: "KMP プロジェクト構成と実践",
+        content:
+          "KMPプロジェクトを実際に構成する際は、共有モジュールとプラットフォーム固有モジュールを適切に分離することが重要です。shared モジュールにビジネスロジックとデータ層を配置し、各プラットフォームのアプリモジュールからそれを参照します。DIの設計、テスト戦略、CI/CD設定など、プロジェクト運用の観点も含めた実践的な構成方法を理解しましょう。KMP対応ライブラリのエコシステムも急速に成長しています。",
+        code: `// プロジェクト全体構造
+// my-kmp-app/
+// ├── build.gradle.kts          (ルート)
+// ├── settings.gradle.kts
+// ├── shared/                   (共有モジュール)
+// │   ├── build.gradle.kts
+// │   └── src/
+// │       ├── commonMain/kotlin/com/example/shared/
+// │       │   ├── di/           (DI設定)
+// │       │   ├── data/         (リポジトリ、API)
+// │       │   ├── domain/       (ユースケース、モデル)
+// │       │   └── util/         (ユーティリティ)
+// │       ├── androidMain/kotlin/
+// │       └── iosMain/kotlin/
+// ├── androidApp/               (Android アプリ)
+// │   ├── build.gradle.kts
+// │   └── src/main/
+// ├── iosApp/                   (iOS アプリ / Xcode)
+// │   └── iosApp/
+// └── desktopApp/               (デスクトップアプリ)
+
+// === shared/build.gradle.kts ===
+// KMP対応ライブラリの依存関係
+// commonMain {
+//   dependencies {
+//     // HTTP通信
+//     implementation("io.ktor:ktor-client-core:2.3.8")
+//     // JSON
+//     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+//     // 非同期処理
+//     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+//     // 日時
+//     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+//     // DI
+//     implementation("org.kodein.di:kodein-di:7.21.2")
+//     // DB
+//     implementation("app.cash.sqldelight:runtime:2.0.1")
+//     // 設定保存
+//     implementation("com.russhwolf:multiplatform-settings:1.1.1")
+//   }
+// }
+
+// === 共有モジュールの DI 設定 ===
+// commonMain
+class SharedModule {
+    val httpClient: HttpClient = createHttpClient()
+    val json: Json = Json { ignoreUnknownKeys = true }
+
+    // API
+    val articleApi: ArticleApi by lazy { ArticleApi(httpClient) }
+    val userApi: UserApi by lazy { UserApi(httpClient) }
+
+    // リポジトリ
+    val articleRepository: ArticleRepository by lazy {
+        ArticleRepository(articleApi, InMemoryArticleCache())
+    }
+
+    // ユースケース
+    val getTrendingArticles: GetTrendingArticlesUseCase by lazy {
+        GetTrendingArticlesUseCase(articleRepository)
+    }
+}
+
+// Androidアプリでの使用
+// androidApp/src/main/kotlin/
+class MyAndroidApp : Application() {
+    val shared = SharedModule()
+
+    override fun onCreate() {
+        super.onCreate()
+        // Android固有の初期化
+    }
+}
+
+// iOSアプリでの使用（Swift から呼び出し）
+// iOSHelper.kt (iosMain)
+object IosHelper {
+    private val shared = SharedModule()
+
+    fun getArticleRepository() = shared.articleRepository
+    fun getTrendingArticlesUseCase() = shared.getTrendingArticles
+}
+
+// Swift 側:
+// let useCase = IosHelper.shared.getTrendingArticlesUseCase()
+
+// === テスト（commonTest） ===
+class ArticleRepositoryTest {
+    private val fakeApi = FakeArticleApi()
+    private val cache = InMemoryArticleCache()
+    private val repository = ArticleRepository(fakeApi, cache)
+
+    @Test
+    fun getArticlesReturnsCachedData() = runTest {
+        // 初回はAPIから取得
+        val articles = repository.getArticles()
+        assertEquals(3, articles.size)
+
+        // 2回目はキャッシュから
+        fakeApi.shouldFail = true
+        val cached = repository.getArticles()
+        assertEquals(3, cached.size)
+    }
+}`,
+      },
+    ],
+  },
+
+  {
+    id: "error-handling",
+    title: "エラーハンドリング",
+    category: "features",
+    description:
+      "try/catch/finally、Result型、runCatching、sealed classによるエラーモデリング、Eitherパターンなど、Kotlinの堅牢なエラーハンドリング手法を学ぶ",
+    sections: [
+      {
+        title: "try / catch / finally",
+        content:
+          "Kotlinの例外処理はJavaと同様にtry/catch/finallyを使いますが、大きな違いとしてKotlinにはチェック例外がありません。すべての例外は非チェック例外として扱われるため、throws宣言が不要です。また、tryは式として値を返すことができるため、変数への代入が可能です。catchブロックでは複数の例外型をキャッチでき、finallyブロックはリソースの解放などに使います。use関数を使えば、AutoCloseableなリソースを安全に管理できます。",
+        code: `// try は式として値を返せる
+val number: Int = try {
+    "123".toInt()
+} catch (e: NumberFormatException) {
+    println("数値変換失敗: \${e.message}")
+    0  // デフォルト値
+}
+println(number)  // 123
+
+// 複数の例外をキャッチ
+fun readConfig(path: String): Map<String, String> {
+    return try {
+        val file = java.io.File(path)
+        file.readLines()
+            .filter { it.contains("=") }
+            .associate {
+                val (key, value) = it.split("=", limit = 2)
+                key.trim() to value.trim()
+            }
+    } catch (e: java.io.FileNotFoundException) {
+        println("設定ファイルが見つかりません: \${path}")
+        emptyMap()
+    } catch (e: java.io.IOException) {
+        println("読み取りエラー: \${e.message}")
+        emptyMap()
+    } finally {
+        println("設定ファイル読み込み処理完了")
+    }
+}
+
+// use 関数でリソースを安全に管理（try-with-resources相当）
+fun countLines(path: String): Int {
+    return java.io.BufferedReader(java.io.FileReader(path)).use { reader ->
+        reader.lineSequence().count()
+    }
+}
+
+// Nothing 型を返す関数（常に例外をスローする関数）
+fun fail(message: String): Nothing {
+    throw IllegalStateException(message)
+}
+
+val value: String = map["key"] ?: fail("キーが見つかりません")`,
+      },
+      {
+        title: "Result 型と runCatching",
+        content:
+          "Kotlin標準ライブラリのResult<T>型は、成功値または失敗（例外）を保持する型です。runCatching関数はブロック内の処理を実行し、結果をResult型で返します。例外がスローされた場合は自動的にキャッチしてResult.failureとして返すため、try/catchを書く必要がなくなります。Result型にはmap、mapCatching、recover、fold、getOrElse、getOrDefaultなど豊富な操作メソッドが用意されており、関数型スタイルでエラーハンドリングを連鎖させることができます。",
+        code: `// runCatching で例外を安全にキャッチ
+val result: Result<Int> = runCatching {
+    "42".toInt()
+}
+println(result.isSuccess)    // true
+println(result.getOrNull())  // 42
+
+// 失敗のケース
+val failed: Result<Int> = runCatching {
+    "abc".toInt()  // NumberFormatException
+}
+println(failed.isFailure)  // true
+println(failed.exceptionOrNull()?.message)  // For input string: "abc"
+
+// getOrElse / getOrDefault でデフォルト値を取得
+val safeValue = failed.getOrElse { exception ->
+    println("変換失敗: \${exception.message}")
+    -1
+}
+println(safeValue)  // -1
+
+// map / mapCatching でチェーン処理
+data class User(val id: Int, val name: String)
+
+fun fetchUserName(idStr: String): Result<String> {
+    return runCatching {
+        idStr.toInt()
+    }.mapCatching { id ->
+        // DBからユーザー取得をシミュレート
+        if (id <= 0) throw IllegalArgumentException("無効なID: \$id")
+        User(id, "ユーザー\$id")
+    }.map { user ->
+        user.name
+    }
+}
+
+println(fetchUserName("5").getOrNull())   // ユーザー5
+println(fetchUserName("abc").isFailure)   // true
+
+// recover で失敗時にリカバリ
+val recovered = failed.recover { exception ->
+    println("リカバリ: \${exception.message}")
+    0
+}
+println(recovered.getOrNull())  // 0
+
+// fold で成功・失敗を統一的に処理
+val message = result.fold(
+    onSuccess = { "成功: 値は\$it" },
+    onFailure = { "失敗: \${it.message}" }
+)
+println(message)  // 成功: 値は42`,
+      },
+      {
+        title: "sealed class でのエラーモデリング",
+        content:
+          "sealed classを使うと、成功と失敗のケースを型安全に表現できます。標準のResult型は例外ベースですが、sealed classを使えばビジネスエラーを例外に頼らず明示的にモデリングできます。when式と組み合わせることで、すべてのケースを網羅的に処理でき、ケースの追加忘れをコンパイル時に検出できます。これはドメイン駆動設計（DDD）において非常に有効なパターンです。",
+        code: `// ビジネスエラーを sealed class でモデリング
+sealed class ApiResult<out T> {
+    data class Success<T>(val data: T) : ApiResult<T>()
+    sealed class Error : ApiResult<Nothing>() {
+        data class NetworkError(val cause: Throwable) : Error()
+        data class HttpError(val code: Int, val message: String) : Error()
+        data class ParseError(val rawBody: String) : Error()
+        data object Unauthorized : Error()
+        data object NotFound : Error()
+    }
+}
+
+// 使用例：API呼び出し
+data class UserProfile(val id: Int, val name: String, val email: String)
+
+fun fetchProfile(userId: Int): ApiResult<UserProfile> {
+    return when {
+        userId <= 0 ->
+            ApiResult.Error.HttpError(400, "無効なユーザーID")
+        userId == 999 ->
+            ApiResult.Error.NotFound
+        else ->
+            ApiResult.Success(
+                UserProfile(userId, "田中太郎", "tanaka@example.com")
+            )
+    }
+}
+
+// when 式で網羅的に処理（else 不要 = ケース追加時にコンパイルエラー）
+fun handleResult(result: ApiResult<UserProfile>): String {
+    return when (result) {
+        is ApiResult.Success ->
+            "ユーザー: \${result.data.name} (\${result.data.email})"
+        is ApiResult.Error.NetworkError ->
+            "ネットワークエラー: \${result.cause.message}"
+        is ApiResult.Error.HttpError ->
+            "HTTPエラー \${result.code}: \${result.message}"
+        is ApiResult.Error.ParseError ->
+            "パースエラー: \${result.rawBody.take(100)}"
+        ApiResult.Error.Unauthorized ->
+            "認証エラー: ログインしてください"
+        ApiResult.Error.NotFound ->
+            "リソースが見つかりません"
+    }
+}
+
+// 実行
+val profile = fetchProfile(1)
+println(handleResult(profile))  // ユーザー: 田中太郎 (tanaka@example.com)
+
+val notFound = fetchProfile(999)
+println(handleResult(notFound))  // リソースが見つかりません`,
+      },
+      {
+        title: "Either パターン",
+        content:
+          "Eitherパターンは関数型プログラミングでよく使われるエラーハンドリング手法で、Left（失敗）とRight（成功）の2つの値のどちらかを保持します。Kotlinではsealed classで簡単に実装でき、例外を使わずにエラーを伝播できます。mapやflatMapを実装することで、成功時のみ処理を連鎖させるモナド的な操作が可能になります。ArrowライブラリのEitherを使えばより高機能な実装を利用できますが、基本的な用途ではカスタム実装で十分です。",
+        code: `// Either をシンプルに実装
+sealed class Either<out L, out R> {
+    data class Left<L>(val value: L) : Either<L, Nothing>()
+    data class Right<R>(val value: R) : Either<Nothing, R>()
+
+    // map: 成功側の値を変換
+    fun <T> map(transform: (R) -> T): Either<L, T> = when (this) {
+        is Left -> this
+        is Right -> Right(transform(value))
+    }
+
+    // flatMap: 成功側の値を変換（変換結果も Either）
+    fun <T> flatMap(transform: (R) -> Either<L, T>): Either<L, T> = when (this) {
+        is Left -> this
+        is Right -> transform(value)
+    }
+
+    // fold: 両方のケースを処理
+    fun <T> fold(onLeft: (L) -> T, onRight: (R) -> T): T = when (this) {
+        is Left -> onLeft(value)
+        is Right -> onRight(value)
+    }
+}
+
+// ドメインエラーを定義
+sealed class DomainError(val message: String) {
+    class ValidationError(message: String) : DomainError(message)
+    class BusinessRuleError(message: String) : DomainError(message)
+    class ExternalServiceError(message: String) : DomainError(message)
+}
+
+// バリデーション関数
+data class Email(val value: String)
+data class Age(val value: Int)
+
+fun validateEmail(input: String): Either<DomainError, Email> {
+    return if (input.contains("@") && input.contains(".")) {
+        Either.Right(Email(input))
+    } else {
+        Either.Left(DomainError.ValidationError("無効なメールアドレス: \$input"))
+    }
+}
+
+fun validateAge(input: Int): Either<DomainError, Age> {
+    return if (input in 0..150) {
+        Either.Right(Age(input))
+    } else {
+        Either.Left(DomainError.ValidationError("無効な年齢: \$input"))
+    }
+}
+
+// flatMap で処理をチェーン
+data class RegistrationData(val email: Email, val age: Age)
+
+fun register(emailStr: String, ageInt: Int): Either<DomainError, RegistrationData> {
+    return validateEmail(emailStr).flatMap { email ->
+        validateAge(ageInt).map { age ->
+            RegistrationData(email, age)
+        }
+    }
+}
+
+// 使用例
+val success = register("user@example.com", 25)
+val result = success.fold(
+    onLeft = { "エラー: \${it.message}" },
+    onRight = { "登録成功: \${it.email.value}, \${it.age.value}歳" }
+)
+println(result)  // 登録成功: user@example.com, 25歳
+
+val failure = register("invalid", 25)
+println(failure.fold({ it.message }, { "OK" }))  // 無効なメールアドレス: invalid`,
+      },
+      {
+        title: "実践的なエラーハンドリング設計",
+        content:
+          "実際のアプリケーションでは、複数のエラーハンドリング手法を組み合わせて使います。外部ライブラリやI/O操作ではrunCatchingやtry/catchを使い、ドメイン層ではsealed classやEitherパターンを使うのが一般的です。コルーチンではCoroutineExceptionHandlerを使って非同期処理のエラーをハンドリングします。また、複数のバリデーションエラーを蓄積するAccumulatedエラーパターンも実務では重要です。",
+        code: `// 複数のバリデーションエラーを蓄積するパターン
+data class ValidationErrors(val errors: List<String>) {
+    companion object {
+        fun of(vararg errors: String) = ValidationErrors(errors.toList())
+    }
+    fun merge(other: ValidationErrors) =
+        ValidationErrors(errors + other.errors)
+}
+
+sealed class Validated<out E, out T> {
+    data class Valid<T>(val value: T) : Validated<Nothing, T>()
+    data class Invalid<E>(val error: E) : Validated<E, Nothing>()
+}
+
+// バリデーションの蓄積
+data class UserForm(val name: String, val email: String, val age: Int)
+
+fun validateForm(name: String, email: String, age: Int):
+        Validated<ValidationErrors, UserForm> {
+    val errors = mutableListOf<String>()
+
+    if (name.isBlank()) errors.add("名前は必須です")
+    if (name.length > 50) errors.add("名前は50文字以内です")
+    if (!email.contains("@")) errors.add("メールアドレスが無効です")
+    if (age !in 0..150) errors.add("年齢が範囲外です")
+
+    return if (errors.isEmpty()) {
+        Validated.Valid(UserForm(name, email, age))
+    } else {
+        Validated.Invalid(ValidationErrors(errors))
+    }
+}
+
+// 実行例
+when (val result = validateForm("", "invalid", -5)) {
+    is Validated.Valid -> println("登録: \${result.value}")
+    is Validated.Invalid -> {
+        println("バリデーションエラー:")
+        result.error.errors.forEach { println("  - \$it") }
+    }
+}
+// 出力:
+// バリデーションエラー:
+//   - 名前は必須です
+//   - メールアドレスが無効です
+//   - 年齢が範囲外です
+
+// リポジトリ層：外部I/Oのエラーをドメインエラーに変換
+sealed class DbError(val message: String) {
+    class ConnectionFailed(message: String) : DbError(message)
+    class RecordNotFound(val id: Int) : DbError("ID=\$id のレコードが見つかりません")
+    class DuplicateKey(val key: String) : DbError("重複キー: \$key")
+}
+
+class UserRepository {
+    fun findById(id: Int): Either<DbError, UserProfile> {
+        return runCatching {
+            // DB接続をシミュレート
+            if (id == 1) UserProfile(1, "田中太郎", "tanaka@example.com")
+            else throw NoSuchElementException("Not found")
+        }.fold(
+            onSuccess = { Either.Right(it) },
+            onFailure = { Either.Left(DbError.RecordNotFound(id)) }
+        )
+    }
+}
+
+val repo = UserRepository()
+val user = repo.findById(1)
+println(user)  // Right(UserProfile(1, 田中太郎, tanaka@example.com))
+
+val missing = repo.findById(99)
+println(missing)  // Left(RecordNotFound(id=99))`,
+      },
+    ],
+  },
+  {
+    id: "testing-kotlin",
+    title: "Kotlinテスト",
+    category: "practice",
+    description:
+      "JUnit5、Kotest、MockKなどのテストフレームワークを活用し、コルーチンやプロパティベーステストを含む実践的なKotlinテスト手法を学ぶ",
+    sections: [
+      {
+        title: "JUnit5 + Kotlin",
+        content:
+          "KotlinでのJUnit5テストはJavaとほぼ同じですが、Kotlinの言語機能によりさらに簡潔に書けます。バッククォートで囲んだ関数名を使えば、日本語のテスト名が可能です。@Nested内部クラスでテストをグループ化し、@ParameterizedTestでデータ駆動テストを実現します。また、assertThrowsの代わりにKotlinらしいassertFailsやassertThrows<T>のreified型パラメータが使えます。",
+        code: `import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
+
+// テスト対象のクラス
+class Calculator {
+    fun add(a: Int, b: Int): Int = a + b
+    fun divide(a: Int, b: Int): Int {
+        require(b != 0) { "0で割ることはできません" }
+        return a / b
+    }
+}
+
+class CalculatorTest {
+    private lateinit var calculator: Calculator
+
+    @BeforeEach
+    fun setUp() {
+        calculator = Calculator()
+    }
+
+    @Test
+    fun \`足し算が正しく動作すること\`() {
+        assertEquals(5, calculator.add(2, 3))
+        assertEquals(0, calculator.add(-1, 1))
+        assertEquals(-3, calculator.add(-1, -2))
+    }
+
+    @Test
+    fun \`0で割るとIllegalArgumentExceptionが発生すること\`() {
+        val exception = assertThrows<IllegalArgumentException> {
+            calculator.divide(10, 0)
+        }
+        assertEquals("0で割ることはできません", exception.message)
+    }
+
+    @Nested
+    inner class \`割り算テスト\` {
+        @ParameterizedTest(name = "{0} ÷ {1} = {2}")
+        @CsvSource("10,2,5", "9,3,3", "100,10,10")
+        fun \`正常な割り算\`(a: Int, b: Int, expected: Int) {
+            assertEquals(expected, calculator.divide(a, b))
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [1, 2, 3, 4, 5])
+    fun \`正の数同士の足し算は正の数になること\`(value: Int) {
+        assertTrue(calculator.add(value, value) > 0)
+    }
+}`,
+      },
+      {
+        title: "Kotest（BDDスタイル）",
+        content:
+          "KotestはKotlinネイティブのテストフレームワークで、複数のテストスタイル（FunSpec, StringSpec, BehaviorSpec, DescribeSpecなど）をサポートします。BehaviorSpecではGiven/When/Then形式でBDDスタイルのテストを記述でき、ビジネスロジックのテストに適しています。Kotest独自のマッチャー（shouldBe, shouldContain, shouldThrowなど）は非常に読みやすく、テストの意図を明確に表現できます。",
+        code: `import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.assertions.throwables.shouldThrow
+
+// テスト対象
+data class User(val name: String, val email: String, val age: Int) {
+    init {
+        require(name.isNotBlank()) { "名前は必須です" }
+        require(age in 0..150) { "年齢は0〜150の範囲です" }
+        require(email.contains("@")) { "無効なメールアドレスです" }
+    }
+}
+
+// BehaviorSpec: Given/When/Then スタイル
+class UserBehaviorTest : BehaviorSpec({
+    Given("有効なユーザー情報が提供された場合") {
+        val name = "田中太郎"
+        val email = "tanaka@example.com"
+        val age = 30
+
+        When("ユーザーを作成すると") {
+            val user = User(name, email, age)
+
+            Then("正しい値が設定される") {
+                user.name shouldBe "田中太郎"
+                user.email shouldContain "@"
+                user.age shouldBe 30
+            }
+        }
+    }
+
+    Given("無効な名前が提供された場合") {
+        When("空文字でユーザーを作成すると") {
+            Then("IllegalArgumentExceptionが発生する") {
+                val exception = shouldThrow<IllegalArgumentException> {
+                    User("", "test@example.com", 25)
+                }
+                exception.message shouldBe "名前は必須です"
+            }
+        }
+    }
+})
+
+// StringSpec: 最もシンプルなスタイル
+class UserStringTest : StringSpec({
+    "ユーザーの名前が正しく設定される" {
+        val user = User("山田花子", "yamada@example.com", 25)
+        user.name shouldBe "山田花子"
+    }
+
+    "年齢が範囲外の場合に例外が発生する" {
+        shouldThrow<IllegalArgumentException> {
+            User("テスト", "test@example.com", 200)
+        }
+    }
+})`,
+      },
+      {
+        title: "MockK によるモックテスト",
+        content:
+          "MockKはKotlin専用のモックライブラリで、Kotlinの言語機能（コルーチン、拡張関数、トップレベル関数など）を完全にサポートします。every/answersでモックの振る舞いを定義し、verify/confirmVerifiedで呼び出しを検証します。coEvery/coVerifyを使えばsuspend関数のモックも容易です。spyk（スパイ）を使うと実際のオブジェクトの一部だけをモックできます。",
+        code: `import io.mockk.*
+import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.InjectMockKs
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+// プロダクションコード
+data class Product(val id: Int, val name: String, val price: Int)
+
+interface ProductRepository {
+    fun findById(id: Int): Product?
+    fun findAll(): List<Product>
+    suspend fun save(product: Product): Product
+}
+
+class ProductService(private val repository: ProductRepository) {
+    fun getProduct(id: Int): Product {
+        return repository.findById(id)
+            ?: throw NoSuchElementException("商品ID=\$id が見つかりません")
+    }
+
+    fun getExpensiveProducts(threshold: Int): List<Product> {
+        return repository.findAll().filter { it.price >= threshold }
+    }
+}
+
+// テスト
+class ProductServiceTest {
+    @MockK
+    private lateinit var repository: ProductRepository
+
+    private lateinit var service: ProductService
+
+    @BeforeEach
+    fun setUp() {
+        MockKAnnotations.init(this)
+        service = ProductService(repository)
+    }
+
+    @Test
+    fun \`商品IDで商品を取得できること\`() {
+        // モックの振る舞いを定義
+        val expected = Product(1, "Kotlin入門書", 3000)
+        every { repository.findById(1) } returns expected
+
+        // 実行
+        val result = service.getProduct(1)
+
+        // 検証
+        assert(result == expected)
+        verify(exactly = 1) { repository.findById(1) }
+        confirmVerified(repository)
+    }
+
+    @Test
+    fun \`高額商品のフィルタリングが正しく動作すること\`() {
+        every { repository.findAll() } returns listOf(
+            Product(1, "本", 1500),
+            Product(2, "PC", 150000),
+            Product(3, "マウス", 3000),
+            Product(4, "モニター", 50000)
+        )
+
+        val result = service.getExpensiveProducts(10000)
+
+        assert(result.size == 2)
+        assert(result.all { it.price >= 10000 })
+
+        verify { repository.findAll() }
+    }
+
+    @Test
+    fun \`スパイを使った部分モック\`() {
+        val realList = mutableListOf("a", "b", "c")
+        val spyList = spyk(realList)
+
+        // 一部だけモック
+        every { spyList.size } returns 100
+
+        assert(spyList[0] == "a")  // 実際の値
+        assert(spyList.size == 100) // モックされた値
+    }
+}`,
+      },
+      {
+        title: "テストコルーチン（runTest）",
+        content:
+          "Kotlinコルーチンのテストにはkotlinx-coroutines-testライブラリのrunTestを使います。runTestは仮想時間を使用するため、delay()を含むコルーチンも即座にテストが完了します。TestDispatcherを使ってディスパッチャーを制御でき、advanceTimeByやadvanceUntilIdleで時間の進行を明示的にコントロールできます。Turbineライブラリを使えばFlowのテストも容易に行えます。",
+        code: `import kotlinx.coroutines.*
+import kotlinx.coroutines.test.*
+import kotlinx.coroutines.flow.*
+import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
+
+// テスト対象のサービス
+class NotificationService {
+    suspend fun sendWithRetry(
+        message: String,
+        maxRetries: Int = 3
+    ): Result<String> {
+        repeat(maxRetries) { attempt ->
+            try {
+                delay(1000L * (attempt + 1))  // リトライ間隔
+                // 送信処理シミュレーション
+                return Result.success("送信完了: \$message")
+            } catch (e: Exception) {
+                if (attempt == maxRetries - 1) {
+                    return Result.failure(e)
+                }
+            }
+        }
+        return Result.failure(Exception("送信失敗"))
+    }
+
+    fun observeNotifications(): Flow<String> = flow {
+        var count = 0
+        while (true) {
+            delay(5000)  // 5秒ごとにポーリング
+            count++
+            emit("通知 #\$count")
+        }
+    }
+}
+
+class NotificationServiceTest {
+
+    @Test
+    fun \`リトライ付き送信が成功すること\`() = runTest {
+        val service = NotificationService()
+        val result = service.sendWithRetry("テストメッセージ")
+
+        assertEquals(true, result.isSuccess)
+        assertEquals("送信完了: テストメッセージ", result.getOrNull())
+    }
+
+    @Test
+    fun \`仮想時間でFlowをテスト\`() = runTest {
+        val service = NotificationService()
+        val results = mutableListOf<String>()
+
+        // 最初の3件だけ取得
+        val job = launch {
+            service.observeNotifications()
+                .take(3)
+                .collect { results.add(it) }
+        }
+
+        // 仮想時間を進める
+        advanceTimeBy(15_001)  // 15秒 + 1ms
+        job.join()
+
+        assertEquals(3, results.size)
+        assertEquals("通知 #1", results[0])
+        assertEquals("通知 #2", results[1])
+        assertEquals("通知 #3", results[2])
+    }
+
+    @Test
+    fun \`TestScopeでディスパッチャーを注入\`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+
+        val service = NotificationService()
+        val results = mutableListOf<String>()
+
+        backgroundScope.launch(testDispatcher) {
+            service.observeNotifications()
+                .take(2)
+                .collect { results.add(it) }
+        }
+
+        advanceTimeBy(10_001)
+        assertEquals(2, results.size)
+    }
+}`,
+      },
+      {
+        title: "プロパティベーステスト",
+        content:
+          "プロパティベーステストは、具体的なテストケースを手動で書く代わりに、入力をランダムに生成してプロパティ（性質）が常に成り立つことを検証するテスト手法です。KotestのProperty Testingモジュールを使えば、Arb（Arbitrary）ジェネレータで様々な入力を自動生成し、forAllやcheckAllで性質を検証できます。エッジケースの見落としを防ぎ、より網羅的なテストが可能になります。",
+        code: `import io.kotest.core.spec.style.FunSpec
+import io.kotest.property.forAll
+import io.kotest.property.checkAll
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.*
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.string.shouldHaveLength
+
+// テスト対象の関数群
+fun reverseString(s: String): String = s.reversed()
+
+fun sortList(list: List<Int>): List<Int> = list.sorted()
+
+data class Money(val amount: Int, val currency: String) {
+    operator fun plus(other: Money): Money {
+        require(currency == other.currency) {
+            "通貨が異なります: \$currency vs \${other.currency}"
+        }
+        return Money(amount + other.amount, currency)
+    }
+}
+
+class PropertyBasedTest : FunSpec({
+
+    test("文字列の反転を2回適用すると元に戻る") {
+        forAll<String> { input ->
+            reverseString(reverseString(input)) == input
+        }
+    }
+
+    test("反転後の文字列長は元の文字列長と同じ") {
+        forAll<String> { input ->
+            reverseString(input).length == input.length
+        }
+    }
+
+    test("ソート後のリストは昇順になっている") {
+        forAll(Arb.list(Arb.int())) { list ->
+            val sorted = sortList(list)
+            sorted.zipWithNext().all { (a, b) -> a <= b }
+        }
+    }
+
+    test("ソート後のリストは元のリストと同じ要素を持つ") {
+        forAll(Arb.list(Arb.int())) { list ->
+            val sorted = sortList(list)
+            sorted.size == list.size && sorted.toSet() == list.toSet()
+        }
+    }
+
+    test("金額の加算は可換性を持つ") {
+        checkAll(Arb.int(0..1_000_000), Arb.int(0..1_000_000)) { a, b ->
+            val moneyA = Money(a, "JPY")
+            val moneyB = Money(b, "JPY")
+
+            val result1 = moneyA + moneyB
+            val result2 = moneyB + moneyA
+
+            result1.amount shouldBe result2.amount
+        }
+    }
+
+    test("金額の加算は結合性を持つ") {
+        checkAll(
+            Arb.int(0..100_000),
+            Arb.int(0..100_000),
+            Arb.int(0..100_000)
+        ) { a, b, c ->
+            val x = Money(a, "JPY")
+            val y = Money(b, "JPY")
+            val z = Money(c, "JPY")
+
+            val left = (x + y) + z
+            val right = x + (y + z)
+
+            left.amount shouldBe right.amount
+        }
+    }
+
+    test("カスタムジェネレータでユーザーデータを生成") {
+        val emailArb = Arb.string(5..10, Codepoint.alphanumeric()).map {
+            "\$it@example.com"
+        }
+        val userArb = Arb.bind(
+            Arb.string(1..20),
+            emailArb,
+            Arb.int(18..100)
+        ) { name, email, age ->
+            User(name.ifBlank { "default" }, email, age)
+        }
+
+        forAll(userArb) { user ->
+            user.age in 18..100 && user.email.contains("@")
+        }
+    }
+})`,
+      },
+    ],
+  },
+  {
+    id: "ktor",
+    title: "Ktor Webフレームワーク",
+    category: "ecosystem",
+    description:
+      "JetBrains製の軽量WebフレームワークKtorを使い、サーバー構築・ルーティング・シリアライゼーション・認証・HTTPクライアント機能を学ぶ",
+    sections: [
+      {
+        title: "Ktor Server 基礎",
+        content:
+          "KtorはJetBrainsが開発したKotlinネイティブの軽量Webフレームワークです。コルーチンベースで非同期処理が自然に書け、プラグイン（Plugin）アーキテクチャにより必要な機能だけを追加できます。embeddedServerでサーバーを起動し、Netty、Jetty、CIOなどのエンジンを選択できます。Application.module()でプラグインやルーティングを設定し、モジュール分割で大規模アプリにも対応できます。",
+        code: `import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.http.*
+
+// 最小構成のKtorサーバー
+fun main() {
+    embeddedServer(Netty, port = 8080) {
+        // プラグインのインストール
+        install(ContentNegotiation) {
+            json()  // JSON シリアライゼーション
+        }
+
+        // ルーティング設定
+        routing {
+            get("/") {
+                call.respondText(
+                    "Hello, Ktor!",
+                    contentType = ContentType.Text.Plain
+                )
+            }
+
+            get("/health") {
+                call.respond(
+                    HttpStatusCode.OK,
+                    mapOf("status" to "UP", "version" to "1.0.0")
+                )
+            }
+        }
+    }.start(wait = true)
+}
+
+// モジュール分割パターン（大規模アプリ向け）
+fun Application.module() {
+    configurePlugins()     // プラグイン設定
+    configureRouting()     // ルーティング設定
+    configureSecurity()    // セキュリティ設定
+}
+
+fun Application.configurePlugins() {
+    install(ContentNegotiation) {
+        json(kotlinx.serialization.json.Json {
+            prettyPrint = true
+            isLenient = true
+            ignoreUnknownKeys = true
+        })
+    }
+}
+
+// application.conf (HOCON形式) での設定
+// ktor {
+//     deployment {
+//         port = 8080
+//         host = 0.0.0.0
+//     }
+//     application {
+//         modules = [ com.example.ApplicationKt.module ]
+//     }
+// }`,
+      },
+      {
+        title: "ルーティング",
+        content:
+          "Ktorのルーティングは直感的なDSLで定義します。HTTPメソッド（get, post, put, delete, patch）ごとにハンドラを設定し、パスパラメータやクエリパラメータを簡単に取得できます。route関数でパスをグループ化してネストでき、RESTful APIの設計が容易です。リクエストボディの受信にはcall.receive<T>()を使い、Kotlinxシリアライゼーションと連携して自動的にデシリアライズされます。",
+        code: `import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.http.*
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class TaskRequest(val title: String, val description: String)
+
+@Serializable
+data class TaskResponse(
+    val id: Int,
+    val title: String,
+    val description: String,
+    val completed: Boolean
+)
+
+// インメモリデータストア
+val tasks = mutableListOf<TaskResponse>()
+var nextId = 1
+
+fun Application.configureRouting() {
+    routing {
+        // APIのグループ化
+        route("/api/v1") {
+            route("/tasks") {
+                // 一覧取得: GET /api/v1/tasks?completed=true
+                get {
+                    val completed = call.request.queryParameters["completed"]
+                        ?.toBooleanStrictOrNull()
+                    val result = if (completed != null) {
+                        tasks.filter { it.completed == completed }
+                    } else {
+                        tasks
+                    }
+                    call.respond(result)
+                }
+
+                // 個別取得: GET /api/v1/tasks/{id}
+                get("/{id}") {
+                    val id = call.parameters["id"]?.toIntOrNull()
+                        ?: return@get call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "無効なIDです")
+                        )
+                    val task = tasks.find { it.id == id }
+                        ?: return@get call.respond(
+                            HttpStatusCode.NotFound,
+                            mapOf("error" to "タスクが見つかりません")
+                        )
+                    call.respond(task)
+                }
+
+                // 作成: POST /api/v1/tasks
+                post {
+                    val request = call.receive<TaskRequest>()
+                    val task = TaskResponse(
+                        id = nextId++,
+                        title = request.title,
+                        description = request.description,
+                        completed = false
+                    )
+                    tasks.add(task)
+                    call.respond(HttpStatusCode.Created, task)
+                }
+
+                // 更新: PUT /api/v1/tasks/{id}
+                put("/{id}") {
+                    val id = call.parameters["id"]?.toIntOrNull()
+                        ?: return@put call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "無効なIDです")
+                        )
+                    val request = call.receive<TaskRequest>()
+                    val index = tasks.indexOfFirst { it.id == id }
+                    if (index == -1) {
+                        call.respond(HttpStatusCode.NotFound)
+                        return@put
+                    }
+                    tasks[index] = tasks[index].copy(
+                        title = request.title,
+                        description = request.description
+                    )
+                    call.respond(tasks[index])
+                }
+
+                // 削除: DELETE /api/v1/tasks/{id}
+                delete("/{id}") {
+                    val id = call.parameters["id"]?.toIntOrNull()
+                        ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                    val removed = tasks.removeIf { it.id == id }
+                    if (removed) call.respond(HttpStatusCode.NoContent)
+                    else call.respond(HttpStatusCode.NotFound)
+                }
+            }
+        }
+    }
+}`,
+      },
+      {
+        title: "Serialization（シリアライゼーション）",
+        content:
+          "KtorではKotlinx.serializationプラグインを使ってJSON/XML/CBORなどのシリアライゼーション・デシリアライゼーションを行います。@Serializableアノテーションを付けたdata classを定義すれば、リクエスト・レスポンスの変換が自動的に行われます。カスタムシリアライザーを作成して複雑な変換ロジックにも対応でき、日付型やenum型のカスタマイズも容易です。ContentNegotiationプラグインでAcceptヘッダーに基づく自動コンテンツネゴシエーションも可能です。",
+        code: `import kotlinx.serialization.*
+import kotlinx.serialization.json.*
+import kotlinx.serialization.descriptors.*
+import kotlinx.serialization.encoding.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
+import java.time.LocalDateTime
+
+// 基本的なシリアライズ可能なクラス
+@Serializable
+data class ApiResponse<T>(
+    val success: Boolean,
+    val data: T? = null,
+    val error: String? = null,
+    val timestamp: Long = System.currentTimeMillis()
+) {
+    companion object {
+        fun <T> ok(data: T) = ApiResponse(success = true, data = data)
+        fun <T> error(message: String) =
+            ApiResponse<T>(success = false, error = message)
+    }
+}
+
+// ネストしたデータクラス
+@Serializable
+data class OrderRequest(
+    val customerId: Int,
+    val items: List<OrderItem>,
+    val shippingAddress: Address,
+    val note: String? = null  // null許容フィールド
+)
+
+@Serializable
+data class OrderItem(
+    val productId: Int,
+    val quantity: Int,
+    val unitPrice: Double
+)
+
+@Serializable
+data class Address(
+    val postalCode: String,
+    val prefecture: String,
+    val city: String,
+    val street: String
+)
+
+// カスタムシリアライザー（LocalDateTime用）
+object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: LocalDateTime) {
+        encoder.encodeString(value.toString())
+    }
+
+    override fun deserialize(decoder: Decoder): LocalDateTime {
+        return LocalDateTime.parse(decoder.decodeString())
+    }
+}
+
+@Serializable
+data class Event(
+    val name: String,
+    @Serializable(with = LocalDateTimeSerializer::class)
+    val startAt: LocalDateTime,
+    @Serializable(with = LocalDateTimeSerializer::class)
+    val endAt: LocalDateTime
+)
+
+// Ktor の ContentNegotiation 設定
+fun Application.configureSerialization() {
+    install(ContentNegotiation) {
+        json(Json {
+            prettyPrint = true          // 整形出力
+            isLenient = true            // 緩いパース
+            ignoreUnknownKeys = true    // 未知のキーを無視
+            encodeDefaults = true       // デフォルト値も出力
+            coerceInputValues = true    // null を デフォルト値に変換
+        })
+    }
+}
+
+// 使用例
+val json = Json { prettyPrint = true }
+val order = OrderRequest(
+    customerId = 1,
+    items = listOf(
+        OrderItem(101, 2, 1500.0),
+        OrderItem(102, 1, 3000.0)
+    ),
+    shippingAddress = Address("100-0001", "東京都", "千代田区", "1-1-1")
+)
+val jsonString = json.encodeToString(order)
+val decoded = json.decodeFromString<OrderRequest>(jsonString)`,
+      },
+      {
+        title: "認証（Authentication）",
+        content:
+          "Ktorの認証はAuthenticationプラグインで実装します。Basic認証、Bearer（JWT）認証、OAuth、セッション認証など複数の認証方式をサポートしています。authenticate {}ブロックでルートを保護し、call.principal<T>()で認証済みユーザーの情報を取得できます。JWT認証ではトークンの生成・検証を行い、ロールベースの認可も実装可能です。複数の認証方式を組み合わせることもできます。",
+        code: `import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.http.*
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import java.util.Date
+
+// JWT設定
+object JwtConfig {
+    private const val SECRET = "your-secret-key"
+    private const val ISSUER = "ktor-app"
+    private const val AUDIENCE = "ktor-users"
+    private const val VALIDITY_MS = 3_600_000L  // 1時間
+
+    val algorithm = Algorithm.HMAC256(SECRET)
+
+    fun generateToken(userId: Int, role: String): String {
+        return JWT.create()
+            .withIssuer(ISSUER)
+            .withAudience(AUDIENCE)
+            .withClaim("userId", userId)
+            .withClaim("role", role)
+            .withExpiresAt(Date(System.currentTimeMillis() + VALIDITY_MS))
+            .sign(algorithm)
+    }
+}
+
+// 認証設定
+fun Application.configureSecurity() {
+    install(Authentication) {
+        // Basic認証
+        basic("auth-basic") {
+            realm = "Ktor App"
+            validate { credentials ->
+                if (credentials.name == "admin"
+                    && credentials.password == "password") {
+                    UserIdPrincipal(credentials.name)
+                } else null
+            }
+        }
+
+        // JWT認証
+        jwt("auth-jwt") {
+            realm = "Ktor App"
+            verifier(
+                JWT.require(JwtConfig.algorithm)
+                    .withIssuer("ktor-app")
+                    .withAudience("ktor-users")
+                    .build()
+            )
+            validate { credential ->
+                val userId = credential.payload.getClaim("userId").asInt()
+                val role = credential.payload.getClaim("role").asString()
+                if (userId != null) {
+                    JWTPrincipal(credential.payload)
+                } else null
+            }
+            challenge { _, _ ->
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    mapOf("error" to "トークンが無効または期限切れです")
+                )
+            }
+        }
+    }
+
+    routing {
+        // ログインエンドポイント（認証不要）
+        post("/login") {
+            val token = JwtConfig.generateToken(userId = 1, role = "admin")
+            call.respond(mapOf("token" to token))
+        }
+
+        // JWT認証で保護されたルート
+        authenticate("auth-jwt") {
+            get("/me") {
+                val principal = call.principal<JWTPrincipal>()!!
+                val userId = principal.payload.getClaim("userId").asInt()
+                val role = principal.payload.getClaim("role").asString()
+                call.respond(mapOf(
+                    "userId" to userId.toString(),
+                    "role" to role
+                ))
+            }
+
+            // ロールベース認可
+            route("/admin") {
+                intercept(ApplicationCallPipeline.Call) {
+                    val principal = call.principal<JWTPrincipal>()
+                    val role = principal?.payload
+                        ?.getClaim("role")?.asString()
+                    if (role != "admin") {
+                        call.respond(
+                            HttpStatusCode.Forbidden,
+                            mapOf("error" to "管理者権限が必要です")
+                        )
+                        finish()
+                    }
+                }
+                get("/users") {
+                    call.respond(mapOf("users" to listOf("user1", "user2")))
+                }
+            }
+        }
+    }
+}`,
+      },
+      {
+        title: "Ktor クライアント機能",
+        content:
+          "KtorはHTTPクライアント機能も提供しており、外部APIとの通信にサーバーと同じシリアライゼーション設定を共有できます。HttpClientはコルーチンベースで非同期リクエストを自然に記述でき、タイムアウト、リトライ、ロギングなどのプラグインも利用可能です。レスポンスの自動デシリアライゼーション、ファイルアップロード、WebSocket通信にも対応しています。テスト時にはMockEngineを使ってHTTP通信をモックできます。",
+        code: `import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class GitHubRepo(
+    val name: String,
+    val full_name: String,
+    val description: String? = null,
+    val stargazers_count: Int = 0,
+    val language: String? = null
+)
+
+// HTTPクライアントの設定
+val client = HttpClient(CIO) {
+    // JSONシリアライゼーション
+    install(ContentNegotiation) {
+        json(kotlinx.serialization.json.Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        })
+    }
+
+    // ロギング
+    install(Logging) {
+        level = LogLevel.INFO
+    }
+
+    // タイムアウト設定
+    install(HttpTimeout) {
+        requestTimeoutMillis = 10_000
+        connectTimeoutMillis = 5_000
+        socketTimeoutMillis = 5_000
+    }
+
+    // デフォルトリクエスト設定
+    defaultRequest {
+        header("Accept", "application/json")
+        header("User-Agent", "Ktor-Client/1.0")
+    }
+}
+
+// 外部APIの呼び出し
+suspend fun fetchGitHubRepos(username: String): List<GitHubRepo> {
+    return client.get("https://api.github.com/users/\$username/repos") {
+        parameter("sort", "stars")
+        parameter("per_page", 10)
+    }.body()
+}
+
+// POST リクエスト
+@Serializable
+data class CreateIssue(val title: String, val body: String)
+
+suspend fun createIssue(
+    owner: String,
+    repo: String,
+    issue: CreateIssue,
+    token: String
+): HttpResponse {
+    return client.post("https://api.github.com/repos/\$owner/\$repo/issues") {
+        bearerAuth(token)
+        contentType(ContentType.Application.Json)
+        setBody(issue)
+    }
+}
+
+// リトライパターン
+suspend fun <T> withRetry(
+    maxRetries: Int = 3,
+    delayMs: Long = 1000,
+    block: suspend () -> T
+): T {
+    var lastException: Exception? = null
+    repeat(maxRetries) { attempt ->
+        try {
+            return block()
+        } catch (e: Exception) {
+            lastException = e
+            println("リトライ \${attempt + 1}/\$maxRetries: \${e.message}")
+            kotlinx.coroutines.delay(delayMs * (attempt + 1))
+        }
+    }
+    throw lastException!!
+}
+
+// テスト用のMockEngine
+import io.ktor.client.engine.mock.*
+
+val mockClient = HttpClient(MockEngine) {
+    engine {
+        addHandler { request ->
+            when (request.url.encodedPath) {
+                "/api/users" -> respond(
+                    content = """[{"name":"test","full_name":"test/repo"}]""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType, "application/json"
+                    )
+                )
+                else -> respondError(HttpStatusCode.NotFound)
+            }
+        }
+    }
+    install(ContentNegotiation) { json() }
+}`,
+      },
+    ],
+  },
+  {
+    id: "kotlin-script",
+    title: "Kotlin Script & Gradle KTS",
+    category: "ecosystem",
+    description:
+      "Kotlin Scriptの基礎からbuild.gradle.kts、カスタムタスク、プラグイン開発、ビルドロジックの共通化まで、Kotlinによるビルドシステムの活用法を学ぶ",
+    sections: [
+      {
+        title: "Kotlin Script（kts）基礎",
+        content:
+          "Kotlin Script（.kts）はKotlinをスクリプト言語として使う機能です。コンパイルなしで直接実行でき、シェルスクリプトやPythonスクリプトの代替として利用できます。ファイルの拡張子を.ktsにし、kotlincまたはkotlinコマンドで実行します。スクリプト内ではトップレベルに式や文を記述でき、main関数は不要です。@file:DependsOnアノテーションで外部ライブラリの依存関係を宣言することもできます。",
+        code: `#!/usr/bin/env kotlin
+// ファイル名: deploy.main.kts
+
+// 外部依存関係の宣言
+@file:DependsOn("com.squareup.okhttp3:okhttp:4.12.0")
+@file:DependsOn("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+// トップレベルコード（main関数不要）
+val timestamp = LocalDateTime.now()
+    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+println("スクリプト開始: \$timestamp")
+
+// コマンドライン引数
+val args = args  // 自動的に利用可能
+val env = args.firstOrNull() ?: "development"
+println("環境: \$env")
+
+// ファイル操作ユーティリティ
+fun findFiles(dir: String, extension: String): List<File> {
+    return File(dir).walkTopDown()
+        .filter { it.extension == extension }
+        .toList()
+}
+
+// CSVファイルの処理
+fun processCSV(path: String): List<Map<String, String>> {
+    val file = File(path)
+    if (!file.exists()) {
+        println("ファイルが見つかりません: \$path")
+        return emptyList()
+    }
+
+    val lines = file.readLines()
+    if (lines.isEmpty()) return emptyList()
+
+    val headers = lines.first().split(",").map { it.trim() }
+    return lines.drop(1).map { line ->
+        val values = line.split(",").map { it.trim() }
+        headers.zip(values).toMap()
+    }
+}
+
+// シェルコマンドの実行
+fun exec(command: String): String {
+    val process = ProcessBuilder("sh", "-c", command)
+        .redirectErrorStream(true)
+        .start()
+    val output = process.inputStream.bufferedReader().readText()
+    val exitCode = process.waitFor()
+    if (exitCode != 0) {
+        error("コマンド失敗 (exit=\$exitCode): \$command\\n\$output")
+    }
+    return output.trim()
+}
+
+// 使用例
+val gitBranch = exec("git branch --show-current")
+println("現在のブランチ: \$gitBranch")
+
+val kotlinFiles = findFiles("src", "kt")
+println("Kotlinファイル数: \${kotlinFiles.size}")`,
+      },
+      {
+        title: "build.gradle.kts の基本構成",
+        content:
+          "build.gradle.ktsはGradleのビルドスクリプトをKotlinで記述する形式です。GroovyベースのGradleに比べ、IDEの補完・リファクタリング・型チェックが効くため、大規模プロジェクトでの保守性が大幅に向上します。plugins {}でプラグインを宣言し、dependencies {}で依存関係を管理します。repositories {}でリポジトリを指定し、tasks {}でカスタムタスクを定義します。settings.gradle.ktsでマルチプロジェクト構成を管理します。",
+        code: `// build.gradle.kts
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+plugins {
+    kotlin("jvm") version "1.9.21"
+    kotlin("plugin.serialization") version "1.9.21"
+    application
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+}
+
+group = "com.example"
+version = "1.0.0"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Kotlin標準ライブラリ
+    implementation(kotlin("stdlib"))
+    implementation(kotlin("reflect"))
+
+    // コルーチン
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
+    // シリアライゼーション
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+    // Ktor
+    val ktorVersion = "2.3.7"
+    implementation("io.ktor:ktor-server-core:\$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:\$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation:\$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:\$ktorVersion")
+
+    // ロギング
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+
+    // テスト
+    testImplementation(kotlin("test"))
+    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
+    testImplementation("io.kotest:kotest-assertions-core:5.8.0")
+    testImplementation("io.mockk:mockk:1.13.8")
+}
+
+// Kotlin コンパイル設定
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-Xjsr305=strict",
+            "-opt-in=kotlin.RequiresOptIn"
+        )
+    }
+}
+
+// テスト設定
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+    }
+}
+
+// アプリケーション設定
+application {
+    mainClass.set("com.example.MainKt")
+}
+
+// settings.gradle.kts（マルチプロジェクト構成）
+// rootProject.name = "my-kotlin-app"
+// include("app", "core", "api", "shared")`,
+      },
+      {
+        title: "カスタムタスクの定義",
+        content:
+          "Gradle KTSではKotlinの型安全なDSLを使ってカスタムタスクを定義できます。register関数で遅延タスクを登録し、doFirst/doLastで実行時のアクションを定義します。DefaultTaskを継承したカスタムタスククラスを作成すれば、@TaskActionアノテーションで実行ロジックを定義し、@Inputや@OutputFileでプロパティを宣言的に管理できます。タスク間の依存関係はdependsOnやfinalizedByで設定します。",
+        code: `import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.*
+import java.io.File
+
+// シンプルなカスタムタスク
+tasks.register("hello") {
+    group = "custom"
+    description = "挨拶を表示するタスク"
+
+    doLast {
+        println("こんにちは、Gradle KTS！")
+        println("プロジェクト名: \${project.name}")
+        println("バージョン: \${project.version}")
+    }
+}
+
+// タスククラスの定義
+abstract class GenerateApiDocs : DefaultTask() {
+    @get:InputDirectory
+    abstract var sourceDir: File
+
+    @get:OutputFile
+    abstract var outputFile: File
+
+    @TaskAction
+    fun generate() {
+        val kotlinFiles = sourceDir.walkTopDown()
+            .filter { it.extension == "kt" }
+            .toList()
+
+        val docs = buildString {
+            appendLine("# API ドキュメント")
+            appendLine("生成日時: \${java.time.LocalDateTime.now()}")
+            appendLine()
+
+            kotlinFiles.forEach { file ->
+                val content = file.readText()
+                // data class を抽出
+                val classRegex = Regex(
+                    """data class (\w+)\(([\s\S]*?)\)"""
+                )
+                classRegex.findAll(content).forEach { match ->
+                    appendLine("## \${match.groupValues[1]}")
+                    appendLine("${"```"}kotlin")
+                    appendLine(match.value)
+                    appendLine("${"```"}")
+                    appendLine()
+                }
+            }
+        }
+
+        outputFile.writeText(docs)
+        println("ドキュメント生成完了: \${outputFile.absolutePath}")
+        println("処理ファイル数: \${kotlinFiles.size}")
+    }
+}
+
+// タスクの登録
+tasks.register<GenerateApiDocs>("generateApiDocs") {
+    group = "documentation"
+    description = "KotlinソースからAPIドキュメントを生成"
+
+    sourceDir = file("src/main/kotlin")
+    outputFile = file("\${layout.buildDirectory.get()}/docs/api.md")
+}
+
+// タスク間の依存関係
+tasks.register("deployLocal") {
+    group = "deployment"
+    description = "ローカル環境にデプロイ"
+
+    dependsOn("build", "generateApiDocs")
+    finalizedBy("cleanTemp")
+
+    doLast {
+        println("ローカルデプロイ完了")
+    }
+}
+
+// 条件付きタスク
+tasks.register("checkEnvironment") {
+    doLast {
+        val requiredVars = listOf("DATABASE_URL", "API_KEY")
+        val missing = requiredVars.filter {
+            System.getenv(it) == null
+        }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "環境変数が未設定: \${missing.joinToString()}"
+            )
+        }
+        println("環境チェック: OK")
+    }
+}`,
+      },
+      {
+        title: "Gradleプラグイン開発",
+        content:
+          "Gradle KTSでカスタムプラグインを開発すると、ビルドロジックを再利用可能なモジュールとしてパッケージ化できます。Pluginインターフェースを実装してapplyメソッドでプラグインの設定を行い、拡張（Extension）オブジェクトでプラグインのパラメータをDSLで設定可能にします。buildSrcディレクトリにプラグインを配置すれば、プロジェクト内で即座に利用できます。独立したプラグインとしてMaven/Gradleリポジトリに公開することも可能です。",
+        code: `// buildSrc/build.gradle.kts
+plugins {
+    \`kotlin-dsl\`
+}
+
+repositories {
+    mavenCentral()
+}
+
+// buildSrc/src/main/kotlin/CodeQualityPlugin.kt
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+
+// プラグインの設定用 Extension
+abstract class CodeQualityExtension {
+    @get:Input
+    abstract val maxLineLength: Property<Int>
+
+    @get:Input
+    abstract val failOnWarning: Property<Boolean>
+
+    @get:Input
+    abstract val excludePatterns: Property<List<String>>
+
+    init {
+        maxLineLength.convention(120)
+        failOnWarning.convention(false)
+        excludePatterns.convention(emptyList())
+    }
+}
+
+// プラグイン本体
+class CodeQualityPlugin : Plugin<Project> {
+    override fun apply(project: Project) {
+        // Extension の登録
+        val extension = project.extensions.create(
+            "codeQuality",
+            CodeQualityExtension::class.java
+        )
+
+        // チェックタスクの登録
+        project.tasks.register("checkCodeQuality") {
+            group = "verification"
+            description = "コード品質をチェックする"
+
+            doLast {
+                val maxLength = extension.maxLineLength.get()
+                val failOnWarn = extension.failOnWarning.get()
+                val excludes = extension.excludePatterns.get()
+                var warnings = 0
+
+                project.fileTree("src/main/kotlin")
+                    .matching { exclude(excludes) }
+                    .files
+                    .forEach { file ->
+                        file.readLines().forEachIndexed { idx, line ->
+                            if (line.length > maxLength) {
+                                println(
+                                    "WARN: \${file.name}:\${idx + 1}" +
+                                    " 行が\${maxLength}文字を超えています" +
+                                    "（\${line.length}文字）"
+                                )
+                                warnings++
+                            }
+                        }
+                    }
+
+                println("チェック完了: 警告 \$warnings 件")
+                if (failOnWarn && warnings > 0) {
+                    throw org.gradle.api.GradleException(
+                        "コード品質チェックに失敗: \$warnings 件の警告"
+                    )
+                }
+            }
+        }
+    }
+}
+
+// build.gradle.kts での使用
+// plugins {
+//     id("code-quality")  // buildSrc内のプラグイン
+// }
+//
+// codeQuality {
+//     maxLineLength.set(100)
+//     failOnWarning.set(true)
+//     excludePatterns.set(listOf("**/generated/**"))
+// }`,
+      },
+      {
+        title: "ビルドロジックの共通化",
+        content:
+          "マルチモジュールプロジェクトでは、各サブプロジェクト間でビルドロジックを共通化することが重要です。Convention Pluginsパターンを使えば、共通の設定をbuildSrcにプラグインとして定義し、各モジュールのbuild.gradle.ktsで適用するだけで統一された設定を維持できます。Version Catalogを使えば依存関係のバージョン管理も一元化でき、大規模プロジェクトの保守性が大幅に向上します。",
+        code: `// gradle/libs.versions.toml（Version Catalog）
+// [versions]
+// kotlin = "1.9.21"
+// ktor = "2.3.7"
+// kotest = "5.8.0"
+// coroutines = "1.7.3"
+//
+// [libraries]
+// kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib",
+//                    version.ref = "kotlin" }
+// ktor-server-core = { module = "io.ktor:ktor-server-core",
+//                       version.ref = "ktor" }
+// ktor-server-netty = { module = "io.ktor:ktor-server-netty",
+//                        version.ref = "ktor" }
+// coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+//                      version.ref = "coroutines" }
+// kotest-runner = { module = "io.kotest:kotest-runner-junit5",
+//                    version.ref = "kotest" }
+//
+// [bundles]
+// ktor-server = ["ktor-server-core", "ktor-server-netty"]
+//
+// [plugins]
+// kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+// buildSrc/src/main/kotlin/kotlin-common-conventions.gradle.kts
+// Convention Plugin: Kotlinの共通設定
+plugins {
+    kotlin("jvm")
+}
+
+group = "com.example"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation(kotlin("stdlib"))
+    testImplementation(kotlin("test"))
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+// buildSrc/src/main/kotlin/ktor-app-conventions.gradle.kts
+// Convention Plugin: Ktorアプリ共通設定
+plugins {
+    id("kotlin-common-conventions")
+    application
+}
+
+dependencies {
+    // Version Catalog から取得
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.coroutines.core)
+    testImplementation(libs.kotest.runner)
+}
+
+// 各サブプロジェクトでの使用
+// app/build.gradle.kts
+plugins {
+    id("ktor-app-conventions")
+}
+
+application {
+    mainClass.set("com.example.app.MainKt")
+}
+
+dependencies {
+    implementation(project(":core"))
+    implementation(project(":api"))
+}
+
+// core/build.gradle.kts
+plugins {
+    id("kotlin-common-conventions")
+}
+
+// settings.gradle.kts
+// rootProject.name = "my-kotlin-project"
+// include("app", "core", "api", "shared")
+//
+// dependencyResolutionManagement {
+//     versionCatalogs {
+//         create("libs") {
+//             from(files("gradle/libs.versions.toml"))
+//         }
+//     }
+// }`,
+      },
+    ],
+  },
+  {
+    id: "functional",
+    title: "関数型プログラミング",
+    category: "features",
+    description:
+      "不変性、Arrow ライブラリ、モナド、関数合成、パターンマッチングなど、Kotlinでの関数型プログラミング手法を体系的に学ぶ",
+    sections: [
+      {
+        title: "不変性とイミュータブルデータ",
+        content:
+          "関数型プログラミングの基盤は不変性（Immutability）です。Kotlinではval、不変コレクション（List, Set, Map）、data classのcopyメソッドにより、イミュータブルなデータ操作を言語レベルでサポートしています。不変データは副作用がなく、並行処理での安全性が保証され、テストやデバッグが容易になります。深いネストのデータ構造を更新するにはcopyを連鎖させるか、レンズ（Lens）パターンを使います。",
+        code: `// data class は不変データの基本
+data class Address(val city: String, val street: String)
+data class User(
+    val name: String,
+    val age: Int,
+    val address: Address,
+    val tags: List<String>
+)
+
+// copy() でイミュータブルな更新
+val user = User("田中", 30, Address("東京", "渋谷1-1"), listOf("kotlin", "java"))
+
+// 名前だけ変更した新しいオブジェクト（元のuserは変更されない）
+val renamed = user.copy(name = "山田")
+
+// ネストしたプロパティの更新
+val moved = user.copy(address = user.address.copy(city = "大阪"))
+
+// コレクションのイミュータブル操作
+val original = listOf(1, 2, 3)
+val added = original + 4           // [1, 2, 3, 4] 新しいリスト
+val removed = original - 2         // [1, 3] 新しいリスト
+val mapped = original.map { it * 2 }  // [2, 4, 6] 新しいリスト
+
+// イミュータブルなMap操作
+val config = mapOf("host" to "localhost", "port" to "8080")
+val updated = config + ("port" to "3000")  // portを上書きした新しいMap
+val withNew = config + ("debug" to "true") // 追加した新しいMap
+
+// シンプルなLensパターン
+data class Lens<S, A>(
+    val get: (S) -> A,
+    val set: (S, A) -> S
+)
+
+// User -> Address のレンズ
+val userAddress = Lens<User, Address>(
+    get = { it.address },
+    set = { user, address -> user.copy(address = address) }
+)
+
+// Address -> city のレンズ
+val addressCity = Lens<Address, String>(
+    get = { it.city },
+    set = { address, city -> address.copy(city = city) }
+)
+
+// レンズの合成
+fun <S, A, B> Lens<S, A>.compose(other: Lens<A, B>): Lens<S, B> = Lens(
+    get = { s -> other.get(this.get(s)) },
+    set = { s, b -> this.set(s, other.set(this.get(s), b)) }
+)
+
+val userCity = userAddress.compose(addressCity)
+val updatedUser = userCity.set(user, "福岡")
+println(updatedUser.address.city)  // 福岡`,
+      },
+      {
+        title: "Arrow ライブラリ",
+        content:
+          "Arrowは Kotlin向けの関数型プログラミングライブラリで、Either、Option、Validated、IOなどの関数型データ型を提供します。Arrow 1.x系では関数型プログラミングの概念をKotlinのコルーチンと自然に統合し、型安全なエラーハンドリングや副作用の管理を可能にします。Raised DSLを使えば、命令的なスタイルで関数型のエラーハンドリングを記述でき、学習コストを抑えながら関数型の恩恵を受けられます。",
+        code: `import arrow.core.*
+import arrow.core.raise.*
+
+// Option: nullの代替
+fun findUser(id: Int): Option<String> {
+    val users = mapOf(1 to "田中", 2 to "山田", 3 to "佐藤")
+    return users[id].toOption()
+}
+
+val user1 = findUser(1)  // Some("田中")
+val user9 = findUser(9)  // None
+
+// Option のチェーン操作
+val greeting = findUser(1)
+    .map { name -> "こんにちは、\${name}さん" }
+    .getOrElse { "ゲストさん、こんにちは" }
+println(greeting)  // こんにちは、田中さん
+
+// Either: 型安全なエラーハンドリング
+sealed class AppError {
+    data class NotFound(val id: Int) : AppError()
+    data class Validation(val field: String, val message: String) : AppError()
+    data class Unauthorized(val reason: String) : AppError()
+}
+
+data class UserProfile(val id: Int, val name: String, val email: String)
+
+fun fetchUser(id: Int): Either<AppError, UserProfile> {
+    return if (id > 0) {
+        UserProfile(id, "ユーザー\$id", "user\$id@example.com").right()
+    } else {
+        AppError.Validation("id", "IDは正の数である必要があります").left()
+    }
+}
+
+// Either のチェーン
+val result = fetchUser(1)
+    .map { it.name }
+    .flatMap { name ->
+        if (name.isNotBlank()) name.right()
+        else AppError.Validation("name", "名前が空です").left()
+    }
+    .fold(
+        ifLeft = { "エラー: \$it" },
+        ifRight = { "成功: \$it" }
+    )
+println(result)  // 成功: ユーザー1
+
+// Raise DSL（Arrow 1.2+）: 命令的スタイルで関数型エラーハンドリング
+fun Raise<AppError>.processOrder(userId: Int, amount: Int): String {
+    // ensure: 条件を満たさない場合はエラーを raise
+    ensure(amount > 0) {
+        AppError.Validation("amount", "金額は正の数である必要があります")
+    }
+
+    // bind(): Either から値を取り出す（失敗時は自動的に raise）
+    val user = fetchUser(userId).bind()
+
+    return "注文完了: \${user.name}, 金額: \${amount}円"
+}
+
+// Raise DSL の実行
+val orderResult: Either<AppError, String> = either {
+    processOrder(1, 5000)
+}
+println(orderResult)  // Right(注文完了: ユーザー1, 金額: 5000円)`,
+      },
+      {
+        title: "モナド（Option / Either）",
+        content:
+          "モナドは値をコンテキスト（成功/失敗、存在/不在など）で包み、そのコンテキストを維持しながら処理をチェーンするデザインパターンです。KotlinではOption（値の有無）やEither（成功/失敗）が代表的なモナドです。flatMap（bind）により、モナド内の値を取り出して別のモナドを返す関数に渡す連鎖が可能です。これにより、null チェックの連鎖やtry/catchのネストを排除し、読みやすいコードを書けます。",
+        code: `// モナドの本質: flatMap による処理の連鎖
+
+// Option モナドの実装
+sealed class Maybe<out T> {
+    data class Just<T>(val value: T) : Maybe<T>()
+    data object Empty : Maybe<Nothing>()
+
+    fun <R> map(transform: (T) -> R): Maybe<R> = when (this) {
+        is Just -> Just(transform(value))
+        is Empty -> Empty
+    }
+
+    fun <R> flatMap(transform: (T) -> Maybe<R>): Maybe<R> = when (this) {
+        is Just -> transform(value)
+        is Empty -> Empty
+    }
+
+    fun getOrElse(default: () -> T): T = when (this) {
+        is Just -> value
+        is Empty -> default()
+    }
+}
+
+// 実用例: DB検索の連鎖（null チェック地獄を解消）
+data class Company(val name: String, val ceoId: Int?)
+data class Employee(val name: String, val departmentId: Int?)
+data class Department(val name: String)
+
+fun findCompany(id: Int): Maybe<Company> =
+    if (id == 1) Maybe.Just(Company("TechCorp", 100))
+    else Maybe.Empty
+
+fun findEmployee(id: Int): Maybe<Employee> =
+    if (id == 100) Maybe.Just(Employee("田中CEO", 10))
+    else Maybe.Empty
+
+fun findDepartment(id: Int): Maybe<Department> =
+    if (id == 10) Maybe.Just(Department("経営企画部"))
+    else Maybe.Empty
+
+// flatMap で安全にチェーン
+val departmentName = findCompany(1)
+    .flatMap { company ->
+        company.ceoId?.let { findEmployee(it) } ?: Maybe.Empty
+    }
+    .flatMap { employee ->
+        employee.departmentId?.let { findDepartment(it) } ?: Maybe.Empty
+    }
+    .map { it.name }
+    .getOrElse { "不明" }
+
+println(departmentName)  // 経営企画部
+
+// Either モナドの for-comprehension 風パターン
+sealed class Result<out E, out T> {
+    data class Ok<T>(val value: T) : Result<Nothing, T>()
+    data class Err<E>(val error: E) : Result<E, Nothing>()
+
+    fun <R> map(f: (T) -> R): Result<E, R> = when (this) {
+        is Ok -> Ok(f(value))
+        is Err -> this
+    }
+
+    fun <R> flatMap(f: (T) -> Result<@UnsafeVariance E, R>): Result<E, R> =
+        when (this) {
+            is Ok -> f(value)
+            is Err -> this
+        }
+}
+
+// バリデーションの連鎖
+fun validateName(name: String): Result<String, String> =
+    if (name.isNotBlank()) Result.Ok(name)
+    else Result.Err("名前は必須です")
+
+fun validateAge(age: Int): Result<String, Int> =
+    if (age in 0..150) Result.Ok(age)
+    else Result.Err("年齢が範囲外です")
+
+data class ValidUser(val name: String, val age: Int)
+
+fun createValidUser(name: String, age: Int): Result<String, ValidUser> =
+    validateName(name).flatMap { validName ->
+        validateAge(age).map { validAge ->
+            ValidUser(validName, validAge)
+        }
+    }
+
+println(createValidUser("太郎", 25))   // Ok(ValidUser(太郎, 25))
+println(createValidUser("", 25))       // Err(名前は必須です)`,
+      },
+      {
+        title: "関数合成",
+        content:
+          "関数合成とは、複数の小さな関数を組み合わせて新しい関数を作るテクニックです。Kotlinでは中置関数やoperator overloadを使って関数合成演算子を定義できます。andThen（f の後に g を適用）とcompose（g の後に f を適用）が基本的な合成操作です。関数合成により、データ変換パイプラインを宣言的に構築でき、各ステップを独立してテスト・再利用できるようになります。",
+        code: `// 関数合成の基本演算子を定義
+infix fun <A, B, C> ((A) -> B).andThen(g: (B) -> C): (A) -> C =
+    { a -> g(this(a)) }
+
+infix fun <A, B, C> ((B) -> C).compose(g: (A) -> B): (A) -> C =
+    { a -> this(g(a)) }
+
+// 基本的な関数合成
+val double: (Int) -> Int = { it * 2 }
+val addOne: (Int) -> Int = { it + 1 }
+val square: (Int) -> Int = { it * it }
+
+// double してから addOne する
+val doubleAndAddOne = double andThen addOne
+println(doubleAndAddOne(5))  // 11 = (5 * 2) + 1
+
+// square してから double する
+val squareThenDouble = double compose square
+println(squareThenDouble(3))  // 18 = (3^2) * 2
+
+// 3つ以上の合成
+val pipeline = double andThen addOne andThen square
+println(pipeline(3))  // 49 = ((3*2)+1)^2
+
+// 実用例: テキスト処理パイプライン
+val trim: (String) -> String = { it.trim() }
+val lowercase: (String) -> String = { it.lowercase() }
+val removeSpaces: (String) -> String = { it.replace("\\s+".toRegex(), "-") }
+val truncate: (String) -> String = { it.take(50) }
+
+// URLスラッグ生成パイプライン
+val toSlug = trim andThen lowercase andThen removeSpaces andThen truncate
+println(toSlug("  Hello World Kotlin  "))  // hello-world-kotlin
+
+// パイプライン演算子（|> 風）
+infix fun <A, B> A.pipe(f: (A) -> B): B = f(this)
+
+val result = "  Hello World  " pipe trim pipe lowercase pipe removeSpaces
+println(result)  // hello-world
+
+// 実用例: データ変換パイプライン
+data class RawOrder(val items: List<String>, val quantities: List<Int>)
+data class OrderLine(val item: String, val quantity: Int, val total: Int)
+
+val prices = mapOf("りんご" to 100, "バナナ" to 200, "みかん" to 150)
+
+val parseOrder: (RawOrder) -> List<Pair<String, Int>> = { order ->
+    order.items.zip(order.quantities)
+}
+
+val calculateTotals: (List<Pair<String, Int>>) -> List<OrderLine> = { items ->
+    items.map { (item, qty) ->
+        val price = prices[item] ?: 0
+        OrderLine(item, qty, price * qty)
+    }
+}
+
+val filterPositive: (List<OrderLine>) -> List<OrderLine> = { lines ->
+    lines.filter { it.total > 0 }
+}
+
+val formatSummary: (List<OrderLine>) -> String = { lines ->
+    val total = lines.sumOf { it.total }
+    lines.joinToString("\\n") {
+        "  \${it.item} x\${it.quantity} = \${it.total}円"
+    } + "\\n合計: \${total}円"
+}
+
+// パイプラインの合成
+val processOrder = parseOrder andThen calculateTotals andThen
+    filterPositive andThen formatSummary
+
+val order = RawOrder(
+    items = listOf("りんご", "バナナ", "みかん"),
+    quantities = listOf(3, 2, 5)
+)
+println(processOrder(order))`,
+      },
+      {
+        title: "パターンマッチング（when + sealed）",
+        content:
+          "Kotlinのwhen式とsealed class/interfaceを組み合わせると、関数型言語のパターンマッチングに近い表現力を得られます。sealed型により取り得る状態を網羅的に列挙でき、when式でコンパイル時に全ケースの処理が保証されます。分解宣言（destructuring）を活用すれば、マッチした値のプロパティに直接アクセスでき、ガード条件と組み合わせた高度なパターンも記述できます。再帰的なデータ構造の処理にも適しています。",
+        code: `// 数式を表す再帰的データ構造（AST: 抽象構文木）
+sealed interface Expr {
+    data class Num(val value: Double) : Expr
+    data class Add(val left: Expr, val right: Expr) : Expr
+    data class Mul(val left: Expr, val right: Expr) : Expr
+    data class Neg(val expr: Expr) : Expr
+    data class Var(val name: String) : Expr
+}
+
+// パターンマッチングによる評価
+fun eval(expr: Expr, env: Map<String, Double> = emptyMap()): Double =
+    when (expr) {
+        is Expr.Num -> expr.value
+        is Expr.Add -> eval(expr.left, env) + eval(expr.right, env)
+        is Expr.Mul -> eval(expr.left, env) * eval(expr.right, env)
+        is Expr.Neg -> -eval(expr.expr, env)
+        is Expr.Var -> env[expr.name]
+            ?: error("未定義の変数: \${expr.name}")
+    }
+
+// パターンマッチングによる文字列表現
+fun show(expr: Expr): String = when (expr) {
+    is Expr.Num -> expr.value.toString()
+    is Expr.Add -> "(\${show(expr.left)} + \${show(expr.right)})"
+    is Expr.Mul -> "(\${show(expr.left)} * \${show(expr.right)})"
+    is Expr.Neg -> "(-\${show(expr.expr)})"
+    is Expr.Var -> expr.name
+}
+
+// 最適化（定数畳み込み）
+fun optimize(expr: Expr): Expr = when (expr) {
+    is Expr.Add -> {
+        val l = optimize(expr.left)
+        val r = optimize(expr.right)
+        when {
+            l is Expr.Num && l.value == 0.0 -> r
+            r is Expr.Num && r.value == 0.0 -> l
+            l is Expr.Num && r is Expr.Num ->
+                Expr.Num(l.value + r.value)
+            else -> Expr.Add(l, r)
+        }
+    }
+    is Expr.Mul -> {
+        val l = optimize(expr.left)
+        val r = optimize(expr.right)
+        when {
+            l is Expr.Num && l.value == 0.0 -> Expr.Num(0.0)
+            r is Expr.Num && r.value == 0.0 -> Expr.Num(0.0)
+            l is Expr.Num && l.value == 1.0 -> r
+            r is Expr.Num && r.value == 1.0 -> l
+            else -> Expr.Mul(l, r)
+        }
+    }
+    is Expr.Neg -> when (val inner = optimize(expr.expr)) {
+        is Expr.Neg -> inner.expr  // 二重否定の除去
+        is Expr.Num -> Expr.Num(-inner.value)
+        else -> Expr.Neg(inner)
+    }
+    is Expr.Num, is Expr.Var -> expr
+}
+
+// 使用例
+val expr = Expr.Add(
+    Expr.Mul(Expr.Num(2.0), Expr.Var("x")),
+    Expr.Add(Expr.Num(3.0), Expr.Num(4.0))
+)
+
+val env = mapOf("x" to 5.0)
+println(show(expr))            // ((2.0 * x) + (3.0 + 4.0))
+println(eval(expr, env))       // 17.0
+println(show(optimize(expr)))  // ((2.0 * x) + 7.0)
+
+// 状態管理のパターンマッチング
+sealed class UiState<out T> {
+    data object Loading : UiState<Nothing>()
+    data class Success<T>(val data: T) : UiState<T>()
+    data class Error(val message: String, val retry: () -> Unit) : UiState<Nothing>()
+    data object Empty : UiState<Nothing>()
+}
+
+fun <T> renderState(state: UiState<T>, render: (T) -> String): String =
+    when (state) {
+        is UiState.Loading -> "読み込み中..."
+        is UiState.Success -> render(state.data)
+        is UiState.Error -> "エラー: \${state.message}"
+        is UiState.Empty -> "データがありません"
+    }`,
+      },
+    ],
+  },
+  {
+    id: "concurrency-patterns",
+    title: "並行処理パターン",
+    category: "practice",
+    description:
+      "Channel、SharedFlow/StateFlow、Mutex/Semaphore、アクターモデル、構造化並行性など、Kotlinコルーチンを活用した実践的な並行処理パターンを学ぶ",
+    sections: [
+      {
+        title: "Channel",
+        content:
+          "ChannelはKotlinコルーチン間でデータを安全にやり取りするための通信プリミティブです。GoのChannelに似た概念で、送信側（send）と受信側（receive）がサスペンドしながらデータを受け渡します。Channelには容量（バッファ）を指定でき、RENDEZVOUS（バッファなし）、BUFFERED、CONFLATED（最新値のみ保持）、UNLIMITED の4種類があります。produce ビルダーを使えば、Channel をコルーチンと組み合わせたプロデューサーを簡潔に書けます。",
+        code: `import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+
+// 基本的な Channel の使い方
+suspend fun basicChannel() = coroutineScope {
+    val channel = Channel<Int>(capacity = 5)  // バッファ付きChannel
+
+    // プロデューサー
+    launch {
+        for (i in 1..10) {
+            println("送信: \$i")
+            channel.send(i)
+            delay(100)
+        }
+        channel.close()  // 送信完了を通知
+    }
+
+    // コンシューマー
+    launch {
+        for (value in channel) {  // close() まで繰り返す
+            println("受信: \$value")
+            delay(200)  // 処理に時間がかかる
+        }
+        println("全て受信完了")
+    }
+}
+
+// produce ビルダーでプロデューサーを作成
+fun CoroutineScope.generateNumbers(max: Int): ReceiveChannel<Int> = produce {
+    for (i in 1..max) {
+        send(i)
+        delay(100)
+    }
+}
+
+// パイプラインパターン（Channel の連鎖）
+fun CoroutineScope.square(numbers: ReceiveChannel<Int>): ReceiveChannel<Int> =
+    produce {
+        for (n in numbers) {
+            send(n * n)
+        }
+    }
+
+fun CoroutineScope.filter(
+    numbers: ReceiveChannel<Int>,
+    predicate: (Int) -> Boolean
+): ReceiveChannel<Int> = produce {
+    for (n in numbers) {
+        if (predicate(n)) send(n)
+    }
+}
+
+suspend fun pipelineExample() = coroutineScope {
+    val numbers = generateNumbers(20)
+    val squared = square(numbers)
+    val filtered = filter(squared) { it > 50 }
+
+    for (value in filtered) {
+        println("結果: \$value")
+    }
+}
+
+// Fan-out: 複数のワーカーで並列処理
+suspend fun fanOutExample() = coroutineScope {
+    val tasks = Channel<String>(capacity = 100)
+
+    // タスクの投入
+    launch {
+        val jobs = listOf("レポート生成", "メール送信", "データ集計",
+            "バックアップ", "通知処理", "ログ解析")
+        jobs.forEach { tasks.send(it) }
+        tasks.close()
+    }
+
+    // 3つのワーカーで並列処理
+    repeat(3) { workerId ->
+        launch {
+            for (task in tasks) {
+                println("ワーカー\$workerId: \$task 処理中")
+                delay((100L..500L).random())
+                println("ワーカー\$workerId: \$task 完了")
+            }
+        }
+    }
+}`,
+      },
+      {
+        title: "SharedFlow / StateFlow",
+        content:
+          "SharedFlowとStateFlowはKotlinのホットFlowで、複数のコレクターにデータをブロードキャストします。StateFlowは常に最新の状態を保持し、UIの状態管理に最適です。SharedFlowはイベントの配信に使い、replayキャッシュや追加のバッファを設定できます。MutableStateFlowのvalueプロパティでスレッドセーフに状態を更新でき、updateメソッドでアトミックな更新も可能です。collectはsuspend関数なので、コルーチン内で自然に使えます。",
+        code: `import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+
+// StateFlow: 状態管理
+class CounterViewModel {
+    // 内部は Mutable、外部には読み取り専用を公開
+    private val _count = MutableStateFlow(0)
+    val count: StateFlow<Int> = _count.asStateFlow()
+
+    private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    sealed class UiState {
+        data object Idle : UiState()
+        data object Loading : UiState()
+        data class Success(val message: String) : UiState()
+        data class Error(val error: String) : UiState()
+    }
+
+    fun increment() {
+        _count.update { it + 1 }  // アトミックな更新
+    }
+
+    suspend fun loadData() {
+        _uiState.value = UiState.Loading
+        try {
+            delay(1000)  // API呼び出しのシミュレーション
+            _uiState.value = UiState.Success("データ読み込み完了")
+        } catch (e: Exception) {
+            _uiState.value = UiState.Error(e.message ?: "不明なエラー")
+        }
+    }
+}
+
+// SharedFlow: イベントの配信
+class EventBus {
+    private val _events = MutableSharedFlow<AppEvent>(
+        replay = 0,          // リプレイキャッシュなし
+        extraBufferCapacity = 64,  // バッファ
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val events: SharedFlow<AppEvent> = _events.asSharedFlow()
+
+    sealed class AppEvent {
+        data class UserLoggedIn(val userId: Int) : AppEvent()
+        data class OrderPlaced(val orderId: String) : AppEvent()
+        data class NotificationReceived(val message: String) : AppEvent()
+    }
+
+    suspend fun emit(event: AppEvent) {
+        _events.emit(event)
+    }
+}
+
+// 使用例
+suspend fun stateFlowExample() = coroutineScope {
+    val viewModel = CounterViewModel()
+
+    // 状態の監視
+    val job = launch {
+        viewModel.uiState.collect { state ->
+            when (state) {
+                is CounterViewModel.UiState.Idle ->
+                    println("待機中")
+                is CounterViewModel.UiState.Loading ->
+                    println("読み込み中...")
+                is CounterViewModel.UiState.Success ->
+                    println("成功: \${state.message}")
+                is CounterViewModel.UiState.Error ->
+                    println("エラー: \${state.error}")
+            }
+        }
+    }
+
+    viewModel.loadData()
+    delay(1500)
+    job.cancel()
+}
+
+// SharedFlow のイベント処理
+suspend fun eventBusExample() = coroutineScope {
+    val bus = EventBus()
+
+    // 複数のサブスクライバー
+    launch {
+        bus.events
+            .filterIsInstance<EventBus.AppEvent.OrderPlaced>()
+            .collect { println("注文処理: \${it.orderId}") }
+    }
+
+    launch {
+        bus.events.collect { println("ログ: \$it") }
+    }
+
+    delay(100)
+    bus.emit(EventBus.AppEvent.UserLoggedIn(1))
+    bus.emit(EventBus.AppEvent.OrderPlaced("ORD-001"))
+    delay(500)
+    coroutineContext.cancelChildren()
+}`,
+      },
+      {
+        title: "Mutex / Semaphore",
+        content:
+          "コルーチンでの排他制御にはMutexを使います。JavaのsynchronizedやReentrantLockとは異なり、Mutexはスレッドをブロックせずサスペンドするため、コルーチンとの相性が良いです。withLockブロックで安全にクリティカルセクションを保護できます。Semaphoreは同時実行数を制限するために使い、外部API呼び出しのレート制限やリソースプールの管理に有効です。AtomicIntegerやatomicfu も並行性制御の選択肢です。",
+        code: `import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.*
+import java.util.concurrent.atomic.AtomicInteger
+
+// Mutex: 排他制御
+class BankAccount(initialBalance: Int) {
+    private var balance = initialBalance
+    private val mutex = Mutex()
+
+    suspend fun transfer(amount: Int): Boolean = mutex.withLock {
+        if (balance >= amount) {
+            delay(10)  // 処理のシミュレーション
+            balance -= amount
+            println("出金: \${amount}円, 残高: \${balance}円")
+            true
+        } else {
+            println("残高不足: 残高\${balance}円 < \${amount}円")
+            false
+        }
+    }
+
+    suspend fun deposit(amount: Int) = mutex.withLock {
+        delay(10)
+        balance += amount
+        println("入金: \${amount}円, 残高: \${balance}円")
+    }
+
+    suspend fun getBalance(): Int = mutex.withLock { balance }
+}
+
+// Mutex を使った安全な並行処理
+suspend fun mutexExample() = coroutineScope {
+    val account = BankAccount(10000)
+
+    // 100個の並行出金
+    val jobs = (1..100).map {
+        launch {
+            account.transfer(100)
+        }
+    }
+    jobs.joinAll()
+
+    println("最終残高: \${account.getBalance()}円")  // 正確に0円
+}
+
+// Semaphore: 同時実行数の制限
+class RateLimitedApiClient(maxConcurrent: Int = 5) {
+    private val semaphore = Semaphore(maxConcurrent)
+    private val requestCount = AtomicInteger(0)
+
+    suspend fun <T> request(
+        endpoint: String,
+        block: suspend () -> T
+    ): T {
+        return semaphore.withPermit {
+            val current = requestCount.incrementAndGet()
+            println("API呼び出し開始: \$endpoint " +
+                "(並行数: \$current)")
+            try {
+                block()
+            } finally {
+                requestCount.decrementAndGet()
+            }
+        }
+    }
+}
+
+// Semaphore の使用例
+suspend fun semaphoreExample() = coroutineScope {
+    val client = RateLimitedApiClient(maxConcurrent = 3)
+
+    // 10個のリクエストを同時実行（最大3並行）
+    val results = (1..10).map { id ->
+        async {
+            client.request("/api/users/\$id") {
+                delay((100L..500L).random())  // API処理のシミュレーション
+                "ユーザー\$id のデータ"
+            }
+        }
+    }.awaitAll()
+
+    println("取得完了: \${results.size}件")
+}
+
+// スレッドセーフなキャッシュ
+class CoroutineCache<K, V> {
+    private val cache = mutableMapOf<K, V>()
+    private val mutex = Mutex()
+
+    suspend fun getOrPut(key: K, compute: suspend () -> V): V {
+        // 楽観的読み取り
+        mutex.withLock { cache[key] }?.let { return it }
+
+        // キャッシュミス時は計算して格納
+        val value = compute()
+        mutex.withLock {
+            cache.getOrPut(key) { value }
+        }
+        return value
+    }
+
+    suspend fun invalidate(key: K) = mutex.withLock {
+        cache.remove(key)
+    }
+
+    suspend fun size(): Int = mutex.withLock { cache.size }
+}`,
+      },
+      {
+        title: "アクターモデル",
+        content:
+          "アクターモデルは、状態を持つオブジェクトがメッセージを受信して処理する並行処理パターンです。各アクターは自身の状態を外部に公開せず、メッセージ（Channel経由）でのみ通信します。これにより、共有状態へのロックが不要になり、デッドロックのリスクを排除できます。Kotlinではコルーチン + Channel + sealed classでアクターパターンを実装でき、状態マシンの構築に適しています。",
+        code: `import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+
+// アクターへのメッセージを定義
+sealed class CartMessage {
+    data class AddItem(
+        val productId: String,
+        val name: String,
+        val price: Int,
+        val quantity: Int
+    ) : CartMessage()
+
+    data class RemoveItem(val productId: String) : CartMessage()
+
+    data class UpdateQuantity(
+        val productId: String,
+        val quantity: Int
+    ) : CartMessage()
+
+    data class GetTotal(
+        val response: CompletableDeferred<Int>
+    ) : CartMessage()
+
+    data class GetItems(
+        val response: CompletableDeferred<List<CartItem>>
+    ) : CartMessage()
+
+    data object Clear : CartMessage()
+}
+
+data class CartItem(
+    val productId: String,
+    val name: String,
+    val price: Int,
+    val quantity: Int
+) {
+    val subtotal: Int get() = price * quantity
+}
+
+// アクターの実装
+fun CoroutineScope.shoppingCartActor(): Channel<CartMessage> {
+    val channel = Channel<CartMessage>()
+
+    launch {
+        // アクターのローカル状態（外部からアクセス不可）
+        val items = mutableMapOf<String, CartItem>()
+
+        for (msg in channel) {
+            when (msg) {
+                is CartMessage.AddItem -> {
+                    val existing = items[msg.productId]
+                    items[msg.productId] = if (existing != null) {
+                        existing.copy(
+                            quantity = existing.quantity + msg.quantity
+                        )
+                    } else {
+                        CartItem(msg.productId, msg.name,
+                            msg.price, msg.quantity)
+                    }
+                    println("追加: \${msg.name} x\${msg.quantity}")
+                }
+
+                is CartMessage.RemoveItem -> {
+                    val removed = items.remove(msg.productId)
+                    println("削除: \${removed?.name ?: "不明"}")
+                }
+
+                is CartMessage.UpdateQuantity -> {
+                    items[msg.productId]?.let {
+                        items[msg.productId] = it.copy(
+                            quantity = msg.quantity
+                        )
+                    }
+                }
+
+                is CartMessage.GetTotal -> {
+                    val total = items.values.sumOf { it.subtotal }
+                    msg.response.complete(total)
+                }
+
+                is CartMessage.GetItems -> {
+                    msg.response.complete(items.values.toList())
+                }
+
+                CartMessage.Clear -> {
+                    items.clear()
+                    println("カートをクリアしました")
+                }
+            }
+        }
+    }
+
+    return channel
+}
+
+// アクターの使用例
+suspend fun actorExample() = coroutineScope {
+    val cart = shoppingCartActor()
+
+    // 商品を追加
+    cart.send(CartMessage.AddItem("P001", "Kotlin入門書", 3000, 1))
+    cart.send(CartMessage.AddItem("P002", "ノートPC", 150000, 1))
+    cart.send(CartMessage.AddItem("P001", "Kotlin入門書", 3000, 2))
+
+    // 合計を取得（リクエスト/レスポンスパターン）
+    val totalDeferred = CompletableDeferred<Int>()
+    cart.send(CartMessage.GetTotal(totalDeferred))
+    println("合計: \${totalDeferred.await()}円")  // 159000円
+
+    // 商品一覧を取得
+    val itemsDeferred = CompletableDeferred<List<CartItem>>()
+    cart.send(CartMessage.GetItems(itemsDeferred))
+    itemsDeferred.await().forEach {
+        println("  \${it.name}: \${it.price}円 x \${it.quantity}")
+    }
+
+    cart.close()
+}`,
+      },
+      {
+        title: "構造化並行性（Structured Concurrency）",
+        content:
+          "構造化並行性はKotlinコルーチンの中核概念で、すべてのコルーチンが明確なスコープ内で管理されることを保証します。親コルーチンは子コルーチンの完了を待ち、子が失敗すれば親もキャンセルされ、親がキャンセルされれば全ての子もキャンセルされます。これによりリソースリークや孤立したコルーチンを防ぎます。coroutineScope、supervisorScope、withContextを使い分けることで、適切なエラー伝播とキャンセルポリシーを設計できます。",
+        code: `import kotlinx.coroutines.*
+
+// coroutineScope: 子の失敗で全体がキャンセルされる
+suspend fun fetchDashboardData(): DashboardData = coroutineScope {
+    // 全APIを並列で呼び出し
+    val userDeferred = async { fetchUserProfile() }
+    val ordersDeferred = async { fetchRecentOrders() }
+    val statsDeferred = async { fetchStatistics() }
+
+    // 全て揃うまで待機（1つでも失敗すれば他もキャンセル）
+    DashboardData(
+        user = userDeferred.await(),
+        orders = ordersDeferred.await(),
+        stats = statsDeferred.await()
+    )
+}
+
+data class DashboardData(
+    val user: String,
+    val orders: List<String>,
+    val stats: Map<String, Int>
+)
+
+suspend fun fetchUserProfile(): String {
+    delay(500)
+    return "田中太郎"
+}
+suspend fun fetchRecentOrders(): List<String> {
+    delay(800)
+    return listOf("注文1", "注文2")
+}
+suspend fun fetchStatistics(): Map<String, Int> {
+    delay(600)
+    return mapOf("total" to 100, "thisMonth" to 15)
+}
+
+// supervisorScope: 子の失敗が他の子に影響しない
+suspend fun sendNotifications(
+    userIds: List<Int>
+): Map<Int, Result<String>> = supervisorScope {
+    userIds.map { userId ->
+        userId to async {
+            runCatching {
+                sendNotification(userId)
+            }
+        }
+    }.associate { (id, deferred) ->
+        id to deferred.await()
+    }
+}
+
+suspend fun sendNotification(userId: Int): String {
+    delay(100)
+    if (userId == 3) throw RuntimeException("ユーザー\$userId: 送信失敗")
+    return "ユーザー\$userId: 送信成功"
+}
+
+// タイムアウト付きの並行処理
+suspend fun fetchWithTimeout() {
+    // withTimeout: タイムアウトで例外
+    try {
+        val result = withTimeout(3000) {
+            fetchSlowData()
+        }
+        println("結果: \$result")
+    } catch (e: TimeoutCancellationException) {
+        println("タイムアウト: \${e.message}")
+    }
+
+    // withTimeoutOrNull: タイムアウトで null
+    val result = withTimeoutOrNull(1000) {
+        fetchSlowData()
+    }
+    println("結果: \${result ?: "タイムアウト（デフォルト値を使用）"}")
+}
+
+suspend fun fetchSlowData(): String {
+    delay(2000)
+    return "遅いデータ"
+}
+
+// 実践的なパターン: 並行処理ユーティリティ
+suspend fun <T, R> Iterable<T>.parallelMap(
+    concurrency: Int = 10,
+    transform: suspend (T) -> R
+): List<R> = coroutineScope {
+    val semaphore = kotlinx.coroutines.sync.Semaphore(concurrency)
+    map { item ->
+        async {
+            semaphore.withPermit {
+                transform(item)
+            }
+        }
+    }.awaitAll()
+}
+
+// 使用例
+suspend fun parallelExample() = coroutineScope {
+    val userIds = (1..100).toList()
+
+    // 最大10並行でユーザーデータを取得
+    val users = userIds.parallelMap(concurrency = 10) { id ->
+        delay(100)  // API呼び出しのシミュレーション
+        "ユーザー\$id"
+    }
+    println("取得完了: \${users.size}件")
+
+    // レース: 最初に完了した結果を使う
+    suspend fun <T> raceOf(vararg blocks: suspend () -> T): T =
+        coroutineScope {
+            select {
+                blocks.forEach { block ->
+                    async { block() }.onAwait { it }
+                }
+            }.also { coroutineContext.cancelChildren() }
+        }
+
+    val fastest = raceOf(
+        { delay(300); "サーバーA" },
+        { delay(100); "サーバーB" },
+        { delay(200); "サーバーC" }
+    )
+    println("最速: \$fastest")  // サーバーB
+}`,
+      },
+    ],
+  },
+
 ];
