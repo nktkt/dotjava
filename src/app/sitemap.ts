@@ -32,6 +32,11 @@ import { cleanCodeChapters } from "@/data/clean-code";
 import { performanceChapters } from "@/data/performance";
 import { microservicesChapters } from "@/data/microservices";
 import { restApiChapters } from "@/data/rest-api";
+import { springSecurityChapters } from "@/data/spring-security";
+import { sqlBasicsChapters } from "@/data/sql-basics";
+import { linuxCliChapters } from "@/data/linux-cli";
+import { cicdChapters } from "@/data/cicd";
+import { kotlinChapters } from "@/data/kotlin";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -70,6 +75,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/performance`, priority: 0.8 },
     { url: `${baseUrl}/microservices`, priority: 0.8 },
     { url: `${baseUrl}/rest-api`, priority: 0.8 },
+    { url: `${baseUrl}/spring-security`, priority: 0.8 },
+    { url: `${baseUrl}/sql-basics`, priority: 0.8 },
+    { url: `${baseUrl}/linux-cli`, priority: 0.8 },
+    { url: `${baseUrl}/cicd`, priority: 0.8 },
+    { url: `${baseUrl}/kotlin`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
     { url: `${baseUrl}/patterns`, priority: 0.8 },
     { url: `${baseUrl}/errors`, priority: 0.7 },
@@ -242,6 +252,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const springSecurityPages: MetadataRoute.Sitemap = springSecurityChapters.map((c) => ({
+    url: `${baseUrl}/spring-security/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const sqlBasicsPages: MetadataRoute.Sitemap = sqlBasicsChapters.map((c) => ({
+    url: `${baseUrl}/sql-basics/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const linuxCliPages: MetadataRoute.Sitemap = linuxCliChapters.map((c) => ({
+    url: `${baseUrl}/linux-cli/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const cicdPages: MetadataRoute.Sitemap = cicdChapters.map((c) => ({
+    url: `${baseUrl}/cicd/${c.id}`,
+    priority: 0.6,
+  }));
+
+  const kotlinPages: MetadataRoute.Sitemap = kotlinChapters.map((c) => ({
+    url: `${baseUrl}/kotlin/${c.id}`,
+    priority: 0.6,
+  }));
+
   return [
     ...staticPages,
     ...versionPages,
@@ -277,5 +312,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...performancePages,
     ...microservicesPages,
     ...restApiPages,
+    ...springSecurityPages,
+    ...sqlBasicsPages,
+    ...linuxCliPages,
+    ...cicdPages,
+    ...kotlinPages,
   ];
 }

@@ -41,6 +41,7 @@ const navGroups = [
     items: [
       { href: "/web", label: "Web開発" },
       { href: "/spring-boot", label: "Spring Boot" },
+      { href: "/spring-security", label: "Spring Security" },
       { href: "/rest-api", label: "REST API" },
       { href: "/jpa", label: "JPA/Hibernate" },
       { href: "/testing", label: "テスト" },
@@ -57,12 +58,15 @@ const navGroups = [
       { href: "/patterns", label: "デザインパターン" },
       { href: "/microservices", label: "マイクロサービス" },
       { href: "/docker-java", label: "Docker" },
+      { href: "/cicd", label: "CI/CD" },
+      { href: "/linux-cli", label: "Linux" },
       { href: "/eclipse-ide", label: "Eclipse" },
     ],
   },
   {
     label: "他言語・技術",
     items: [
+      { href: "/kotlin", label: "Kotlin" },
       { href: "/javascript", label: "JavaScript" },
       { href: "/html", label: "HTML" },
       { href: "/htmx", label: "HTMX" },
@@ -75,6 +79,7 @@ const navGroups = [
   {
     label: "DB・インフラ",
     items: [
+      { href: "/sql-basics", label: "SQL基礎" },
       { href: "/postgresql", label: "PostgreSQL" },
       { href: "/aws", label: "AWS" },
       { href: "/github", label: "GitHub" },
