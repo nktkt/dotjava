@@ -37,6 +37,16 @@ import { sqlBasicsChapters } from "@/data/sql-basics";
 import { linuxCliChapters } from "@/data/linux-cli";
 import { cicdChapters } from "@/data/cicd";
 import { kotlinChapters } from "@/data/kotlin";
+import { jmeterChapters } from "@/data/jmeter";
+import { gitPracticalChapters } from "@/data/git-practical";
+import { exercisesChapters } from "@/data/exercises";
+import { springBootTestingChapters } from "@/data/spring-boot-testing";
+import { dbDesignChapters } from "@/data/db-design";
+import { jvmChapters } from "@/data/jvm";
+import { owaspChapters } from "@/data/owasp";
+import { redisChapters } from "@/data/redis";
+import { messagingChapters } from "@/data/messaging";
+import { terraformChapters } from "@/data/terraform";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://dotjava.org";
@@ -80,6 +90,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/linux-cli`, priority: 0.8 },
     { url: `${baseUrl}/cicd`, priority: 0.8 },
     { url: `${baseUrl}/kotlin`, priority: 0.8 },
+    { url: `${baseUrl}/jmeter`, priority: 0.8 },
+    { url: `${baseUrl}/git`, priority: 0.8 },
+    { url: `${baseUrl}/exercises`, priority: 0.8 },
+    { url: `${baseUrl}/spring-boot-testing`, priority: 0.8 },
+    { url: `${baseUrl}/db-design`, priority: 0.8 },
+    { url: `${baseUrl}/jvm`, priority: 0.8 },
+    { url: `${baseUrl}/owasp`, priority: 0.8 },
+    { url: `${baseUrl}/redis`, priority: 0.8 },
+    { url: `${baseUrl}/messaging`, priority: 0.8 },
+    { url: `${baseUrl}/terraform`, priority: 0.8 },
     { url: `${baseUrl}/glossary`, priority: 0.7 },
     { url: `${baseUrl}/patterns`, priority: 0.8 },
     { url: `${baseUrl}/errors`, priority: 0.7 },
@@ -277,6 +297,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const jmeterPages: MetadataRoute.Sitemap = jmeterChapters.map((c) => ({
+    url: `${baseUrl}/jmeter/${c.id}`,
+    priority: 0.6,
+  }));
+
   return [
     ...staticPages,
     ...versionPages,
@@ -317,5 +342,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...linuxCliPages,
     ...cicdPages,
     ...kotlinPages,
+    ...jmeterPages,
+    ...gitPracticalChapters.map((c) => ({ url: `${baseUrl}/git/${c.id}`, priority: 0.6 as const })),
+    ...exercisesChapters.map((c) => ({ url: `${baseUrl}/exercises/${c.id}`, priority: 0.6 as const })),
+    ...springBootTestingChapters.map((c) => ({ url: `${baseUrl}/spring-boot-testing/${c.id}`, priority: 0.6 as const })),
+    ...dbDesignChapters.map((c) => ({ url: `${baseUrl}/db-design/${c.id}`, priority: 0.6 as const })),
+    ...jvmChapters.map((c) => ({ url: `${baseUrl}/jvm/${c.id}`, priority: 0.6 as const })),
+    ...owaspChapters.map((c) => ({ url: `${baseUrl}/owasp/${c.id}`, priority: 0.6 as const })),
+    ...redisChapters.map((c) => ({ url: `${baseUrl}/redis/${c.id}`, priority: 0.6 as const })),
+    ...messagingChapters.map((c) => ({ url: `${baseUrl}/messaging/${c.id}`, priority: 0.6 as const })),
+    ...terraformChapters.map((c) => ({ url: `${baseUrl}/terraform/${c.id}`, priority: 0.6 as const })),
   ];
 }
