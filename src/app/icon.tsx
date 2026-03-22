@@ -16,7 +16,7 @@ export default function Icon() {
           background: "transparent",
         }}
       >
-        <span style={{ fontSize: 28, lineHeight: 1 }}>☕</span>
+        <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1, color: "#000", letterSpacing: "-0.05em" }}>CL</span>
       </div>
     ),
     { ...size }

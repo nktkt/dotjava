@@ -13,7 +13,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { Coffee, Menu, Sun, Moon, ChevronDown } from "lucide-react";
+import { Menu, Sun, Moon, ChevronDown } from "lucide-react";
 
 function XIcon({ className }: { className?: string }) {
   return (
@@ -25,10 +25,9 @@ function XIcon({ className }: { className?: string }) {
 
 const navGroups = [
   {
-    label: "Java基礎",
+    label: "Java",
     items: [
-      { href: "/#versions", label: "バージョン別" },
-      { href: "/#topics", label: "トピック別" },
+      { href: "/java", label: "Java総合" },
       { href: "/io", label: "入出力" },
       { href: "/algorithm", label: "アルゴリズム" },
       { href: "/concurrency", label: "並行処理" },
@@ -137,13 +136,12 @@ export function Header() {
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md"
+      className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md"
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Coffee className="h-6 w-6 text-[var(--color-dads-blue)]" />
-          <span className="text-lg font-bold tracking-tight">
-            Java<span className="text-[var(--color-dads-blue)]">学習</span>
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-xl font-bold tracking-tighter">
+            CL
           </span>
         </Link>
 

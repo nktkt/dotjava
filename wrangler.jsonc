@@ -9,6 +9,7 @@
   },
   "routes": [
     { "pattern": "dotjava.org", "custom_domain": true },
-    { "pattern": "www.dotjava.org", "custom_domain": true }
+    { "pattern": "www.dotjava.org", "custom_domain": true },
+    { "pattern": "cl.naokitakata.com", "custom_domain": true }
   ]
 }

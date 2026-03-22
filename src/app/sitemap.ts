@@ -49,10 +49,11 @@ import { messagingChapters } from "@/data/messaging";
 import { terraformChapters } from "@/data/terraform";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://dotjava.org";
+  const baseUrl = "https://cl.naokitakata.com";
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: baseUrl, priority: 1.0 },
+    { url: `${baseUrl}/java`, priority: 0.9 },
     { url: `${baseUrl}/web`, priority: 0.8 },
     { url: `${baseUrl}/io`, priority: 0.8 },
     { url: `${baseUrl}/excel`, priority: 0.8 },

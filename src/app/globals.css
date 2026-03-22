@@ -117,47 +117,47 @@
 }
 
 .dark {
-  --background: #1A1214;
-  --foreground: #F5F0F1;
-  --card: #2A2022;
-  --card-foreground: #F5F0F1;
-  --popover: #2A2022;
-  --popover-foreground: #F5F0F1;
-  --primary: #FF7A7A;
-  --primary-foreground: #1A1214;
-  --secondary: #2A2022;
-  --secondary-foreground: #F5F0F1;
-  --muted: #2A2022;
-  --muted-foreground: #A89A9D;
-  --accent: #2E1520;
-  --accent-foreground: #FF9A9A;
-  --destructive: #FF6B6B;
-  --border: rgba(255, 200, 200, 0.10);
-  --input: rgba(255, 200, 200, 0.12);
-  --ring: #FF7A7A;
-  --chart-1: #FF7A7A;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #e5e5e5;
+  --primary-foreground: #0a0a0a;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.10);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #a3a3a3;
+  --chart-1: #e5e5e5;
   --chart-2: #34D399;
   --chart-3: #FBBF24;
   --chart-4: #A78BFA;
   --chart-5: #22D3EE;
-  --sidebar: #2A2022;
-  --sidebar-foreground: #F5F0F1;
-  --sidebar-primary: #FF7A7A;
-  --sidebar-primary-foreground: #1A1214;
-  --sidebar-accent: #2E1520;
-  --sidebar-accent-foreground: #FF9A9A;
-  --sidebar-border: rgba(255, 200, 200, 0.10);
-  --sidebar-ring: #FF7A7A;
-  /* DADS color tokens — dark variants */
-  --dads-blue: #FF7A7A;
-  --dads-blue-light: #2E1520;
-  --dads-blue-hover: #FF9A9A;
+  --sidebar: #171717;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #e5e5e5;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: rgba(255, 255, 255, 0.10);
+  --sidebar-ring: #a3a3a3;
+  /* DADS color tokens — dark neutral variants */
+  --dads-blue: #e5e5e5;
+  --dads-blue-light: #262626;
+  --dads-blue-hover: #fafafa;
   --dads-success: #34D399;
-  --dads-success-light: #1A2E25;
-  --dads-error: #FF6B6B;
-  --dads-error-light: #2E1A1A;
+  --dads-success-light: #1a2e25;
+  --dads-error: #ef4444;
+  --dads-error-light: #2e1a1a;
   --dads-warning: #FBBF24;
-  --dads-warning-light: #2E2510;
+  --dads-warning-light: #2e2510;
   --dads-purple: #A78BFA;
   --dads-cyan: #22D3EE;
   --dads-gray: #94A3B8;
@@ -168,9 +168,6 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  html {
-    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground;

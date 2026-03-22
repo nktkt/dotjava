@@ -12,16 +12,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://dotjava.org"),
+  metadataBase: new URL("https://cl.naokitakata.com"),
   title: {
-    default: "dotjava | Java・Excel・Oracle 学習サイト",
-    template: "%s | dotjava",
+    default: "CL | Java・Spring Boot・DB・DevOps 学習サイト",
+    template: "%s | CL",
   },
   description:
-    "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excel、Oracle Databaseまで、全てをコード例と共に学習できるリファレンスサイト。",
+    "Java、Spring Boot、データベース、DevOps、フロントエンドまで40以上のセクションをコード例と共に体系的に学習できるサイト。",
   openGraph: {
     type: "website",
-    siteName: "dotjava",
+    siteName: "CL",
     locale: "ja_JP",
   },
   twitter: {
@@ -32,15 +32,15 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "dotjava",
-  url: "https://dotjava.org",
+  name: "CL",
+  url: "https://cl.naokitakata.com",
   description:
-    "Javaの基礎からバージョンごとの新機能、Web開発、入出力、Excel、Oracle Databaseまで、全てをコード例と共に学習できるリファレンスサイト。",
+    "Java、Spring Boot、データベース、DevOps、フロントエンドまで40以上のセクションをコード例と共に体系的に学習できるサイト。",
   potentialAction: {
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: "https://dotjava.org/search?q={search_term_string}",
+      urlTemplate: "https://cl.naokitakata.com/search?q={search_term_string}",
     },
     "query-input": "required name=search_term_string",
   },
@@ -64,9 +64,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${geistMono.variable} antialiased overflow-x-hidden`}>
+      <body className={`${geistMono.variable} antialiased`}>
         <Header />
-        <main className="min-h-screen">{children}</main>
+        <main className="min-h-screen pt-16">{children}</main>
         <Footer />
         <GrokButton />
       </body>

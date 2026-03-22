@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import { Check, Copy, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,6 @@ interface CodeBlockProps {
 
 export function CodeBlock({ code, language = "java" }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
-  const [isScrollable, setIsScrollable] = useState(false);
-  const [isScrolledToEnd, setIsScrolledToEnd] = useState(false);
-  const preRef = useRef<HTMLPreElement>(null);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -22,33 +19,12 @@ export function CodeBlock({ code, language = "java" }: CodeBlockProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  useEffect(() => {
-    const el = preRef.current;
-    if (!el) return;
-
-    const checkScroll = () => {
-      const scrollable = el.scrollWidth > el.clientWidth;
-      setIsScrollable(scrollable);
-      setIsScrolledToEnd(
-        scrollable && el.scrollLeft + el.clientWidth >= el.scrollWidth - 2
-      );
-    };
-
-    checkScroll();
-
-    const resizeObserver = new ResizeObserver(checkScroll);
-    resizeObserver.observe(el);
-    el.addEventListener("scroll", checkScroll, { passive: true });
-
-    return () => {
-      resizeObserver.disconnect();
-      el.removeEventListener("scroll", checkScroll);
-    };
-  }, [code]);
-
   return (
-    <div className="relative group rounded-lg border border-[#D9DBE0] bg-[#1A1A1C] text-[#F1F3F9] overflow-hidden">
-      {/* Header with language label and action buttons */}
+    <div
+      className="rounded-lg border border-[#D9DBE0] bg-[#1A1A1C] text-[#F1F3F9]"
+      style={{ overflow: "hidden" }}
+    >
+      {/* Header */}
       <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b border-[#27272A] bg-[#27272A]">
         <span className="text-xs text-[#A1A1AA] font-mono">{language}</span>
         <div className="flex items-center gap-1">
@@ -89,25 +65,22 @@ export function CodeBlock({ code, language = "java" }: CodeBlockProps) {
         </div>
       </div>
 
-      {/* Code area with scroll handling */}
-      <div className="relative">
+      {/* Scroll container — separate from the clipping parent */}
+      <div
+        className="scrollbar-thin"
+        style={{
+          overflowX: "scroll",
+          overscrollBehaviorX: "contain",
+          touchAction: "pan-x pan-y",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
         <pre
-          ref={preRef}
-          className="overflow-x-auto p-3 sm:p-4 text-xs sm:text-sm leading-relaxed scrollbar-thin"
+          className="p-3 sm:p-4 text-xs sm:text-sm leading-relaxed"
+          style={{ width: "max-content", minWidth: "100%" }}
         >
           <code>{code}</code>
         </pre>
-
-        {/* Scroll fade indicator on the right edge */}
-        {isScrollable && !isScrolledToEnd && (
-          <div
-            className="absolute top-0 right-0 bottom-0 w-8 pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(to right, transparent, #1A1A1C)",
-            }}
-          />
-        )}
       </div>
     </div>
   );
