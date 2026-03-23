@@ -148,10 +148,10 @@
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: rgba(255, 255, 255, 0.10);
   --sidebar-ring: #a3a3a3;
-  /* DADS color tokens — dark neutral variants */
-  --dads-blue: #e5e5e5;
-  --dads-blue-light: #262626;
-  --dads-blue-hover: #fafafa;
+  /* DADS color tokens — dark variants */
+  --dads-blue: #60a5fa;
+  --dads-blue-light: #172554;
+  --dads-blue-hover: #93c5fd;
   --dads-success: #34D399;
   --dads-success-light: #1a2e25;
   --dads-error: #ef4444;
